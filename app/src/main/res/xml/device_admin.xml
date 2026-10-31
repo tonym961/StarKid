@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Dichiarazione richiesta da Android perche KidsDeviceAdminReceiver sia un
+    amministratore valido: senza questo file "dpm set-device-owner" risponde
+    "Unknown admin" e la modalita kiosk non si puo attivare.
+
+    Le politiche del kiosk (lock task, barra di stato, disinstallazione
+    bloccata) sono poteri del Device Owner e non si elencano qui. Qui sta solo
+    force-lock, il minimo perche la dichiarazione sia valida: niente wipe-data
+    ne reset-password, che l'app non usa e non deve potere.
+-->
+<device-admin xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-policies>
+        <force-lock />
+    </uses-policies>
+</device-admin>

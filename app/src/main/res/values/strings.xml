@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">StarKid</string>
+    <string name="guard_channel_name">Controllo genitori</string>
+    <string name="guard_notification_title">Controllo genitori attivo</string>
+</resources>
