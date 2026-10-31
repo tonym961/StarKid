@@ -1,0 +1,170 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://starkid.antoninomiccio.com/schema/config/v1",
+  "title": "Documento di configurazione StarKid, versione 1",
+  "description": "L'unica cosa che il server dice a un tablet. Vocabolario chiuso: un campo non previsto e un errore (422), non una chiave da ignorare. Questo file e la fonte di verita: app/models.py lo legge all'avvio e ne ricava enumerazioni, limiti e valori iniziali, cosi non esistono due elenchi da tenere allineati a mano. Gli identificatori sono gli stessi che usa il tablet in data/Appearance.kt, games/GameCatalog.kt e data/Prefs.kt: non si rinominano, si aggiungono.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "tema",
+    "sfondo",
+    "schermata",
+    "orientamento",
+    "kiosk",
+    "kiosk_recenti",
+    "limite_giornaliero",
+    "fascia",
+    "app_permesse",
+    "giochi_spenti",
+    "suoni"
+  ],
+  "properties": {
+    "revisione": {
+      "description": "Numero di revisione. In uscita dal server e sempre presente e lo assegna il server. In entrata e facoltativo e vale 'la revisione che avevo davanti quando ho modificato': se non e piu quella corrente la scrittura viene rifiutata con 409, cosi due schede del browser non si sovrascrivono a vicenda.",
+      "type": "integer",
+      "minimum": 1
+    },
+    "tema": {
+      "description": "Colori e decorazioni della schermata del bambino. Non cambia la disposizione.",
+      "type": "string",
+      "enum": ["pulito", "spaziale"],
+      "default": "pulito"
+    },
+    "sfondo": {
+      "description": "Tinta di sfondo. Deve appartenere al tema scelto, vedi allOf in fondo. 'foto' non c'e di proposito: lo sfondo fotografico lo sceglie il genitore sul tablet, la foto non passa dal server e il server non deve poter dire 'metti quella foto'.",
+      "$comment": "Lo sfondo fotografico sul tablet ha l'id 'foto' (data/Appearance.kt, BACKGROUND_PHOTO). Qui e volutamente assente: un documento con sfondo 'foto' va rifiutato con 422, non accettato e poi ignorato.",
+      "type": "string",
+      "enum": [
+        "lilla",
+        "cielo",
+        "prato",
+        "tramonto",
+        "notte",
+        "nebulosa",
+        "marte",
+        "orbita"
+      ],
+      "default": "lilla"
+    },
+    "schermata": {
+      "description": "Come si apre la schermata del bambino: a scomparti ('categorie') o tutto in vista ('tutte').",
+      "type": "string",
+      "enum": ["categorie", "tutte"],
+      "default": "categorie"
+    },
+    "orientamento": {
+      "type": "string",
+      "enum": ["orizzontale", "verticale", "automatico"],
+      "default": "orizzontale"
+    },
+    "kiosk": {
+      "description": "Modalita kiosk. Il campo e asimmetrico: false lo applica il tablet subito, true e soltanto una richiesta, che sul tablet va confermata col PIN. Quando il tablet non la conferma risponde all'ack con esito 'partial' e campi_rifiutati che contiene 'kiosk'; finche non arriva la conferma il server mostra 'in attesa', non 'attivo'.",
+      "type": "boolean",
+      "default": false
+    },
+    "kiosk_recenti": {
+      "description": "Se lasciare raggiungibili le app recenti dentro il kiosk.",
+      "type": "boolean",
+      "default": false
+    },
+    "limite_giornaliero": {
+      "description": "Tetto complessivo in minuti, 0 = senza limite. Il massimo e 1440, un giorno intero.",
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1440,
+      "default": 60
+    },
+    "fascia": {
+      "description": "Fascia oraria in cui il tablet si puo usare.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["attiva", "inizio", "fine", "giorni"],
+      "properties": {
+        "attiva": { "type": "boolean" },
+        "inizio": {
+          "description": "Minuti dalla mezzanotte, 0..1439. 480 = 08:00.",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1439
+        },
+        "fine": {
+          "description": "Minuti dalla mezzanotte, 0..1439. 1200 = 20:00. Una fascia con fine minore di inizio scavalca la mezzanotte, come fa Guard.inWindow sul tablet, e va bene.",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1439
+        },
+        "giorni": {
+          "description": "Giorni attivi, nella numerazione che usa il tablet (java.util.Calendar.DAY_OF_WEEK): 1 = domenica, 2 = lunedi, ... 7 = sabato. Senza ripetizioni, almeno un giorno.",
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 7,
+          "uniqueItems": true,
+          "items": { "type": "integer", "minimum": 1, "maximum": 7 }
+        }
+      },
+      "default": { "attiva": true, "inizio": 480, "fine": 1200, "giorni": [1, 2, 3, 4, 5, 6, 7] }
+    },
+    "app_permesse": {
+      "description": "Nomi di pacchetto Android delle app permesse. Solo nomi di pacchetto: il motivo e che un nome di pacchetto non puo essere un indirizzo, un percorso o un comando. Il server non deve poter dire 'esegui questa cosa'.",
+      "type": "array",
+      "maxItems": 200,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 3,
+        "maxLength": 128,
+        "pattern": "^[a-zA-Z][a-zA-Z0-9_]*(\\.[a-zA-Z0-9_]+)+$"
+      },
+      "default": []
+    },
+    "giochi_spenti": {
+      "description": "Id dei giochi interni di StarKid da non mostrare. Elenco chiuso, gli id sono quelli di games/GameCatalog.kt.",
+      "type": "array",
+      "maxItems": 12,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "memory",
+          "conta",
+          "acchiappa",
+          "sequenza",
+          "intruso",
+          "disegna",
+          "macchinine",
+          "xilofono",
+          "puzzle",
+          "confronto",
+          "serie",
+          "citta"
+        ]
+      },
+      "default": []
+    },
+    "suoni": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "allOf": [
+    {
+      "$comment": "Lo sfondo appartiene al tema: le quattro tinte chiare sono del tema pulito.",
+      "if": { "required": ["tema"], "properties": { "tema": { "const": "pulito" } } },
+      "then": {
+        "properties": {
+          "sfondo": { "enum": ["lilla", "cielo", "prato", "tramonto"] }
+        }
+      }
+    },
+    {
+      "$comment": "Le quattro tinte scure sono del tema spaziale.",
+      "if": { "required": ["tema"], "properties": { "tema": { "const": "spaziale" } } },
+      "then": {
+        "properties": {
+          "sfondo": { "enum": ["notte", "nebulosa", "marte", "orbita"] }
+        }
+      }
+    }
+  ],
+  "$comment": "Campi che non esisteranno mai qui, e il motivo: nome del bambino, avatar e PIN (il server non deve sapere chi e il bambino ne come si apre l'area genitori), IMEI o seriale (non serve identificare l'hardware, basta il token), uso per singola app e minuti consumati (sono il diario di un bambino, restano sul tablet), qualunque URL, percorso o comando (il server non deve poter esprimere 'esegui'), password del Wi-Fi (sta nel QR, che si genera nel browser). Chi aggiunge un campo a questo file lo aggiunge anche a app/models.py e ai test in tests/test_campi_vietati.py."
+}

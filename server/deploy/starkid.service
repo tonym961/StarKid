@@ -1,0 +1,91 @@
+# StarKid - server di configurazione dei tablet
+# Destinazione: /etc/systemd/system/starkid.service
+#
+# Ascolta SOLO su 127.0.0.1:8082. Verso l'esterno ci arriva nginx, nient'altro.
+# Un solo worker: su questa macchina la RAM e il vincolo, non la concorrenza.
+
+[Unit]
+Description=StarKid - server di configurazione dei tablet
+Documentation=https://github.com/tonym961/StarKid
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=starkid
+Group=starkid
+WorkingDirectory=/opt/starkid
+EnvironmentFile=/etc/starkid/starkid.env
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONDONTWRITEBYTECODE=1
+
+ExecStart=/opt/starkid/venv/bin/uvicorn app.main:app \
+    --host 127.0.0.1 \
+    --port 8082 \
+    --workers 1 \
+    --no-server-header \
+    --proxy-headers \
+    --forwarded-allow-ips 127.0.0.1 \
+    --timeout-keep-alive 10 \
+    --log-level info
+
+Restart=on-failure
+RestartSec=5s
+TimeoutStopSec=20s
+KillSignal=SIGINT
+
+# --- RAM: 954 MB in tutto, swap gia in uso. Questo servizio non sfonda. ---
+# MemoryHigh fa recuperare memoria prima di arrivare al limite duro;
+# MemoryMax e il limite oltre il quale il kernel lo uccide (e systemd lo riavvia).
+MemoryHigh=160M
+MemoryMax=192M
+MemorySwapMax=64M
+TasksMax=48
+
+# --- Privilegi ---
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+AmbientCapabilities=
+SecureBits=noroot-locked
+
+# --- Filesystem ---
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+# StateDirectory crea /var/lib/starkid con utente e permessi giusti a ogni avvio.
+StateDirectory=starkid
+StateDirectoryMode=0750
+# L'unico posto scrivibile. Il codice in /opt/starkid resta di root e in sola lettura:
+# il servizio non puo riscriversi da solo.
+ReadWritePaths=/var/lib/starkid
+UMask=0077
+
+# --- Kernel e cgroup ---
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+ProtectProc=invisible
+ProcSubset=pid
+
+# --- Rete: solo IPv4 e socket unix. Niente AF_NETLINK, niente AF_PACKET. ---
+RestrictAddressFamilies=AF_INET AF_UNIX
+IPAddressDeny=any
+IPAddressAllow=localhost
+
+# --- Resto ---
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged @resources @obsolete
+SystemCallErrorNumber=EPERM
+
+[Install]
+WantedBy=multi-user.target

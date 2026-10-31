@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="StarKid">
+  <!-- Una stella su sfondo lilla: la stessa idea del logo del progetto,
+       ridotta a quello che si distingue in una linguetta del browser. -->
+  <rect width="32" height="32" rx="7" fill="#5b3fd1"/>
+  <path d="M16 5.5l3.2 6.9 7.3.9-5.4 5.1 1.4 7.4L16 22.2l-6.5 3.6 1.4-7.4-5.4-5.1 7.3-.9z" fill="#ffe08a"/>
+</svg>

@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex, nofollow">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; connect-src 'self'; form-action 'none'; base-uri 'none'">
+<title>Configurazione del tablet - StarKid</title>
+<link rel="icon" href="icona.svg" type="image/svg+xml">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<a class="salta" href="#principale">Salta al contenuto</a>
+
+<header class="barra">
+  <a class="marchio" href="tablets.html">Star<span>Kid</span></a>
+  <nav>
+    <a href="tablets.html">Tablet</a>
+    <a href="salute.html">Servizio</a>
+  </nav>
+  <button type="button" id="esci" class="bottone fantasma">Esci</button>
+</header>
+
+<main id="principale">
+
+  <p class="piccolo"><a href="tablets.html">&larr; Tutti i tablet</a></p>
+
+  <div class="intestazione-pagina">
+    <div>
+      <h1 id="titolo">Tablet</h1>
+      <p class="tenue" id="sottotitolo">Carico la configurazione...</p>
+    </div>
+  </div>
+
+  <div id="messaggio" class="nascosto" aria-live="polite"></div>
+  <div id="cartello"></div>
+
+  <form id="modulo" class="nascosto" method="post" novalidate>
+
+    <fieldset class="carta">
+      <legend>Come si vede</legend>
+
+      <div class="campo">
+        <label>Tema</label>
+        <div id="temi"></div>
+      </div>
+
+      <div class="campo">
+        <label id="etichetta-sfondo">Sfondo</label>
+        <div class="sfondi" id="sfondi" role="radiogroup" aria-labelledby="etichetta-sfondo"></div>
+        <span class="aiuto">Solo le tinte del tema scelto. La foto di sfondo si mette sul tablet: la fotografia di un bambino non deve passare da un server.</span>
+        <div class="errore-campo nascosto" id="errore-sfondo"></div>
+      </div>
+
+      <div class="due-colonne">
+        <div class="campo">
+          <label for="schermata">Schermata</label>
+          <select id="schermata"></select>
+          <span class="aiuto" id="aiuto-schermata"></span>
+        </div>
+        <div class="campo">
+          <label for="orientamento">Orientamento</label>
+          <select id="orientamento"></select>
+          <span class="aiuto">Come sta il tablet in mano al bambino.</span>
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset class="carta">
+      <legend>Quanto e quando</legend>
+
+      <div class="campo">
+        <label for="limite">Limite giornaliero (minuti)</label>
+        <input type="number" id="limite" min="0" max="1440" step="5" inputmode="numeric">
+        <span class="aiuto" id="aiuto-limite">0 significa nessun limite. Il tempo dei giochi di StarKid conta come quello delle altre app.</span>
+        <div class="errore-campo nascosto" id="errore-limite_giornaliero"></div>
+      </div>
+
+      <label class="interruttore" for="fascia-attiva">
+        <input type="checkbox" id="fascia-attiva">
+        <span>Permetti l'uso solo in una fascia oraria
+          <span class="aiuto">Fuori dalla fascia il tablet mostra il blocco, anche se il tempo di oggi non e finito.</span>
+        </span>
+      </label>
+
+      <div id="fascia-dettagli">
+        <div class="due-colonne">
+          <div class="campo">
+            <label for="fascia-inizio">Dalle</label>
+            <input type="time" id="fascia-inizio" step="300">
+            <div class="errore-campo nascosto" id="errore-fascia.inizio"></div>
+          </div>
+          <div class="campo">
+            <label for="fascia-fine">Alle</label>
+            <input type="time" id="fascia-fine" step="300">
+            <div class="errore-campo nascosto" id="errore-fascia.fine"></div>
+          </div>
+        </div>
+        <div class="campo">
+          <label id="etichetta-giorni">Giorni</label>
+          <div class="giorni" id="giorni" role="group" aria-labelledby="etichetta-giorni"></div>
+          <div class="errore-campo nascosto" id="errore-fascia.giorni"></div>
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset class="carta">
+      <legend>Kiosk</legend>
+
+      <div class="avviso" id="nota-kiosk">
+        <h3>Il kiosk non e simmetrico</h3>
+        <p>Spegnerlo e immediato: il tablet lo spegne appena riceve la
+        configurazione. Accenderlo e una <strong>richiesta</strong>: il tablet
+        lo accende solo se StarKid e Device Owner, altrimenti risponde che
+        l'ha rifiutato e lo vedi scritto qui sopra.</p>
+      </div>
+
+      <label class="interruttore" for="kiosk">
+        <input type="checkbox" id="kiosk">
+        <span>Blocca il tablet su StarKid
+          <span class="aiuto">Niente barra di sistema, niente altre app, niente disinstallazione.</span>
+        </span>
+      </label>
+
+      <label class="interruttore" for="kiosk_recenti">
+        <input type="checkbox" id="kiosk_recenti">
+        <span>Lascia il tasto delle app recenti
+          <span class="aiuto">Vale solo col kiosk accesso: serve ai bambini piu grandi che passano fra due app permesse.</span>
+        </span>
+      </label>
+    </fieldset>
+
+    <fieldset class="carta">
+      <legend>Giochi di StarKid</legend>
+      <p class="piccolo tenue">Togli la spunta per spegnere un gioco. Spenti non compaiono nella griglia del bambino.</p>
+      <div class="lista-caselle" id="giochi"></div>
+      <div class="errore-campo nascosto" id="errore-giochi_spenti"></div>
+
+      <label class="interruttore" for="suoni">
+        <input type="checkbox" id="suoni">
+        <span>Suoni accesi
+          <span class="aiuto">I suoni dei giochi, sintetizzati sul tablet.</span>
+        </span>
+      </label>
+    </fieldset>
+
+    <fieldset class="carta">
+      <legend>App permesse</legend>
+      <div class="campo">
+        <label for="app">Nomi dei pacchetti, uno per riga</label>
+        <textarea id="app" spellcheck="false" autocapitalize="none"
+                  placeholder="com.esempio.gioco&#10;org.esempio.disegno"></textarea>
+        <span class="aiuto">Il nome del pacchetto si legge sul tablet, in Area genitori &gt; App permesse. Se qui l'elenco e vuoto, al bambino restano i giochi di StarKid.</span>
+        <div class="errore-campo nascosto" id="errore-app_permesse"></div>
+      </div>
+    </fieldset>
+
+    <div class="carta riga-bottoni">
+      <button type="submit" class="bottone" id="salva">Salva: pubblica una nuova revisione</button>
+      <button type="button" class="bottone secondario" id="scarica">Scarica configurazione (JSON)</button>
+      <button type="button" class="bottone fantasma" id="annulla">Annulla le modifiche</button>
+    </div>
+  </form>
+
+  <section class="carta" id="sezione-storico">
+    <h2>Storico</h2>
+    <p class="piccolo tenue">Le ultime dieci revisioni. "Torna a questa" ne pubblica una nuova con lo stesso contenuto: la storia non si cancella.</p>
+    <div id="storico"><p class="caricamento">Carico lo storico...</p></div>
+  </section>
+
+  <noscript>
+    <div class="avviso guasto">
+      <h3>Serve JavaScript</h3>
+      <p>La configurazione si legge e si scrive dal browser. Attiva
+      JavaScript per questo indirizzo.</p>
+    </div>
+  </noscript>
+
+</main>
+<script src="app.js"></script>
+<script src="pagina-tablet.js"></script>
+</body>
+</html>

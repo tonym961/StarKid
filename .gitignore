@@ -13,3 +13,13 @@ captures/
 
 # File di lavoro, non pubblicati
 NOTE-TECNICHE.md
+
+# Server: roba che Python si genera da solo
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.db
+*.db-shm
+*.db-wal
+venv/
+.venv/

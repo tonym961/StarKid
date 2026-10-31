@@ -1,0 +1,31 @@
+# Dipendenze del server StarKid, versioni fissate.
+#
+# Il vincolo che decide questo elenco e la RAM della macchina: 954 MB totali,
+# con swap gia in uso. Percio:
+#   - uvicorn LISCIO, non uvicorn[standard]: uvloop e httptools vanno
+#     compilati, portano una toolchain e tengono piu memoria residente. Con un
+#     solo genitore e qualche tablet che chiamano ogni pochi minuti, l'event
+#     loop di asyncio basta e avanza.
+#   - nessun driver di database: si usa sqlite3 della libreria standard.
+#   - nessuna libreria di hashing password (passlib, bcrypt, argon2): bastano
+#     hashlib.scrypt e hmac.compare_digest della libreria standard.
+#   - niente python-multipart: non si riceve nessun upload.
+#
+# Installazione (a mano, sulla macchina di destinazione):
+#   python3 -m venv /opt/starkid/venv
+#   /opt/starkid/venv/bin/pip install --no-cache-dir -r requirements.txt
+# --no-cache-dir perche la cache di pip su un disco con swap attivo e solo
+# peso morto.
+
+fastapi==0.115.6
+starlette==0.41.3
+pydantic==2.10.4
+pydantic-core==2.27.2
+annotated-types==0.7.0
+typing-extensions==4.12.2
+anyio==4.7.0
+idna==3.10
+sniffio==1.3.1
+uvicorn==0.34.0
+click==8.1.8
+h11==0.14.0

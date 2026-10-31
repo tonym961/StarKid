@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex, nofollow">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; connect-src 'self'; form-action 'none'; base-uri 'none'">
+<title>Servizio - StarKid</title>
+<link rel="icon" href="icona.svg" type="image/svg+xml">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<a class="salta" href="#principale">Salta al contenuto</a>
+
+<header class="barra">
+  <a class="marchio" href="tablets.html">Star<span>Kid</span></a>
+  <nav>
+    <a href="tablets.html">Tablet</a>
+    <a href="salute.html">Servizio</a>
+  </nav>
+  <button type="button" id="esci" class="bottone fantasma">Esci</button>
+</header>
+
+<main id="principale">
+
+  <div class="intestazione-pagina">
+    <div>
+      <h1>Il servizio</h1>
+      <p class="tenue">Come sta la macchina che tiene le configurazioni.</p>
+    </div>
+    <button type="button" class="bottone secondario piccolo" id="ricarica">Ricarica</button>
+  </div>
+
+  <div id="messaggio" class="nascosto" aria-live="polite"></div>
+
+  <div class="numeri" id="numeri">
+    <div class="numero"><span class="valore" id="n-servizio">...</span><span class="nome">Servizio</span></div>
+    <div class="numero"><span class="valore" id="n-certificato">...</span><span class="nome">Giorni al certificato</span></div>
+    <div class="numero"><span class="valore" id="n-backup">...</span><span class="nome">Ultimo backup</span></div>
+    <div class="numero"><span class="valore" id="n-database">...</span><span class="nome">Database</span></div>
+    <div class="numero"><span class="valore" id="n-zitti">...</span><span class="nome">Tablet che non si fanno sentire</span></div>
+  </div>
+
+  <section class="carta">
+    <h2>Tablet che non si fanno sentire</h2>
+    <p class="piccolo tenue">Un tablet si fa vivo da solo. Se tace da piu di un
+    giorno: o e spento, o non ha rete, o StarKid non gira piu.</p>
+    <div id="zitti"><p class="caricamento">Carico...</p></div>
+  </section>
+
+  <section class="carta">
+    <h2>Dettagli</h2>
+    <div id="dettagli"><p class="caricamento">Carico...</p></div>
+  </section>
+
+  <noscript>
+    <div class="avviso guasto">
+      <h3>Serve JavaScript</h3>
+      <p>I numeri di questa pagina si chiedono al server e si mostrano qui.</p>
+    </div>
+  </noscript>
+
+</main>
+<script src="app.js"></script>
+<script src="pagina-salute.js"></script>
+</body>
+</html>

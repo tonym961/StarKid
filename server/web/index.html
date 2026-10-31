@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex, nofollow">
+<!-- Tutto da questo server e niente altro: nessuno script, nessun carattere
+     tipografico e nessuna immagine da fuori. default-src 'none' spegne anche
+     le connessioni che qualcuno riuscisse a far fare alla pagina. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; connect-src 'self'; form-action 'none'; base-uri 'none'">
+<title>Accesso - StarKid</title>
+<link rel="icon" href="icona.svg" type="image/svg+xml">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<main id="principale" class="stretta">
+
+  <h1>Star<span class="tenue">Kid</span></h1>
+  <p class="tenue">I tablet dei tuoi bambini, da qui.</p>
+
+  <div id="messaggio" class="nascosto" aria-live="polite"></div>
+
+  <form class="carta" id="modulo-accesso" method="post" novalidate>
+    <div class="campo">
+      <label for="utente">Nome utente</label>
+      <input type="text" id="utente" name="utente" autocomplete="username"
+             autocapitalize="none" spellcheck="false" required>
+      <span class="aiuto">Il nome utente, non l'indirizzo email.</span>
+      <div class="errore-campo nascosto" id="errore-utente"></div>
+    </div>
+
+    <div class="campo">
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" autocomplete="current-password" required>
+      <div class="errore-campo nascosto" id="errore-password"></div>
+    </div>
+
+    <button type="submit" class="bottone" id="entra">Entra</button>
+  </form>
+
+  <p class="piccolo tenue">
+    C'e un solo account e si crea sul server da riga di comando: qui non ci si
+    puo iscrivere, e non c'e nessun recupero password da questa pagina.
+    Se l'hai perduta, serve una sessione SSH sul server.
+  </p>
+
+  <noscript>
+    <div class="avviso guasto">
+      <h3>Serve JavaScript</h3>
+      <p>Questa pagina lavora nel browser - e il motivo per cui il nome del
+      bambino e la password del Wi-Fi non arrivano al server. Attiva
+      JavaScript per questo indirizzo: niente viene caricato da altri siti.</p>
+    </div>
+  </noscript>
+
+</main>
+<script src="app.js"></script>
+<script src="pagina-accesso.js"></script>
+</body>
+</html>

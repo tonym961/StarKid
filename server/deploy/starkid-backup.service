@@ -1,0 +1,54 @@
+# StarKid - copia di sicurezza del database (unita di servizio)
+# Destinazione: /etc/systemd/system/starkid-backup.service
+#
+# Non si abilita: la lancia starkid-backup.timer. Su questa macchina cron non
+# c'e, i lavori periodici sono timer di systemd.
+# Si puo sempre lanciare a mano:  systemctl start starkid-backup.service
+
+[Unit]
+Description=StarKid - copia di sicurezza del database
+Documentation=https://github.com/tonym961/StarKid
+After=starkid.service
+# Nessun Requires: la copia ha senso anche se il server e fermo.
+
+[Service]
+Type=oneshot
+User=starkid
+Group=starkid
+ExecStart=/opt/starkid/bin/starkid-backup.sh
+TimeoutStartSec=300
+
+# Costa poco, ma qui la RAM e contata.
+MemoryMax=64M
+TasksMax=16
+Nice=10
+IOSchedulingClass=idle
+
+# Stesso irrigidimento del servizio principale.
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+AmbientCapabilities=
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+PrivateNetwork=yes
+ReadWritePaths=/var/lib/starkid
+UMask=0077
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+ProtectProc=invisible
+ProcSubset=pid
+RestrictAddressFamilies=AF_UNIX
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged @resources @obsolete
+SystemCallErrorNumber=EPERM

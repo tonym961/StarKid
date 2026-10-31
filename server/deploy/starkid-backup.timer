@@ -1,0 +1,24 @@
+# StarKid - quando fare la copia di sicurezza
+# Destinazione: /etc/systemd/system/starkid-backup.timer
+# Si abilita con:  systemctl enable --now starkid-backup.timer
+#
+# Cron su questa macchina non esiste: i lavori periodici sono timer.
+
+[Unit]
+Description=StarKid - copia giornaliera del database
+Documentation=https://github.com/tonym961/StarKid
+
+[Timer]
+Unit=starkid-backup.service
+# Le 4:17 di notte, non le 4:00 in punto: su una macchina con 2 vCPU e la RAM
+# contata conviene non finire addosso ai lavori degli altri dodici siti.
+OnCalendar=*-*-* 04:17:00
+# Piu un ritardo casuale fino a 15 minuti, per lo stesso motivo.
+RandomizedDelaySec=900
+# Se la macchina era spenta all'ora prevista, la copia si fa alla riaccensione
+# (serve anche per il riavvio in sospeso).
+Persistent=true
+AccuracySec=1m
+
+[Install]
+WantedBy=timers.target

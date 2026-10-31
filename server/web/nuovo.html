@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex, nofollow">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; connect-src 'self'; form-action 'none'; base-uri 'none'">
+<title>Nuovo tablet - StarKid</title>
+<link rel="icon" href="icona.svg" type="image/svg+xml">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<a class="salta" href="#principale">Salta al contenuto</a>
+
+<header class="barra no-stampa">
+  <a class="marchio" href="tablets.html">Star<span>Kid</span></a>
+  <nav>
+    <a href="tablets.html">Tablet</a>
+    <a href="salute.html">Servizio</a>
+  </nav>
+  <button type="button" id="esci" class="bottone fantasma">Esci</button>
+</header>
+
+<main id="principale">
+
+  <p class="piccolo no-stampa"><a href="tablets.html">&larr; Tutti i tablet</a></p>
+
+  <h1>Aggiungi un tablet</h1>
+  <p class="tenue">Due passi: prima il tablet sul server, poi il QR da inquadrare.</p>
+
+  <div id="messaggio" class="nascosto" aria-live="polite"></div>
+
+  <!-- ------------------------------ passo 1 ------------------------------ -->
+  <form class="carta" id="modulo-crea" method="post" novalidate>
+    <h2>1. Il tablet sul server</h2>
+
+    <div class="campo">
+      <label for="nome">Nome del tablet</label>
+      <input type="text" id="nome" maxlength="60" autocapitalize="sentences" required>
+      <span class="aiuto"><strong>Non il nome del bambino.</strong> Serve solo a te per
+      riconoscerlo nell'elenco: "tablet blu", "tablet del salotto". Il nome del
+      bambino lo scrivi al passo 2 e resta in questa pagina.</span>
+      <div class="errore-campo nascosto" id="errore-nome"></div>
+    </div>
+
+    <button type="submit" class="bottone" id="crea">Crea il tablet</button>
+  </form>
+
+  <!-- ------------------------------ passo 2 ------------------------------ -->
+  <section class="carta nascosto" id="passo-due">
+    <h2>2. Il QR di arruolamento</h2>
+
+    <div class="avviso ok">
+      <h3>Il tablet e stato creato</h3>
+      <p id="riga-creato">&nbsp;</p>
+      <p class="piccolo">Codice di arruolamento (serve una volta sola):</p>
+      <div class="segreto">
+        <input type="text" id="token" readonly class="mono">
+        <button type="button" class="bottone secondario piccolo no-stampa" id="copia-token">Copia</button>
+      </div>
+    </div>
+
+    <div class="avviso attesa no-stampa">
+      <h3>Questo QR e un segreto</h3>
+      <p>Dentro ci sono il codice di arruolamento, il nome del bambino e - se lo
+      scrivi - la password del Wi-Fi. <strong>Non e passato dal server</strong>:
+      il disegno lo fa questa pagina nel tuo browser. Quindi non mandarlo in
+      chat e non fotografarlo per tenerlo: stampalo, usalo, buttalo.</p>
+    </div>
+
+    <form id="modulo-qr" method="post" novalidate>
+
+      <fieldset>
+        <legend>Cosa sapra il tablet appena acceso</legend>
+
+        <div class="campo">
+          <label for="server">Indirizzo di questo server</label>
+          <input type="url" id="server" inputmode="url" autocapitalize="none" spellcheck="false">
+          <span class="aiuto">Il tablet chiedera qui la sua configurazione.</span>
+        </div>
+
+        <div class="campo">
+          <label for="bambino">Nome del bambino (resta in questa pagina)</label>
+          <input type="text" id="bambino" maxlength="30" autocapitalize="words">
+          <span class="aiuto">Va nel QR e da li sul tablet, in cima alla schermata.
+          Al server non arriva e il server non ha nessun campo per tenerlo.
+          Puoi anche lasciarlo vuoto e scriverlo sul tablet.</span>
+        </div>
+
+        <div class="due-colonne">
+          <div class="campo">
+            <label for="tema-iniziale">Tema iniziale</label>
+            <select id="tema-iniziale"></select>
+          </div>
+          <div class="campo">
+            <label for="limite-iniziale">Limite giornaliero (minuti)</label>
+            <input type="number" id="limite-iniziale" min="0" max="1440" step="5" value="60" inputmode="numeric">
+          </div>
+        </div>
+
+        <label class="interruttore" for="kiosk-iniziale">
+          <input type="checkbox" id="kiosk-iniziale">
+          <span>Chiedi il kiosk subito
+            <span class="aiuto">Arruolando col QR il tablet diventa Device Owner, quindi stavolta il kiosk lo puo accendere davvero.</span>
+          </span>
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Wi-Fi (facoltativo)</legend>
+        <p class="piccolo tenue">Se lo metti, il tablet si collega da solo durante la
+        preparazione. Se lo lasci vuoto, la rete si scegliera a mano sul tablet:
+        il QR resta piu corto e senza password dentro.</p>
+
+        <div class="due-colonne">
+          <div class="campo">
+            <label for="wifi-nome">Nome della rete (SSID)</label>
+            <input type="text" id="wifi-nome" autocapitalize="none" spellcheck="false">
+          </div>
+          <div class="campo">
+            <label for="wifi-tipo">Sicurezza</label>
+            <select id="wifi-tipo">
+              <option value="WPA">WPA / WPA2 / WPA3</option>
+              <option value="WEP">WEP</option>
+              <option value="NONE">Rete aperta</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="campo">
+          <label for="wifi-password">Password del Wi-Fi</label>
+          <div class="segreto">
+            <input type="password" id="wifi-password" autocomplete="off" spellcheck="false">
+            <button type="button" class="bottone secondario piccolo no-stampa" id="mostra-password">Mostra</button>
+          </div>
+          <span class="aiuto">Resta nel browser e nel QR. Al server non arriva.</span>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Da dove si scarica StarKid</legend>
+        <p class="piccolo tenue">Durante la preparazione il tablet non ha ancora
+        l'app: la scarica da qui. Se preferisci installarla con <span class="mono">adb</span>,
+        lascia vuoto e il QR diventa molto piu corto.</p>
+
+        <div class="campo">
+          <label for="apk">Indirizzo dell'APK</label>
+          <input type="url" id="apk" inputmode="url" autocapitalize="none" spellcheck="false">
+        </div>
+
+        <div class="campo">
+          <label for="checksum">Impronta della firma (SIGNATURE_CHECKSUM)</label>
+          <input type="text" id="checksum" class="mono" autocapitalize="none" spellcheck="false">
+          <span class="aiuto">L'impronta SHA-256 del certificato di firma, in base64 per URL.
+          Senza questa Android rifiuta l'installazione.</span>
+        </div>
+
+        <label class="interruttore" for="sistema-attive">
+          <input type="checkbox" id="sistema-attive" checked>
+          <span>Lascia attive le app di sistema
+            <span class="aiuto">Senza questa spunta Android, arruolando, disattiva quasi tutte le app di sistema: resterebbero fuori anche Impostazioni e Fotocamera.</span>
+          </span>
+        </label>
+
+        <label class="interruttore" for="salta-cifratura">
+          <input type="checkbox" id="salta-cifratura">
+          <span>Salta la cifratura del tablet
+            <span class="aiuto">Piu rapido sui tablet vecchi e lenti. Su un tablet di un bambino la cifratura serve a poco, ma lasciala accesa se il tablet esce di casa.</span>
+          </span>
+        </label>
+      </fieldset>
+    </form>
+
+    <div class="qr-scatola">
+      <div>
+        <div class="qr-cornice" id="qr-cornice"></div>
+        <p class="piccolo tenue centrato" id="qr-dettagli">&nbsp;</p>
+      </div>
+      <div class="qr-lato">
+        <div id="qr-errore"></div>
+        <div class="misura" id="misura">
+          <p class="piccolo" id="misura-testo">&nbsp;</p>
+          <div class="barra-misura"><div class="riempimento" id="misura-riempimento"></div></div>
+        </div>
+
+        <div class="riga-bottoni no-stampa">
+          <button type="button" class="bottone secondario" id="scarica-png">Scarica QR (PNG)</button>
+          <button type="button" class="bottone secondario" id="scarica-json">Scarica JSON</button>
+          <button type="button" class="bottone fantasma" id="stampa">Stampa</button>
+        </div>
+
+        <details class="no-stampa">
+          <summary class="piccolo">Cosa c'e scritto dentro il QR</summary>
+          <pre id="json"></pre>
+        </details>
+      </div>
+    </div>
+
+    <h3>Come si usa</h3>
+    <ol>
+      <li><strong>Prima di tutto, prova a inquadrarlo</strong> con la fotocamera di
+      un telefono qualsiasi: devi vedere comparire del testo che comincia con
+      <span class="mono">{"android.app.extra...</span>. Se il telefono non lo
+      legge, non lo leggera nemmeno il tablet: accorcia il contenuto (togli il
+      Wi-Fi) e riprova.</li>
+      <li>Riporta il tablet <strong>alle condizioni di fabbrica</strong>. Il QR
+      funziona solo sul primo avvio, su un tablet senza nessun account dentro.</li>
+      <li>Nella primissima schermata di benvenuto <strong>tocca sei volte</strong>
+      lo stesso punto dello schermo: si apre il lettore di QR.</li>
+      <li>Inquadra questo QR e lascia fare: il tablet scarica StarKid, la
+      installa come Device Owner e si arruola da solo.</li>
+      <li>Torna nell'elenco: il tablet comparira come attivo appena si fa vivo.</li>
+    </ol>
+    <p class="piccolo tenue no-stampa">Se il tablet e gia pronto e vuoi solo
+    arruolarlo, puoi usare il codice qui sopra a mano dall'area genitori di
+    StarKid, senza riportarlo alle condizioni di fabbrica: in quel caso pero
+    non diventa Device Owner e il kiosk restera spento.</p>
+
+    <div class="riga-bottoni no-stampa">
+      <a class="bottone" href="tablets.html">Ho finito, torna all'elenco</a>
+      <a class="bottone secondario" href="nuovo.html">Aggiungi un altro tablet</a>
+    </div>
+  </section>
+
+  <noscript>
+    <div class="avviso guasto">
+      <h3>Serve JavaScript</h3>
+      <p>Il QR viene disegnato qui dentro, nel browser: e il motivo per cui il
+      nome del bambino e la password del Wi-Fi non arrivano al server. Senza
+      JavaScript questa pagina non puo fare il suo lavoro.</p>
+    </div>
+  </noscript>
+
+</main>
+<script src="app.js"></script>
+<script src="qr.js"></script>
+<script src="pagina-nuovo.js"></script>
+</body>
+</html>

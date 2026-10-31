@@ -1,0 +1,11 @@
+# Solo per sviluppo e test. Non va installato sulla macchina di destinazione:
+# pytest e httpx sono decine di megabyte che in produzione non servono.
+-r requirements.txt
+
+pytest==8.3.4
+iniconfig==2.0.0
+packaging==24.2
+pluggy==1.5.0
+httpx==0.28.1
+httpcore==1.0.7
+certifi==2024.12.14

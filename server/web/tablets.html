@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex, nofollow">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; connect-src 'self'; form-action 'none'; base-uri 'none'">
+<title>Tablet - StarKid</title>
+<link rel="icon" href="icona.svg" type="image/svg+xml">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<a class="salta" href="#principale">Salta al contenuto</a>
+
+<header class="barra">
+  <a class="marchio" href="tablets.html">Star<span>Kid</span></a>
+  <nav>
+    <a href="tablets.html">Tablet</a>
+    <a href="salute.html">Servizio</a>
+  </nav>
+  <button type="button" id="esci" class="bottone fantasma">Esci</button>
+</header>
+
+<main id="principale">
+
+  <div class="intestazione-pagina">
+    <div>
+      <h1>I tuoi tablet</h1>
+      <p class="tenue" id="sottotitolo">Carico...</p>
+    </div>
+    <div class="riga-bottoni">
+      <button type="button" class="bottone secondario piccolo" id="ricarica">Ricarica</button>
+      <a class="bottone" href="nuovo.html">Aggiungi un tablet</a>
+    </div>
+  </div>
+
+  <div id="messaggio" class="nascosto" aria-live="polite"></div>
+  <div id="riepilogo"></div>
+
+  <div id="elenco" aria-live="polite">
+    <p class="caricamento">Sto chiedendo al server l'elenco dei tablet...</p>
+  </div>
+
+  <noscript>
+    <div class="avviso guasto">
+      <h3>Serve JavaScript</h3>
+      <p>Questa pagina chiede i dati al server e li mostra qui: senza
+      JavaScript resta vuota. Niente viene caricato da altri siti.</p>
+    </div>
+  </noscript>
+
+</main>
+<script src="app.js"></script>
+<script src="pagina-tablets.js"></script>
+</body>
+</html>

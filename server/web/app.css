@@ -1,0 +1,551 @@
+/* StarKid - web UI del genitore
+ *
+ * Un solo foglio di stile per tutte le pagine: nginx lo serve una volta e
+ * poi sta in cache. Niente framework, niente CDN, niente font scaricati:
+ * la pagina deve aprirsi anche se l'unica cosa raggiungibile e questo
+ * server, e il browser del genitore non deve parlare con nessun altro.
+ *
+ * Nota per chi modifica: le pagine dichiarano una Content-Security-Policy
+ * che vieta lo stile in linea. Quindi niente attributi style="" nell'HTML:
+ * ogni variante e una classe qui dentro.
+ */
+
+/* ---------------------------------------------------------------- colori */
+
+:root {
+  /* Le tinte vengono dal tema "Pulito" dell'app sul tablet, cosi il
+     genitore ritrova gli stessi colori che vede il bambino. */
+  --sfondo: #f7f5fb;
+  --carta: #ffffff;
+  --carta-alt: #f2effa;
+  --bordo: #ded7ee;
+  --bordo-forte: #c3b8e0;
+  --testo: #1d1b26;
+  --testo-tenue: #5d5873;
+  --accento: #5b3fd1;
+  --accento-chiaro: #ece6ff;
+  --accento-testo: #ffffff;
+  --ok: #1f7a43;
+  --ok-sfondo: #e4f5ea;
+  --attesa: #8a6100;
+  --attesa-sfondo: #fdf2d8;
+  --guasto: #a3232b;
+  --guasto-sfondo: #fde8e8;
+  --ombra: 0 1px 2px rgba(29, 27, 38, .06), 0 6px 18px rgba(29, 27, 38, .07);
+  --raggio: 14px;
+  --raggio-piccolo: 9px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* E il tema "Spaziale": notte, non grigio. */
+    --sfondo: #0b0f22;
+    --carta: #151a33;
+    --carta-alt: #1d2340;
+    --bordo: #2b3357;
+    --bordo-forte: #3e4877;
+    --testo: #eef0fb;
+    --testo-tenue: #a8aecd;
+    --accento: #a994ff;
+    --accento-chiaro: #251f45;
+    --accento-testo: #10132a;
+    --ok: #6fdc9b;
+    --ok-sfondo: #10301f;
+    --attesa: #f2c75c;
+    --attesa-sfondo: #352a0f;
+    --guasto: #ff9a9a;
+    --guasto-sfondo: #3a1718;
+    --ombra: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 22px rgba(0, 0, 0, .35);
+  }
+}
+
+/* ----------------------------------------------------------------- base */
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--sfondo);
+  color: var(--testo);
+  font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  /* 16px pieni: sotto i 16 i telefoni ingrandiscono da soli i campi di
+     testo e la pagina salta. */
+}
+
+h1 { font-size: 1.6rem; line-height: 1.25; margin: 0 0 .4rem; }
+h2 { font-size: 1.22rem; line-height: 1.3; margin: 0 0 .5rem; }
+h3 { font-size: 1.02rem; margin: 0 0 .35rem; }
+
+p { margin: 0 0 .75rem; }
+p:last-child { margin-bottom: 0; }
+
+a { color: var(--accento); }
+
+code, .mono {
+  font-family: ui-monospace, "Cascadia Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: .92em;
+  overflow-wrap: anywhere;
+}
+
+:focus-visible {
+  outline: 3px solid var(--accento);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.salta {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  background: var(--carta);
+  padding: .6rem 1rem;
+  z-index: 10;
+}
+.salta:focus { left: .5rem; top: .5rem; }
+
+.tenue { color: var(--testo-tenue); }
+.piccolo { font-size: .88rem; }
+.nascosto { display: none !important; }
+.centrato { text-align: center; }
+
+/* ------------------------------------------------------------- intestazione */
+
+.barra {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  flex-wrap: wrap;
+  padding: .7rem 16px;
+  background: var(--carta);
+  border-bottom: 1px solid var(--bordo);
+}
+
+.marchio {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--testo);
+  text-decoration: none;
+  letter-spacing: .01em;
+}
+.marchio span { color: var(--accento); }
+
+.barra nav {
+  display: flex;
+  gap: .25rem;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+}
+
+.barra nav a {
+  padding: .45rem .7rem;
+  border-radius: 999px;
+  text-decoration: none;
+  color: var(--testo-tenue);
+  font-weight: 500;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+.barra nav a:hover { background: var(--carta-alt); color: var(--testo); }
+.barra nav a.attiva { background: var(--accento-chiaro); color: var(--accento); }
+
+/* -------------------------------------------------------------- impianto */
+
+main {
+  max-width: 62rem;
+  margin: 0 auto;
+  padding: 1.25rem 16px 4rem;
+}
+
+main.stretta { max-width: 26rem; padding-top: 3rem; }
+
+.intestazione-pagina {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.1rem;
+}
+
+.carta {
+  background: var(--carta);
+  border: 1px solid var(--bordo);
+  border-radius: var(--raggio);
+  box-shadow: var(--ombra);
+  padding: 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.carta > h2:first-child, .carta > h3:first-child { margin-top: 0; }
+
+.griglia {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
+}
+
+.due-colonne {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+}
+
+.riga-bottoni {
+  display: flex;
+  gap: .6rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* -------------------------------------------------------------- bottoni */
+
+.bottone {
+  font: inherit;
+  font-weight: 600;
+  min-height: 44px;
+  padding: .55rem 1.1rem;
+  border-radius: var(--raggio-piccolo);
+  border: 1px solid transparent;
+  background: var(--accento);
+  color: var(--accento-testo);
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .4rem;
+}
+.bottone:hover { filter: brightness(1.08); }
+.bottone:active { transform: translateY(1px); }
+.bottone[disabled] { opacity: .55; cursor: progress; }
+
+.bottone.secondario {
+  background: var(--carta);
+  color: var(--testo);
+  border-color: var(--bordo-forte);
+}
+.bottone.secondario:hover { background: var(--carta-alt); filter: none; }
+
+.bottone.fantasma {
+  background: transparent;
+  color: var(--testo-tenue);
+  border-color: transparent;
+}
+.bottone.fantasma:hover { background: var(--carta-alt); color: var(--testo); filter: none; }
+
+.bottone.pericolo {
+  background: transparent;
+  color: var(--guasto);
+  border-color: var(--guasto);
+}
+.bottone.pericolo:hover { background: var(--guasto-sfondo); filter: none; }
+
+.bottone.piccolo { min-height: 36px; padding: .3rem .7rem; font-size: .9rem; }
+
+/* ---------------------------------------------------------------- campi */
+
+label { display: block; font-weight: 600; margin-bottom: .3rem; }
+
+.campo { margin-bottom: 1rem; }
+.campo .aiuto { display: block; font-weight: 400; color: var(--testo-tenue); font-size: .88rem; margin-top: .25rem; }
+
+input[type=text], input[type=password], input[type=number], input[type=time], input[type=url], select, textarea {
+  font: inherit;
+  width: 100%;
+  min-height: 44px;
+  padding: .5rem .65rem;
+  color: var(--testo);
+  background: var(--carta);
+  border: 1px solid var(--bordo-forte);
+  border-radius: var(--raggio-piccolo);
+}
+textarea { min-height: 7rem; resize: vertical; line-height: 1.45; }
+
+input[aria-invalid="true"], select[aria-invalid="true"], textarea[aria-invalid="true"] {
+  border-color: var(--guasto);
+  background: var(--guasto-sfondo);
+}
+
+.errore-campo {
+  color: var(--guasto);
+  font-size: .88rem;
+  font-weight: 600;
+  margin-top: .3rem;
+}
+
+fieldset {
+  border: 1px solid var(--bordo);
+  border-radius: var(--raggio-piccolo);
+  padding: .8rem;
+  margin: 0 0 1rem;
+}
+legend { font-weight: 600; padding: 0 .35rem; }
+
+/* Interruttori e caselle: la riga intera e cliccabile, anche col pollice. */
+.interruttore, .casella {
+  display: flex;
+  align-items: flex-start;
+  gap: .6rem;
+  font-weight: 500;
+  margin: 0 0 .6rem;
+  padding: .45rem .5rem;
+  border-radius: var(--raggio-piccolo);
+  cursor: pointer;
+  min-height: 44px;
+}
+.interruttore:hover, .casella:hover { background: var(--carta-alt); }
+.interruttore input, .casella input { width: 22px; height: 22px; margin: .15rem 0 0; flex: 0 0 auto; accent-color: var(--accento); }
+.interruttore .aiuto, .casella .aiuto { display: block; font-weight: 400; color: var(--testo-tenue); font-size: .88rem; }
+
+.lista-caselle {
+  display: grid;
+  gap: .2rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr));
+}
+
+.giorni { display: flex; flex-wrap: wrap; gap: .35rem; }
+.giorni label {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  padding: .4rem .6rem;
+  min-height: 44px;
+  border: 1px solid var(--bordo-forte);
+  border-radius: 999px;
+  cursor: pointer;
+}
+.giorni input { accent-color: var(--accento); width: 18px; height: 18px; }
+
+/* Scelta dello sfondo: le tinte vere, cosi si vede cosa si sta scegliendo. */
+.sfondi { display: flex; flex-wrap: wrap; gap: .5rem; }
+.sfondi label {
+  position: relative;
+  margin: 0;
+  width: 5.4rem;
+  border: 2px solid var(--bordo);
+  border-radius: var(--raggio-piccolo);
+  padding: .3rem;
+  cursor: pointer;
+  text-align: center;
+  font-size: .85rem;
+  font-weight: 600;
+}
+.sfondi label:has(input:checked) { border-color: var(--accento); background: var(--accento-chiaro); }
+.sfondi .provino {
+  display: block;
+  height: 2.6rem;
+  border-radius: 6px;
+  margin-bottom: .25rem;
+  border: 1px solid rgba(0, 0, 0, .08);
+}
+/* Il pallino resta visibile: il bordo colorato qui sopra usa :has(), che su
+   un browser vecchio non funziona, e senza pallino non si capirebbe piu
+   quale sfondo e scelto. */
+.sfondi input { width: 18px; height: 18px; accent-color: var(--accento); vertical-align: middle; margin: 0 .25rem 0 0; }
+
+.provino.lilla    { background: linear-gradient(160deg, #f8f0ff, #e4d4ff); }
+.provino.cielo    { background: linear-gradient(160deg, #e6f4ff, #bfdcff); }
+.provino.prato    { background: linear-gradient(160deg, #edf9e4, #c4e9c9); }
+.provino.tramonto { background: linear-gradient(160deg, #fff2e0, #ffd2e0); }
+.provino.notte    { background: linear-gradient(160deg, #070b1e, #1b2555); }
+.provino.nebulosa { background: linear-gradient(160deg, #1b0b33, #2b1559 55%, #071029); }
+.provino.marte    { background: linear-gradient(160deg, #2a1108, #5e2a1c); }
+.provino.orbita   { background: linear-gradient(160deg, #041c2b, #0a2a4a); }
+
+/* ------------------------------------------------------------- messaggi */
+
+.avviso {
+  border: 1px solid var(--bordo-forte);
+  border-left-width: 5px;
+  border-radius: var(--raggio-piccolo);
+  padding: .8rem .9rem;
+  margin-bottom: 1rem;
+  background: var(--carta-alt);
+}
+.avviso h3 { margin: 0 0 .25rem; font-size: 1rem; }
+.avviso.ok      { background: var(--ok-sfondo);     border-color: var(--ok); color: var(--testo); }
+.avviso.attesa  { background: var(--attesa-sfondo); border-color: var(--attesa); }
+.avviso.guasto  { background: var(--guasto-sfondo); border-color: var(--guasto); }
+.avviso ul { margin: .35rem 0 0; padding-left: 1.2rem; }
+
+.avviso-grosso { font-size: 1.02rem; }
+.avviso-grosso strong { font-size: 1.08rem; }
+
+.caricamento {
+  color: var(--testo-tenue);
+  padding: 1.5rem 0;
+  text-align: center;
+}
+
+/* ---------------------------------------------------------------- spie */
+
+.spie { display: flex; flex-wrap: wrap; gap: .35rem; margin: .6rem 0 0; padding: 0; list-style: none; }
+
+.spia {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  font-size: .85rem;
+  font-weight: 600;
+  padding: .25rem .55rem;
+  border-radius: 999px;
+  border: 1px solid var(--bordo);
+  background: var(--carta-alt);
+}
+.spia::before {
+  content: "";
+  width: .6rem;
+  height: .6rem;
+  border-radius: 50%;
+  background: var(--testo-tenue);
+  flex: 0 0 auto;
+}
+.spia.accesa  { background: var(--ok-sfondo);     border-color: var(--ok);     color: var(--ok); }
+.spia.accesa::before  { background: var(--ok); }
+.spia.spenta  { background: var(--guasto-sfondo); border-color: var(--guasto); color: var(--guasto); }
+.spia.spenta::before  { background: var(--guasto); }
+.spia.ignota { color: var(--testo-tenue); }
+
+/* --------------------------------------------------------------- tablet */
+
+.tablet {
+  display: flex;
+  flex-direction: column;
+  gap: .4rem;
+  background: var(--carta);
+  border: 1px solid var(--bordo);
+  border-radius: var(--raggio);
+  box-shadow: var(--ombra);
+  padding: 1rem;
+}
+.tablet.allarme { border-color: var(--guasto); border-left: 5px solid var(--guasto); }
+
+.tablet h2 { margin: 0; }
+.tablet h2 a { text-decoration: none; }
+.tablet h2 a:hover { text-decoration: underline; }
+
+.etichetta {
+  display: inline-block;
+  font-size: .8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  padding: .15rem .5rem;
+  border-radius: 999px;
+  background: var(--carta-alt);
+  color: var(--testo-tenue);
+  border: 1px solid var(--bordo);
+}
+.etichetta.ok     { background: var(--ok-sfondo);     color: var(--ok);     border-color: var(--ok); }
+.etichetta.attesa { background: var(--attesa-sfondo); color: var(--attesa); border-color: var(--attesa); }
+.etichetta.guasto { background: var(--guasto-sfondo); color: var(--guasto); border-color: var(--guasto); }
+
+/* Quando l'etichetta e una frase intera e non una parola, il maiuscolo si
+   legge peggio: questa variante lo toglie. */
+.etichetta.lunga {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: .88rem;
+  font-weight: 600;
+  white-space: normal;
+}
+
+.dati { margin: .4rem 0 0; display: grid; gap: .15rem .8rem; grid-template-columns: auto 1fr; font-size: .92rem; }
+.dati dt { color: var(--testo-tenue); }
+.dati dd { margin: 0; }
+
+/* -------------------------------------------------------------- storico */
+
+.storico { list-style: none; margin: 0; padding: 0; }
+.storico li {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  flex-wrap: wrap;
+  padding: .6rem .2rem;
+  border-bottom: 1px solid var(--bordo);
+}
+.storico li:last-child { border-bottom: 0; }
+.storico .rev { font-weight: 700; min-width: 3.2rem; }
+.storico .quando { color: var(--testo-tenue); font-size: .9rem; flex: 1 1 9rem; }
+.storico details { flex: 1 1 100%; }
+.storico pre { margin: .4rem 0 0; }
+
+pre {
+  background: var(--carta-alt);
+  border: 1px solid var(--bordo);
+  border-radius: var(--raggio-piccolo);
+  padding: .7rem;
+  overflow-x: auto;
+  font-size: .85rem;
+  margin: 0;
+}
+
+/* ------------------------------------------------------------------- QR */
+
+.qr-scatola {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.2rem;
+  align-items: flex-start;
+}
+
+.qr-cornice {
+  background: #ffffff;
+  padding: 12px;
+  border-radius: var(--raggio-piccolo);
+  border: 1px solid var(--bordo);
+  line-height: 0;
+  /* Il QR resta su bianco anche col tema scuro: un lettore ha bisogno del
+     contrasto giusto nel verso giusto. */
+}
+.qr-cornice svg { width: min(78vw, 20rem); height: auto; display: block; }
+
+.qr-lato { flex: 1 1 16rem; min-width: 0; }
+
+.misura { margin: .5rem 0 0; }
+.misura .barra-misura {
+  height: .55rem;
+  background: var(--carta-alt);
+  border: 1px solid var(--bordo);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.misura .riempimento { height: 100%; width: 0; background: var(--ok); }
+.misura.quasi .riempimento { background: var(--attesa); }
+.misura.troppo .riempimento { background: var(--guasto); }
+
+.segreto { display: flex; gap: .4rem; align-items: center; }
+.segreto input { flex: 1 1 auto; }
+
+/* ------------------------------------------------------- numeri servizio */
+
+.numeri {
+  display: grid;
+  gap: .8rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+}
+.numero {
+  background: var(--carta);
+  border: 1px solid var(--bordo);
+  border-radius: var(--raggio);
+  padding: .9rem;
+}
+.numero .valore { font-size: 1.7rem; font-weight: 700; line-height: 1.1; display: block; }
+.numero .nome { color: var(--testo-tenue); font-size: .9rem; }
+.numero.ok .valore     { color: var(--ok); }
+.numero.attesa .valore { color: var(--attesa); }
+.numero.guasto .valore { color: var(--guasto); }
+
+/* ------------------------------------------------------------- stampa */
+
+@media print {
+  .barra, .riga-bottoni, .salta, .no-stampa { display: none !important; }
+  body { background: #fff; color: #000; }
+  .carta { box-shadow: none; border-color: #999; break-inside: avoid; }
+  .qr-cornice { border: 0; }
+}
