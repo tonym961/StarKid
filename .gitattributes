@@ -1,0 +1,13 @@
+# Normalizzazione di fine riga.
+#
+# Su Windows git converte in CRLF al checkout, e va benissimo per il codice
+# Kotlin. Per i file che finiscono su Ubuntu no: un install.sh con i ritorni
+# a capo di Windows non parte nemmeno, bash risponde "bad interpreter" e il
+# motivo non si vede guardando il file. Stessa cosa per le unit di systemd,
+# i file di nginx e di fail2ban.
+#
+# Qui si forza LF in tutta la cartella del server, cosi un "git clone" sulla
+# VPS - o un file copiato da qui con scp - e gia giusto.
+server/** text eol=lf
+server/web/*.svg text eol=lf
+*.sh text eol=lf
