@@ -39,11 +39,14 @@ ENV_FILE=/etc/starkid/starkid.env
 VENV=/opt/starkid/venv
 NGX_AVAIL=/etc/nginx/sites-available/$DOMINIO
 NGX_LINK=/etc/nginx/sites-enabled/$DOMINIO
-ACME_ROOT=/var/www/letsencrypt
+# Webroot ACME: la macchina usa /var/www/<dominio>/html per ogni sito, una
+# cartella per dominio e non una condivisa. Verificato sul posto guardando i
+# dodici vhost gia attivi: seguire la convenzione di casa invece di imporre la
+# propria e meta del lavoro quando si entra in una macchina di qualcun altro.
+ACME_ROOT=/var/www/starkid.antoninomiccio.com/html
 CERT=/etc/letsencrypt/live/$DOMINIO/fullchain.pem
 LOCK=/var/lock/starkid-install.lock
 LOG_DIR=/var/log/starkid
-LOGROTATE=/etc/logrotate.d/starkid
 # L'utente dei worker di nginx: su Debian/Ubuntu e www-data, ma si legge dal
 # file invece di darlo per scontato, perche e lui che deve poter scrivere i log.
 NGX_UTENTE=$(awk '$1=="user" {gsub(";","",$2); print $2; exit}' /etc/nginx/nginx.conf 2>/dev/null)
@@ -163,7 +166,7 @@ if [ -r /etc/os-release ]; then
     esac
 fi
 
-for c in python3 sqlite3 nginx systemctl openssl curl install getent flock ss logrotate; do
+for c in python3 sqlite3 nginx systemctl openssl curl install getent flock ss; do
     command -v "$c" >/dev/null 2>&1 || errore "manca il comando: $c"
 done
 log "comandi necessari: tutti presenti"
@@ -177,7 +180,8 @@ log "python: $(python3 --version 2>&1), venv disponibile"
 for p in "$SRC/requirements.txt" "$SRC/app" "$SRC/web" "$DEPLOY/starkid.service" \
          "$DEPLOY/starkid.nginx.conf" "$DEPLOY/starkid-backup.service" \
          "$DEPLOY/starkid-backup.timer" "$DEPLOY/starkid-backup.sh" \
-         "$DEPLOY/starkid-logrotate.conf"; do
+         "$DEPLOY/starkid-ruota-log.sh" "$DEPLOY/starkid-ruota-log.service" \
+         "$DEPLOY/starkid-ruota-log.timer" "$SRC/schema/config.schema.json"; do
     [ -e "$p" ] || errore "manca $p (sei nella cartella server/ del repo?)"
 done
 [ -f "$SRC/app/main.py" ] || avviso "non trovo $SRC/app/main.py: la unit avvia app.main:app, verifica che il modulo ci sia"
@@ -208,7 +212,12 @@ if [ -f /var/run/reboot-required ]; then
 fi
 
 # --- Altre sessioni automatiche / apt in corso ---
-if pgrep -x 'apt|apt-get|dpkg|unattended-upgr' >/dev/null 2>&1; then
+# Si guarda il LOCK, non i nomi dei processi. Il controllo di prima era
+# "pgrep -x apt|dpkg|unattended-upgr", e prendeva unattended-upgrade-shutdown:
+# un demone che su ogni Ubuntu resta fermo in attesa del segnale di spegnimento
+# per mesi. Avvisava sempre, su qualunque macchina, anche con apt a riposo - e
+# un avviso che c'e sempre e un avviso che nessuno legge piu.
+if ! flock -n /var/lib/dpkg/lock-frontend true 2>/dev/null; then
     avviso "c'e un apt/dpkg in corso: aspetta che finisca, altrimenti vi pestate i piedi sulla RAM."
 fi
 
@@ -381,15 +390,21 @@ if systemctl is-active --quiet starkid.service; then
     systemctl stop starkid.service
 fi
 
-rm -rf "$APP_DIR/app" "$APP_DIR/static"
+# schema/ va copiato come app/ e web/: models.py lo legge all'avvio e senza
+# di lui il server SI RIFIUTA di partire, di proposito - meglio fermo che a
+# meta del suo vocabolario. Dimenticarlo qui faceva fallire l'installazione
+# al passo 5, con nginx ancora intonso: il controllo ha funzionato, ma il
+# file va copiato.
+rm -rf "$APP_DIR/app" "$APP_DIR/static" "$APP_DIR/schema"
 cp -a "$SRC/app" "$APP_DIR/app"
 cp -a "$SRC/web" "$APP_DIR/static"
+cp -a "$SRC/schema" "$APP_DIR/schema"
 install -m 0755 -o root -g root "$DEPLOY/starkid-backup.sh" "$APP_DIR/bin/starkid-backup.sh"
 
 # Il codice e di root e il servizio non puo riscriverselo.
-chown -R root:root "$APP_DIR/app" "$APP_DIR/static" "$APP_DIR/bin"
-find "$APP_DIR/app" "$APP_DIR/static" -type d -exec chmod 0755 {} +
-find "$APP_DIR/app" "$APP_DIR/static" -type f -exec chmod 0644 {} +
+chown -R root:root "$APP_DIR/app" "$APP_DIR/static" "$APP_DIR/schema" "$APP_DIR/bin"
+find "$APP_DIR/app" "$APP_DIR/static" "$APP_DIR/schema" -type d -exec chmod 0755 {} +
+find "$APP_DIR/app" "$APP_DIR/static" "$APP_DIR/schema" -type f -exec chmod 0644 {} +
 chmod 0755 "$APP_DIR/bin/starkid-backup.sh"
 log "codice copiato in $APP_DIR (di root, in sola lettura per il servizio)"
 
@@ -463,18 +478,26 @@ log "RSS del servizio: $(systemctl show -p MemoryCurrent --value starkid.service
 titolo "6. nginx"
 
 # La rotazione va messa PRIMA del vhost: dal momento in cui nginx scrive in
-# $LOG_DIR quei file devono avere un tetto. Tocca solo /etc/logrotate.d/starkid
-# e /var/log/starkid/, niente della configurazione di nginx o degli altri siti.
-if [ -f "$LOGROTATE" ] && ! cmp -s "$DEPLOY/starkid-logrotate.conf" "$LOGROTATE"; then
-    salva_copia "$LOGROTATE"
-fi
-install -m 0644 -o root -g root "$DEPLOY/starkid-logrotate.conf" "$LOGROTATE"
-if logrotate --debug "$LOGROTATE" >/dev/null 2>&1; then
-    log "$LOGROTATE installato e verificato (tetto 100 MB, 7 ruotati, compressi)"
-else
-    avviso "logrotate --debug $LOGROTATE si lamenta: controllalo a mano, i log crescerebbero senza tetto."
-    logrotate --debug "$LOGROTATE" 2>&1 | sed 's/^/     /' | head -20 || true
-fi
+# $LOG_DIR quei file devono avere un tetto.
+#
+# E un timer nostro e non logrotate. Su questa macchina logrotate non e
+# installato - il binario non c'e e il pacchetto nemmeno - benche
+# /etc/logrotate.d/ sia pieno di configurazioni che percio non esegue nessuno.
+# Metterlo avrebbe voluto dire installare un pacchetto su una macchina in
+# produzione di qualcun altro e far partire di colpo la rotazione di tutti i
+# suoi log, che oggi non ruotano: un cambiamento che nessuno ha chiesto. Il
+# timer qui sotto tocca due file soli, i nostri.
+install -m 0755 -o root -g root "$DEPLOY/starkid-ruota-log.sh" "$APP_DIR/bin/starkid-ruota-log.sh"
+for u in starkid-ruota-log.service starkid-ruota-log.timer; do
+    if [ -f "/etc/systemd/system/$u" ] && ! cmp -s "$DEPLOY/$u" "/etc/systemd/system/$u"; then
+        salva_copia "/etc/systemd/system/$u"
+    fi
+    install -m 0644 -o root -g root "$DEPLOY/$u" "/etc/systemd/system/$u"
+done
+systemctl daemon-reload
+systemctl enable --now starkid-ruota-log.timer >/dev/null 2>&1 || \
+    avviso "non sono riuscito ad attivare starkid-ruota-log.timer: i log crescerebbero senza tetto, controllalo."
+log "rotazione dei log attiva (tetto 100 MB per file, 7 ruotati, controllo ogni ora)"
 
 if [ "$FASE" = acme ]; then
     log "prima passata: installo un vhost di sola porta 80 con il webroot ACME."
@@ -500,7 +523,7 @@ server {
         auth_basic off;
         allow all;
         default_type "text/plain";
-        root /var/www/letsencrypt;
+        root /var/www/starkid.antoninomiccio.com/html;
         try_files $uri =404;
     }
 
@@ -548,7 +571,13 @@ fi
 
 printf '\n'
 avviso "Il prossimo passo e il reload di nginx."
-avviso "Quel reload rilegge TUTTI i $((ATTIVI + 1)) vhost di questa macchina, compresi i tre"
+# Si contano i symlink ADESSO, non si somma uno al conteggio del passo 0.
+# Sommando, alla seconda passata il nostro vhost veniva contato due volte (il
+# passo 0 lo trova gia collegato) e il messaggio annunciava un vhost in piu di
+# quelli che esistono. Un numero sbagliato proprio nella riga che chiede una
+# conferma delicata e il modo migliore per far perdere fiducia nel resto.
+ATTIVI_ORA=$(ls -1 /etc/nginx/sites-enabled/ 2>/dev/null | wc -l || echo "?")
+avviso "Quel reload rilegge TUTTI i $ATTIVI_ORA vhost di questa macchina, compresi i tre"
 avviso "che fanno da proxy verso casa. nginx -t e passato, ma il reload resta una tua decisione."
 log "Se rispondi no: il symlink viene ritirato e la macchina resta esattamente come l'hai trovata."
 

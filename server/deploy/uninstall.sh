@@ -107,12 +107,15 @@ systemctl daemon-reload
 systemctl reset-failed starkid.service starkid-backup.service >/dev/null 2>&1 || true
 
 # La rotazione va via con il resto: i log restano (vedi in fondo), ma senza
-# nginx che ci scrive non crescono piu e un logrotate che punta a una cartella
-# abbandonata e solo un avviso in piu ogni notte.
-if [ -f /etc/logrotate.d/starkid ]; then
-    rm -f /etc/logrotate.d/starkid
-    log "rimosso /etc/logrotate.d/starkid"
-fi
+# nginx che ci scrive non crescono piu.
+for u in starkid-ruota-log.timer starkid-ruota-log.service; do
+    if [ -f "/etc/systemd/system/$u" ]; then
+        systemctl disable --now "$u" >/dev/null 2>&1 || true
+        rm -f "/etc/systemd/system/$u"
+        log "rimossa /etc/systemd/system/$u"
+    fi
+done
+rm -f /etc/logrotate.d/starkid
 
 # ---------------------------------------------------------------------------
 titolo "2. nginx"

@@ -1,0 +1,17 @@
+[Unit]
+Description=StarKid - ruota i log di nginx di StarKid se superano il tetto
+Documentation=file:///opt/starkid/README.md
+
+[Service]
+Type=oneshot
+ExecStart=/opt/starkid/bin/starkid-ruota-log.sh
+# Gira di rado e non ha fretta: non deve togliere niente ai dodici siti.
+Nice=10
+IOSchedulingClass=idle
+# Puo scrivere solo dove stanno i log. Tutto il resto del disco e in sola
+# lettura per lui, anche se gira da root (gli serve per segnalare nginx).
+ProtectSystem=strict
+ReadWritePaths=/var/log/starkid
+ProtectHome=yes
+PrivateTmp=yes
+NoNewPrivileges=yes

@@ -306,8 +306,16 @@ def test_i_log_hanno_un_tetto_di_dimensione() -> None:
     Ogni rifiuto di limit_req scrive due righe; a disco pieno si fermano
     nginx, journald e fail2ban per tutti i siti, non solo per StarKid.
     """
-    rotazione = (DEPLOY / "starkid-logrotate.conf").read_text(encoding="utf-8")
-    assert "maxsize" in rotazione
+    # La rotazione e un timer nostro e non logrotate, che su quella macchina
+    # non e nemmeno installato (vedi il commento in install.sh): si controlla
+    # che ci sia il tetto in megabyte e che il timer giri piu spesso di una
+    # volta al giorno, perche il tetto e sulla dimensione e cento megabyte si
+    # scrivono in pochi minuti sotto un flusso di richieste rifiutate.
+    rotazione = (DEPLOY / "starkid-ruota-log.sh").read_text(encoding="utf-8")
+    assert "TETTO_MB=100" in rotazione
+    timer = (DEPLOY / "starkid-ruota-log.timer").read_text(encoding="utf-8")
+    assert "OnCalendar=hourly" in timer
+    assert not (DEPLOY / "starkid-logrotate.conf").exists()
     vhost = (DEPLOY / "starkid.nginx.conf").read_text(encoding="utf-8")
     # In una cartella propria: il logrotate di nginx prende /var/log/nginx/*.log
     # e due file che elencano lo stesso percorso fanno "duplicate log entry".
@@ -337,3 +345,21 @@ def test_non_si_genera_un_segreto_che_nessuno_legge() -> None:
     app_dir = Path(__file__).resolve().parent.parent / "app"
     for sorgente in app_dir.glob("*.py"):
         assert "STARKID_SECRET_KEY" not in sorgente.read_text(encoding="utf-8")
+
+
+def test_install_copia_tutto_quello_che_serve_per_partire() -> None:
+    """Il server non parte senza schema/: l'installazione deve copiarlo.
+
+    Dimenticato alla prima installazione vera sulla VPS. Il server si e
+    rifiutato di partire ("il server non parte senza il suo vocabolario") e
+    install.sh si e fermato prima di toccare nginx: i due controlli hanno
+    funzionato, ma nessuno dei due e un sostituto del copiare il file.
+    """
+    testo = (DEPLOY / "install.sh").read_text(encoding="utf-8")
+    assert '"$SRC/schema"' in testo, "install.sh non copia la cartella schema/"
+    assert '"$SRC/schema/config.schema.json"' in testo, "non e fra i file controllati prima"
+    # Tutto quello che il codice legge dal proprio albero va copiato: se un
+    # domani si aggiunge una cartella, questo test non la vede, ma almeno
+    # ricorda che il controllo esiste.
+    for cartella in ("app", "web", "schema"):
+        assert 'cp -a "$SRC/%s"' % cartella in testo, cartella

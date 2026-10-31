@@ -146,17 +146,36 @@ qualcuno lo ruota convinto di invalidare le sessioni, e non invalida niente.
 | `/etc/starkid/starkid.env` | `root:starkid`, 0640 | la configurazione del servizio |
 | `/etc/systemd/system/starkid*.{service,timer}` | `root:root` | le unita |
 | `/etc/nginx/sites-available/starkid.antoninomiccio.com` | `root:root` | il vhost (piu il symlink in `sites-enabled`) |
-| `/etc/logrotate.d/starkid` | `root:root`, 0644 | la rotazione dei log qui sotto, con tetto a 100 MB |
+| `/opt/starkid/bin/starkid-ruota-log.sh` | `root:root`, 0755 | ruota i log qui sotto |
+| `/etc/systemd/system/starkid-ruota-log.{service,timer}` | `root:root` | il timer che lo chiama, ogni ora |
 | `/var/log/starkid/{access,error}.log` | `www-data:adm`, 0750 | log propri, in una cartella propria (vedi sotto) |
 | `/var/backups/starkid-<data>/` | `root:root` | copia dei file che l'installazione ha sostituito |
 
 I log stanno in `/var/log/starkid/` e non in `/var/log/nginx/` per un motivo
-pratico: il logrotate di nginx prende `/var/log/nginx/*.log`, e due file di
-logrotate che elencano lo stesso percorso fanno `duplicate log entry`, col
-secondo saltato **in silenzio**. In una cartella nostra il tetto di 100 MB
-vale davvero, e serve: ogni richiesta rifiutata da `limit_req` scrive due
-righe (una nell'access e un warn nell'error), e a disco pieno si fermano
-nginx, journald e fail2ban per tutti i siti, non solo per StarKid.
+pratico, e la rotazione e un timer nostro e non logrotate per un altro.
+
+La cartella separata: il logrotate di nginx prende `/var/log/nginx/*.log`, e
+due file che elencano lo stesso percorso fanno `duplicate log entry`, col
+secondo saltato **in silenzio**.
+
+Il timer invece di logrotate: **su questa macchina logrotate non e
+installato**. Il binario non c'e e il pacchetto nemmeno, benche
+`/etc/logrotate.d/` sia pieno di configurazioni — nginx, fail2ban, certbot,
+apt — che quindi non esegue nessuno. Vuol dire che **nessun log di questa
+macchina sta ruotando**, non solo i nostri: e una cosa da sapere, e non e
+roba di StarKid. Installare il pacchetto avrebbe messo mano a una macchina in
+produzione di qualcun altro e fatto partire di colpo la rotazione di tutto,
+che nessuno ha chiesto. Il timer tocca due file soli.
+
+E il tetto serve: ogni richiesta rifiutata da `limit_req` scrive due righe
+(una nell'access e un warn nell'error), e a disco pieno si fermano nginx,
+journald e fail2ban per tutti i siti, non solo per StarKid. Per questo il
+controllo e **ogni ora** e non una volta al giorno: cento megabyte, sotto un
+flusso di richieste rifiutate, si scrivono in pochi minuti.
+
+Il webroot ACME segue la convenzione della macchina,
+`/var/www/<dominio>/html`, non una cartella condivisa: e cosi che fanno gia
+tutti e dodici gli altri siti.
 
 Il servizio ascolta **solo** su `127.0.0.1:8082`. Verso l'esterno non si apre
 nessuna porta nuova: c'e nginx davanti e basta.
@@ -205,7 +224,7 @@ Lo script chiede una prima conferma (si scrive `avanti`), poi:
 5. crea `/etc/starkid/starkid.env`, se non c'e gia;
 6. installa le tre unita systemd, avvia il servizio e il timer della copia;
 7. verifica `http://127.0.0.1:8082/healthz` **prima di toccare nginx**;
-8. installa `/etc/logrotate.d/starkid` e lo verifica con `logrotate --debug`;
+8. installa il timer che ruota i log (ogni ora, tetto 100 MB per file);
 9. scrive il vhost e si ferma a chiedere il reload (passo 3 qui sotto).
 
 Sotto i **250 MB di RAM libera lo script si ferma** invece di avvisare e
@@ -243,7 +262,7 @@ passerebbe `nginx -t`. Per questo `install.sh` installa prima un vhost di
 3), e solo dopo si chiede il certificato:
 
 ```sh
-sudo certbot certonly --webroot -w /var/www/letsencrypt -d starkid.antoninomiccio.com
+sudo certbot certonly --webroot -w /var/www/starkid.antoninomiccio.com/html -d starkid.antoninomiccio.com
 ```
 
 **`certonly` e `--webroot`, non `--nginx`**: il plugin nginx riscriverebbe i
@@ -257,7 +276,7 @@ aggiungerne un secondo.
 grep -rh -A4 'acme-challenge' /etc/nginx/sites-available/ | grep -E 'root|alias' | sort -u
 ```
 
-Se viene fuori una cartella diversa da `/var/www/letsencrypt`, si cambia il
+Se viene fuori una cartella diversa da `/var/www/starkid.antoninomiccio.com/html`, si cambia il
 `root` nei due blocchi ACME di `deploy/starkid.nginx.conf` e nel comando qui
 sotto. Se la cartella c'era gia, `install.sh` non ne tocca ne proprietario ne
 permessi.

@@ -1,0 +1,14 @@
+[Unit]
+Description=StarKid - controlla ogni ora la dimensione dei log
+
+[Timer]
+# Ogni ora, non una volta al giorno: il tetto e sulla DIMENSIONE, e sotto un
+# flusso di richieste rifiutate cento megabyte si scrivono in un paio di
+# minuti. Un controllo giornaliero arriverebbe a disco gia pieno.
+OnCalendar=hourly
+# Sfasato, cosi non cade insieme a tutti gli altri lavori orari della macchina.
+RandomizedDelaySec=10m
+Persistent=true
+
+[Install]
+WantedBy=timers.target
