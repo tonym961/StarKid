@@ -458,7 +458,9 @@ class MainActivity : ComponentActivity() {
         isDefaultHome = isDefaultHome(),
         hasUsageAccess = usage.hasPermission(),
         canDrawOverlay = Settings.canDrawOverlays(this),
-        isDeviceOwner = Kiosk.isDeviceOwner(this),
+        isDeviceOwner = Kiosk.canManage(this),
+        fullOwner = Kiosk.isDeviceOwner(this),
+        kioskFailures = Kiosk.lastFailures,
     )
 
     private fun isDefaultHome(): Boolean {

@@ -337,25 +337,124 @@ private fun CategoryPages(
                                 val background = skin.tileColors[
                                     category.ordinal.mod(skin.tileColors.size),
                                 ]
-                                Tile(
-                                    label = category.label,
-                                    background = background,
-                                    textColor = skin.tileTextColor,
-                                    onClick = { onOpen(category) },
-                                    subtitle = "${countOf(category)}",
-                                ) {
-                                    Icon(
-                                        imageVector = category.icon,
-                                        contentDescription = null,
-                                        tint = skin.tileTextColor,
-                                        modifier = Modifier.size(iconSize),
+                                if (skin.starfield) {
+                                    // Nel tema spaziale uno scomparto e un
+                                    // pianeta, non un rettangolo colorato.
+                                    CategoryPlanet(
+                                        category = category,
+                                        colour = background,
+                                        textColour = skin.tileTextColor,
+                                        count = countOf(category),
+                                        iconSize = iconSize,
+                                        onClick = { onOpen(category) },
                                     )
+                                } else {
+                                    Tile(
+                                        label = category.label,
+                                        background = background,
+                                        textColor = skin.tileTextColor,
+                                        onClick = { onOpen(category) },
+                                        subtitle = "${countOf(category)}",
+                                    ) {
+                                        Icon(
+                                            imageVector = category.icon,
+                                            contentDescription = null,
+                                            tint = skin.tileTextColor,
+                                            modifier = Modifier.size(iconSize),
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
                 }
             }
+        }
+    }
+}
+
+/**
+ * Uno scomparto come pianeta: sfera con la luce da una parte, qualcuno con
+ * l'anello, il disegno della categoria sopra e il nome sotto. Niente bordo
+ * squadrato: nel cielo stellato un rettangolo stona, e un bambino riconosce
+ * un pianeta prima di leggere la parola.
+ */
+@Composable
+private fun CategoryPlanet(
+    category: AppCategory,
+    colour: Color,
+    textColour: Color,
+    count: Int,
+    iconSize: Dp,
+    onClick: () -> Unit,
+) {
+    // L'anello tocca a uno scomparto su tre, sempre agli stessi: deve essere
+    // un segno riconoscibile, non una sorpresa che cambia ogni volta.
+    val ringed = category.ordinal % 3 == 1
+    val glow = Color(
+        red = (colour.red + 0.35f).coerceAtMost(1f),
+        green = (colour.green + 0.35f).coerceAtMost(1f),
+        blue = (colour.blue + 0.35f).coerceAtMost(1f),
+    )
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = onClick,
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        Canvas(Modifier.fillMaxSize()) {
+            val radius = minOf(size.width, size.height) * 0.40f
+            val middle = Offset(size.width / 2f, size.height / 2f)
+            if (ringed) {
+                rotate(degrees = -16f, pivot = middle) {
+                    drawOval(
+                        color = glow.copy(alpha = 0.55f),
+                        topLeft = Offset(middle.x - radius * 1.5f, middle.y - radius * 0.34f),
+                        size = Size(radius * 3f, radius * 0.68f),
+                        style = Stroke(width = radius * 0.14f),
+                    )
+                }
+            }
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(glow, colour),
+                    center = Offset(middle.x - radius * 0.35f, middle.y - radius * 0.35f),
+                    radius = radius * 1.9f,
+                ),
+                radius = radius,
+                center = middle,
+            )
+            drawCircle(
+                color = glow.copy(alpha = 0.8f),
+                radius = radius,
+                center = middle,
+                style = Stroke(width = radius * 0.06f),
+            )
+        }
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(
+                imageVector = category.icon,
+                contentDescription = null,
+                tint = textColour,
+                modifier = Modifier.size(iconSize * 0.8f),
+            )
+            Spacer(Modifier.size(6.dp))
+            Text(
+                text = category.label,
+                style = MaterialTheme.typography.titleMedium,
+                color = textColour,
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+            )
+            Text(
+                text = "$count",
+                style = MaterialTheme.typography.titleLarge,
+                color = textColour.copy(alpha = 0.75f),
+            )
         }
     }
 }

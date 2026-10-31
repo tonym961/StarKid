@@ -38,10 +38,36 @@ object Kiosk {
         context.applicationContext
             .getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
 
-    /** Vero se l'app e Device Owner e quindi il kiosk vero e possibile. */
+    /** In che veste StarKid comanda su questo tablet. */
+    enum class Mode { NESSUNA, PROPRIETARIO_UTENTE, PROPRIETARIO_DISPOSITIVO }
+
+    /** Vero se l'app e Device Owner e quindi il kiosk pieno e possibile. */
     fun isDeviceOwner(context: Context): Boolean = runCatching {
         policyManager(context).isDeviceOwnerApp(context.applicationContext.packageName)
     }.getOrDefault(false)
+
+    /**
+     * Vero se StarKid e almeno proprietaria del profilo di questo utente.
+     *
+     * Su un tablet con piu utenti il Device Owner non si puo avere: Android
+     * lo concede solo a un tablet con un utente solo e nessun account. Su un
+     * utente secondario pulito si puo pero essere proprietari del profilo,
+     * che da meno poteri ma non zero. Quali davvero, lo dice
+     * [lastFailures] dopo aver provato: non si puo sapere in anticipo
+     * perche cambia da una versione di Android all'altra.
+     */
+    fun isProfileOwner(context: Context): Boolean = runCatching {
+        policyManager(context).isProfileOwnerApp(context.applicationContext.packageName)
+    }.getOrDefault(false)
+
+    fun mode(context: Context): Mode = when {
+        isDeviceOwner(context) -> Mode.PROPRIETARIO_DISPOSITIVO
+        isProfileOwner(context) -> Mode.PROPRIETARIO_UTENTE
+        else -> Mode.NESSUNA
+    }
+
+    /** Vero se c'e abbastanza potere per provare ad accendere il kiosk. */
+    fun canManage(context: Context): Boolean = mode(context) != Mode.NESSUNA
 
     /** Comando adb da dare una volta sola, mostrato nell'area genitori. */
     fun provisioningCommand(context: Context): String =
@@ -80,7 +106,7 @@ object Kiosk {
      * kiosk per chiunque sappia dove toccare.
      */
     fun applyPolicies(context: Context, allowedPackages: Set<String>, allowSettings: Boolean = false) {
-        if (!isDeviceOwner(context)) return
+        if (!canManage(context)) return
         val dpm = policyManager(context)
         val admin = admin(context)
         val app = context.applicationContext
@@ -145,7 +171,7 @@ object Kiosk {
 
     /** Rimuove le politiche: il tablet torna a comportarsi normalmente. */
     fun releasePolicies(context: Context) {
-        if (!isDeviceOwner(context)) return
+        if (!canManage(context)) return
         val dpm = policyManager(context)
         val admin = admin(context)
         val app = context.applicationContext
@@ -179,11 +205,12 @@ object Kiosk {
         return am.lockTaskModeState != ActivityManager.LOCK_TASK_MODE_NONE
     }
 
-    /** Entra in lock task. Senza Device Owner non si fa nulla, di proposito. */
+    /** Entra in lock task. Senza alcun potere non si fa nulla, di proposito. */
     fun enter(activity: Activity) {
-        if (!isDeviceOwner(activity)) return
+        if (!canManage(activity)) return
         if (isLocked(activity)) return
         runCatching { activity.startLockTask() }
+            .onFailure { lastFailures = lastFailures + "avvio del kiosk (${it.message})" }
     }
 
     fun exit(activity: Activity) {

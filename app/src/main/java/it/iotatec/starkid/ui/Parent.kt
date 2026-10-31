@@ -63,7 +63,12 @@ data class SetupStatus(
     val isDefaultHome: Boolean,
     val hasUsageAccess: Boolean,
     val canDrawOverlay: Boolean,
+    /** Vero se StarKid puo almeno provare ad accendere il kiosk. */
     val isDeviceOwner: Boolean,
+    /** Device owner pieno o solo proprietaria di questo utente. */
+    val fullOwner: Boolean = false,
+    /** Politiche del kiosk che non sono riuscite, da mostrare al genitore. */
+    val kioskFailures: List<String> = emptyList(),
 )
 
 /** Tutto quello che l'area genitori puo chiedere all'Activity di fare. */
@@ -459,12 +464,36 @@ fun KioskScreen(
             if (status.isDeviceOwner) {
                 SectionCard("Stato") {
                     Text(
-                        text = if (config.kioskEnabled)
-                            "Kiosk attivo. Il bambino resta dentro il launcher e le app permesse: " +
-                                "barra di stato e impostazioni sono chiuse, l'app non si disinstalla."
-                        else "L'app e Device Owner: il kiosk si puo accendere.",
+                        text = when {
+                            config.kioskEnabled && status.fullOwner ->
+                                "Kiosk attivo. Il bambino resta dentro il launcher e le app " +
+                                    "permesse: barra di stato e impostazioni sono chiuse, " +
+                                    "l'app non si disinstalla."
+                            config.kioskEnabled ->
+                                "Kiosk attivo su questo utente. StarKid non e proprietaria " +
+                                    "dell'intero tablet, quindi qualche blocco potrebbe non " +
+                                    "aver fatto presa: controlla l'elenco qui sotto."
+                            status.fullOwner -> "L'app e Device Owner: il kiosk si puo accendere."
+                            else -> "StarKid e proprietaria di questo utente, non di tutto il " +
+                                "tablet. Il kiosk si puo provare, ma con meno poteri."
+                        },
                         style = MaterialTheme.typography.bodyLarge,
                     )
+                    if (status.kioskFailures.isNotEmpty()) {
+                        Spacer(Modifier.size(12.dp))
+                        Text(
+                            text = "Non ha funzionato:",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                        for (failure in status.kioskFailures) {
+                            Text(
+                                text = "· $failure",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.error,
+                            )
+                        }
+                    }
                     Spacer(Modifier.size(14.dp))
                     if (config.kioskEnabled) {
                         Button(onClick = onDisable, modifier = Modifier.fillMaxWidth()) {

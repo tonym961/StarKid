@@ -10,3 +10,6 @@ keystore.properties
 captures/
 .externalNativeBuild/
 .cxx/
+
+# File di lavoro, non pubblicati
+NOTE-TECNICHE.md
