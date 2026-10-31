@@ -105,7 +105,12 @@ object Kiosk {
      * richiude appena esce: un varco permanente sarebbe la via d'uscita dal
      * kiosk per chiunque sappia dove toccare.
      */
-    fun applyPolicies(context: Context, allowedPackages: Set<String>, allowSettings: Boolean = false) {
+    fun applyPolicies(
+        context: Context,
+        allowedPackages: Set<String>,
+        allowSettings: Boolean = false,
+        allowRecents: Boolean = false,
+    ) {
         if (!canManage(context)) return
         val dpm = policyManager(context)
         val admin = admin(context)
@@ -124,10 +129,14 @@ object Kiosk {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             attempt("blocco di notifiche e recenti") {
-                // Si accende SOLO il tasto Home: tutto quello che non e
-                // elencato qui resta spento, comprese le notifiche, la tendina,
-                // le app recenti e il menu di spegnimento.
-                dpm.setLockTaskFeatures(admin, DevicePolicyManager.LOCK_TASK_FEATURE_HOME)
+                // Si accende SOLO quello che e elencato qui: tutto il resto
+                // resta spento, comprese notifiche, tendina e menu di
+                // spegnimento. Le recenti sono una scelta del genitore.
+                var features = DevicePolicyManager.LOCK_TASK_FEATURE_HOME
+                if (allowRecents) {
+                    features = features or DevicePolicyManager.LOCK_TASK_FEATURE_OVERVIEW
+                }
+                dpm.setLockTaskFeatures(admin, features)
             }
         } else {
             failures.add("blocco di notifiche e recenti (serve Android 9 o piu recente)")

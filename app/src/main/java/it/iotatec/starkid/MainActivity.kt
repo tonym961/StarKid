@@ -1,6 +1,7 @@
 package it.iotatec.starkid
 
 import android.content.Intent
+import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
@@ -40,12 +41,17 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
 import it.iotatec.starkid.admin.Kiosk
 import it.iotatec.starkid.data.AppEntry
 import it.iotatec.starkid.data.BACKGROUND_PHOTO
 import it.iotatec.starkid.data.BackgroundStore
 import it.iotatec.starkid.data.InstalledApps
 import it.iotatec.starkid.data.KidsConfig
+import it.iotatec.starkid.data.ORIENT_AUTO
+import it.iotatec.starkid.data.ORIENT_PORTRAIT
 import it.iotatec.starkid.data.Prefs
 import it.iotatec.starkid.domain.BlockReason
 import it.iotatec.starkid.domain.Guard
@@ -132,6 +138,15 @@ class MainActivity : ComponentActivity() {
             val config by prefs.config.collectAsState()
             val skin = Skins.of(config.skin)
             LaunchedEffect(skin.id) { applySkinChrome(skin) }
+            // Un tablet per bambini si tiene in orizzontale: se gira da solo
+            // mentre il bambino gioca, le cose si spostano sotto le dita.
+            LaunchedEffect(config.orientation) {
+                requestedOrientation = when (config.orientation) {
+                    ORIENT_PORTRAIT -> ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                    ORIENT_AUTO -> ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+                    else -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                }
+            }
             KidsTheme(skin) {
                 Box(Modifier.fillMaxSize().safeDrawingPadding()) {
                     LauncherRoot(config, skin)
@@ -173,15 +188,30 @@ class MainActivity : ComponentActivity() {
 
         // Un minuto di gioco dentro StarKid conta come un minuto di app: il
         // tetto giornaliero non si aggira passando ai giochi di casa.
-        LaunchedEffect(screen) {
+        //
+        // Il conteggio e legato allo stato RESUMED: il launcher non viene mai
+        // distrutto, quindi senza questo vincolo i minuti continuavano a
+        // correre a schermo spento, e il bambino ritrovava il tempo finito
+        // senza aver giocato.
+        val lifecycleOwner = LocalLifecycleOwner.current
+        LaunchedEffect(screen, lifecycleOwner) {
             if (screen != Screen.GAME) return@LaunchedEffect
-            while (true) {
-                delay(60_000)
-                prefs.addPlayMinute()
+            lifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                while (true) {
+                    delay(60_000)
+                    prefs.addPlayMinute()
+                }
             }
         }
 
-        LaunchedEffect(Unit) { apps = InstalledApps.all(this@MainActivity) }
+        // L'elenco delle app si rilegge ogni volta che il launcher torna in
+        // primo piano: il genitore installa qualcosa dal Play Store e torna
+        // qui col tasto Home, e la deve trovare.
+        LaunchedEffect(lifecycleOwner) {
+            lifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                apps = InstalledApps.all(this@MainActivity, refresh = apps.isNotEmpty())
+            }
+        }
 
         // Il tasto Home riporta sempre il bambino alla sua schermata.
         LaunchedEffect(homePresses) {
@@ -224,6 +254,7 @@ class MainActivity : ComponentActivity() {
                     context = this@MainActivity,
                     allowedPackages = config.allowedPackages,
                     allowSettings = inParentArea,
+                    allowRecents = config.kioskRecents,
                 )
             }
         }
@@ -233,13 +264,20 @@ class MainActivity : ComponentActivity() {
         val usedToday =
             (config.allowedPackages.sumOf { usageMillis[it] ?: 0L } / 60_000L).toInt() + playedToday
         val now = Calendar.getInstance()
-        val verdict = Guard.checkGlobal(
-            config = config,
-            dayOfWeek = now.get(Calendar.DAY_OF_WEEK),
-            minuteOfDay = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE),
-            usedMinutesToday = usedToday,
-            today = today,
-        )
+        val verdict = if (System.currentTimeMillis() < config.guardPausedUntil) {
+            // "Sospendi il controllo" valeva solo per il servizio: il blocco
+            // disegnato dal launcher restava li, e il genitore che aveva
+            // appena chiesto dieci minuti si ritrovava la stessa schermata.
+            BlockReason.NONE
+        } else {
+            Guard.checkGlobal(
+                config = config,
+                dayOfWeek = now.get(Calendar.DAY_OF_WEEK),
+                minuteOfDay = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE),
+                usedMinutesToday = usedToday,
+                today = today,
+            )
+        }
         val remaining = Guard.remainingMinutes(config, usedToday, today)
         val allowedApps = apps.filter { it.packageName in config.allowedPackages }
 
@@ -365,6 +403,7 @@ class MainActivity : ComponentActivity() {
                 },
                 onAvatar = { prefs.setAvatar(it) },
                 onHomeLayout = { prefs.setHomeLayout(it) },
+                onOrientation = { prefs.setOrientation(it) },
                 onBack = { screen = Screen.PARENT },
             )
 
@@ -410,6 +449,16 @@ class MainActivity : ComponentActivity() {
                     prefs.setKioskEnabled(false)
                     Kiosk.exit(this@MainActivity)
                     Kiosk.releasePolicies(this@MainActivity)
+                },
+                onRecents = { prefs.setKioskRecents(it) },
+                onLeaveToLauncher = {
+                    // Si spegne il kiosk, si libera la home e si porta il
+                    // genitore dove si sceglie il launcher: Android non
+                    // permette a una app di eleggerne un'altra al suo posto.
+                    prefs.setKioskEnabled(false)
+                    Kiosk.exit(this@MainActivity)
+                    Kiosk.releasePolicies(this@MainActivity)
+                    openSettings(Intent(Settings.ACTION_HOME_SETTINGS))
                 },
                 onRelinquishOwner = {
                     prefs.setKioskEnabled(false)

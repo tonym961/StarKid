@@ -51,7 +51,6 @@ fun PinPad(
     onCancel: (() -> Unit)? = null,
 ) {
     var entered by remember { mutableStateOf("") }
-    LaunchedEffect(error) { if (error != null) entered = "" }
 
     Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) {
         Column(
@@ -98,7 +97,18 @@ fun PinPad(
                     if (entered.length < PIN_MAX_LENGTH) entered += digit
                 },
                 onBackspace = { entered = entered.dropLast(1) },
-                onConfirm = { if (entered.length >= PIN_MIN_LENGTH) onSubmit(entered) },
+                onConfirm = {
+                    // Si svuota qui, non quando cambia il messaggio d'errore:
+                    // al secondo PIN sbagliato di fila l'errore e lo stesso di
+                    // prima, quindi non cambia, e le cifre nuove si
+                    // accodavano alle vecchie finche il tastierino si
+                    // piantava a otto e il genitore restava fuori.
+                    if (entered.length >= PIN_MIN_LENGTH) {
+                        val code = entered
+                        entered = ""
+                        onSubmit(code)
+                    }
+                },
                 confirmEnabled = entered.length >= PIN_MIN_LENGTH,
             )
 

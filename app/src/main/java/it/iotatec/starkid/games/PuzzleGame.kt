@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -96,6 +97,11 @@ fun PuzzleGame(onBack: () -> Unit) {
                     val cellColumn = position % SIZE
                     val pieceRow = piece / SIZE
                     val pieceColumn = piece % SIZE
+                    // La chiave e il PEZZO, non la casella: senza, lo stato
+                    // delle animazioni resta attaccato alla posizione e a
+                    // ogni mossa verticale si vedono scivolare tre caselle
+                    // invece di quella toccata.
+                    key(piece) {
                     // La casella scivola fino al suo posto invece di saltarci:
                     // cosi si vede quale pezzo si e mosso.
                     val x by animateDpAsState(cell * cellColumn, label = "x")
@@ -126,6 +132,7 @@ fun PuzzleGame(onBack: () -> Unit) {
                         ) {
                             Text(picture, fontSize = (cell.value * SIZE * 0.70f).sp)
                         }
+                    }
                     }
                 }
             }

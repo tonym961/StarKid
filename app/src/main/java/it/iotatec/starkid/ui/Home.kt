@@ -1,9 +1,12 @@
 package it.iotatec.starkid.ui
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -46,8 +49,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.style.TextAlign
@@ -388,9 +400,10 @@ private fun CategoryPlanet(
     iconSize: Dp,
     onClick: () -> Unit,
 ) {
-    // L'anello tocca a uno scomparto su tre, sempre agli stessi: deve essere
-    // un segno riconoscibile, non una sorpresa che cambia ogni volta.
+    // Ogni scomparto ha sempre lo stesso pianeta: l'anello e le fasce sono
+    // un segno da riconoscere, non una sorpresa che cambia ogni volta.
     val ringed = category.ordinal % 3 == 1
+    val banded = category.ordinal % 3 != 2
     val glow = Color(
         red = (colour.red + 0.35f).coerceAtMost(1f),
         green = (colour.green + 0.35f).coerceAtMost(1f),
@@ -409,31 +422,105 @@ private fun CategoryPlanet(
         Canvas(Modifier.fillMaxSize()) {
             val radius = minOf(size.width, size.height) * 0.40f
             val middle = Offset(size.width / 2f, size.height / 2f)
-            if (ringed) {
-                rotate(degrees = -16f, pivot = middle) {
+            val lit = Offset(middle.x - radius * 0.38f, middle.y - radius * 0.38f)
+
+            fun ring(alpha: Float) {
+                rotate(degrees = -17f, pivot = middle) {
                     drawOval(
-                        color = glow.copy(alpha = 0.55f),
-                        topLeft = Offset(middle.x - radius * 1.5f, middle.y - radius * 0.34f),
-                        size = Size(radius * 3f, radius * 0.68f),
-                        style = Stroke(width = radius * 0.14f),
+                        color = glow.copy(alpha = alpha),
+                        topLeft = Offset(middle.x - radius * 1.62f, middle.y - radius * 0.36f),
+                        size = Size(radius * 3.24f, radius * 0.72f),
+                        style = Stroke(width = radius * 0.17f),
+                    )
+                    drawOval(
+                        color = colour.copy(alpha = alpha * 0.7f),
+                        topLeft = Offset(middle.x - radius * 1.34f, middle.y - radius * 0.30f),
+                        size = Size(radius * 2.68f, radius * 0.60f),
+                        style = Stroke(width = radius * 0.08f),
                     )
                 }
             }
+
+            // Prima la meta dell'anello che passa DIETRO il pianeta. E
+            // questo, piu dell'anello stesso, a far leggere la palla come
+            // una sfera invece che come un disco.
+            if (ringed) {
+                clipRect(top = 0f, bottom = middle.y) { ring(0.75f) }
+            }
+
+            // Il corpo.
             drawCircle(
                 brush = Brush.radialGradient(
                     colors = listOf(glow, colour),
-                    center = Offset(middle.x - radius * 0.35f, middle.y - radius * 0.35f),
-                    radius = radius * 1.9f,
+                    center = lit,
+                    radius = radius * 1.8f,
                 ),
                 radius = radius,
                 center = middle,
             )
+
+            // Quello che ci sta sopra: fasce o crateri, ritagliati sulla palla.
+            val skin = Path().apply { addOval(Rect(middle - Offset(radius, radius), middle + Offset(radius, radius))) }
+            clipPath(skin) {
+                if (banded) {
+                    // Fasce di nuvole, piu strette verso i poli.
+                    val bands = listOf(-0.62f, -0.28f, 0.04f, 0.34f, 0.66f)
+                    bands.forEachIndexed { index, offset ->
+                        val thickness = radius * (0.17f - kotlin.math.abs(offset) * 0.08f)
+                        val tint = if (index % 2 == 0) glow.copy(alpha = 0.34f) else colour.copy(alpha = 0.55f)
+                        drawOval(
+                            color = tint,
+                            topLeft = Offset(middle.x - radius * 1.1f, middle.y + radius * offset - thickness),
+                            size = Size(radius * 2.2f, thickness * 2f),
+                        )
+                    }
+                } else {
+                    // Crateri: sempre negli stessi punti, con il bordo
+                    // illuminato dalla parte della luce.
+                    val craters = listOf(
+                        Triple(-0.34f, -0.26f, 0.30f),
+                        Triple(0.26f, 0.08f, 0.22f),
+                        Triple(-0.08f, 0.42f, 0.17f),
+                        Triple(0.46f, -0.38f, 0.14f),
+                        Triple(-0.52f, 0.22f, 0.12f),
+                    )
+                    for ((dx, dy, size) in craters) {
+                        val at = Offset(middle.x + radius * dx, middle.y + radius * dy)
+                        drawCircle(colour.copy(alpha = 0.75f), radius * size, at)
+                        drawCircle(
+                            glow.copy(alpha = 0.5f),
+                            radius * size,
+                            at + Offset(-radius * size * 0.12f, -radius * size * 0.12f),
+                            style = Stroke(width = radius * size * 0.26f),
+                        )
+                    }
+                }
+
+                // Ombra: il lato opposto alla luce si spegne. Senza, resta
+                // un disco piatto per quanto decorato.
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.55f)),
+                        center = lit,
+                        radius = radius * 2.1f,
+                    ),
+                    radius = radius,
+                    center = middle,
+                )
+            }
+
+            // Alone di atmosfera sul bordo.
             drawCircle(
-                color = glow.copy(alpha = 0.8f),
+                color = glow.copy(alpha = 0.85f),
                 radius = radius,
                 center = middle,
-                style = Stroke(width = radius * 0.06f),
+                style = Stroke(width = radius * 0.05f),
             )
+
+            // E infine la meta dell'anello che passa DAVANTI.
+            if (ringed) {
+                clipRect(top = middle.y, bottom = size.height) { ring(0.95f) }
+            }
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(

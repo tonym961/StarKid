@@ -23,8 +23,11 @@ android {
         applicationId = "it.iotatec.starkid"
         minSdk = 26
         targetSdk = 35
+        // Numerazione: 1.0.1, 1.0.2 ... fino a 1.0.99. Il versionCode e
+        // l'ultimo numero: Android aggiorna solo se cresce, quindi non va
+        // mai riusato ne abbassato.
         versionCode = 1
-        versionName = "1.0"
+        versionName = "1.0.1"
     }
 
     signingConfigs {
@@ -65,6 +68,9 @@ dependencies {
     implementation("androidx.core:core-ktx:1.15.0")
     implementation("androidx.activity:activity-compose:1.9.3")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
+    // LocalLifecycleOwner e repeatOnLifecycle dentro Compose: servono a non
+    // far correre i contatori a schermo spento.
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
     implementation(platform("androidx.compose:compose-bom:2024.10.01"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")

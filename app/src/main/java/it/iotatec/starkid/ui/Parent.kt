@@ -54,6 +54,9 @@ import it.iotatec.starkid.data.HOME_ALL
 import it.iotatec.starkid.data.HOME_CATEGORIES
 import it.iotatec.starkid.data.KidsConfig
 import it.iotatec.starkid.data.NotRecommended
+import it.iotatec.starkid.data.ORIENT_AUTO
+import it.iotatec.starkid.data.ORIENT_LANDSCAPE
+import it.iotatec.starkid.data.ORIENT_PORTRAIT
 import it.iotatec.starkid.data.Recommendation
 import it.iotatec.starkid.data.Recommendations
 import it.iotatec.starkid.games.Games
@@ -447,6 +450,8 @@ fun KioskScreen(
     provisioningCommand: String,
     onEnable: () -> Unit,
     onDisable: () -> Unit,
+    onLeaveToLauncher: () -> Unit,
+    onRecents: (Boolean) -> Unit,
     onRelinquishOwner: () -> Unit,
     onBack: () -> Unit,
 ) {
@@ -495,10 +500,36 @@ fun KioskScreen(
                         }
                     }
                     Spacer(Modifier.size(14.dp))
+                    SwitchRow(
+                        label = "Lascia le app recenti",
+                        checked = config.kioskRecents,
+                        onCheckedChange = onRecents,
+                    )
+                    Text(
+                        text = "Spente, il bambino non puo passare da una app all'altra se " +
+                            "non dalla schermata di StarKid.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.size(14.dp))
                     if (config.kioskEnabled) {
                         Button(onClick = onDisable, modifier = Modifier.fillMaxWidth()) {
                             Text("Esci dal kiosk")
                         }
+                        Spacer(Modifier.size(10.dp))
+                        OutlinedButton(
+                            onClick = onLeaveToLauncher,
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text("Esci e usa il launcher di sistema")
+                        }
+                        Text(
+                            text = "Spegne il kiosk, libera la home e apre le impostazioni " +
+                                "per rimettere il launcher di prima. StarKid resta " +
+                                "installata e il PIN non cambia.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     } else {
                         Button(onClick = onEnable, modifier = Modifier.fillMaxWidth()) {
                             Text("Attiva il kiosk")
@@ -779,6 +810,7 @@ fun LookScreen(
     onRemovePhoto: () -> Unit,
     onAvatar: (String) -> Unit,
     onHomeLayout: (String) -> Unit,
+    onOrientation: (String) -> Unit,
     onBack: () -> Unit,
 ) {
     val skin = Skins.of(config.skin)
@@ -831,6 +863,46 @@ fun LookScreen(
                         onClick = { onHomeLayout(HOME_ALL) },
                         modifier = Modifier.weight(1f),
                     )
+                }
+            }
+
+            SectionCard("Come sta lo schermo") {
+                Text(
+                    text = "Se gira da solo mentre il bambino gioca, le cose si spostano " +
+                        "sotto le dita. Di base resta in orizzontale.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.size(12.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    for ((value, label) in listOf(
+                        ORIENT_LANDSCAPE to "Orizzontale",
+                        ORIENT_PORTRAIT to "Verticale",
+                        ORIENT_AUTO to "Come lo gira",
+                    )) {
+                        Card(
+                            onClick = { onOrientation(value) },
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (config.orientation == value) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.surfaceVariant
+                                },
+                            ),
+                        ) {
+                            Text(
+                                text = label,
+                                style = MaterialTheme.typography.titleMedium,
+                                color = if (config.orientation == value) {
+                                    MaterialTheme.colorScheme.onPrimary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                },
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                            )
+                        }
+                    }
                 }
             }
 

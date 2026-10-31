@@ -20,6 +20,15 @@ const val BACKGROUND_PHOTO = "foto"
 const val HOME_CATEGORIES = "categorie"
 const val HOME_ALL = "tutte"
 
+/**
+ * Come sta lo schermo. Un tablet per bambini si usa in orizzontale, e se gira
+ * da solo mentre il bambino gioca le cose si spostano sotto le dita: percio
+ * l'orizzontale e il valore predefinito e la rotazione e una scelta.
+ */
+const val ORIENT_LANDSCAPE = "orizzontale"
+const val ORIENT_PORTRAIT = "verticale"
+const val ORIENT_AUTO = "automatico"
+
 /** Categorie della barra in alto, come sul tablet di un bambino. */
 enum class AppCategory(val id: String) {
     GAMES("giochi"),

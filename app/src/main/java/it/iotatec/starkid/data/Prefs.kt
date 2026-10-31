@@ -62,6 +62,10 @@ data class KidsConfig(
      */
     val serverUrl: String = "",
     val serverToken: String = "",
+    /** [ORIENT_LANDSCAPE], [ORIENT_PORTRAIT] o [ORIENT_AUTO]. */
+    val orientation: String = ORIENT_LANDSCAPE,
+    /** Col kiosk acceso, lascia o no il tasto delle app recenti. */
+    val kioskRecents: Boolean = false,
 )
 
 /**
@@ -109,6 +113,8 @@ class Prefs private constructor(context: Context) {
         homeLayout = sp.getString(KEY_HOME_LAYOUT, HOME_CATEGORIES) ?: HOME_CATEGORIES,
         serverUrl = sp.getString(KEY_SERVER_URL, "") ?: "",
         serverToken = sp.getString(KEY_SERVER_TOKEN, "") ?: "",
+        orientation = sp.getString(KEY_ORIENTATION, ORIENT_LANDSCAPE) ?: ORIENT_LANDSCAPE,
+        kioskRecents = sp.getBoolean(KEY_KIOSK_RECENTS, false),
     )
 
     private fun edit(block: SharedPreferences.Editor.() -> Unit) {
@@ -181,6 +187,10 @@ class Prefs private constructor(context: Context) {
     fun setSoundOn(on: Boolean) = edit { putBoolean(KEY_SOUND, on) }
 
     fun setHomeLayout(layout: String) = edit { putString(KEY_HOME_LAYOUT, layout) }
+
+    fun setOrientation(value: String) = edit { putString(KEY_ORIENTATION, value) }
+
+    fun setKioskRecents(allow: Boolean) = edit { putBoolean(KEY_KIOSK_RECENTS, allow) }
 
     fun setServer(url: String, token: String) = edit {
         putString(KEY_SERVER_URL, url.trim())
@@ -287,6 +297,8 @@ class Prefs private constructor(context: Context) {
         private const val KEY_HOME_LAYOUT = "home_layout"
         private const val KEY_SERVER_URL = "server_url"
         private const val KEY_SERVER_TOKEN = "server_token"
+        private const val KEY_ORIENTATION = "orientation"
+        private const val KEY_KIOSK_RECENTS = "kiosk_recents"
 
         @Volatile
         private var instance: Prefs? = null
