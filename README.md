@@ -51,7 +51,7 @@ StarKid**.
 
 | Gioco | Cosa si fa | Categoria |
 | --- | --- | --- |
-| Macchinine | Si guida inclinando il tablet o col dito, scegliendo fra 3 carrozzerie, 8 colori e 4 piste | Giochi |
+| Macchinine | Kart **in 3D**: si guida inclinando il tablet o col dito, scegliendo fra 3 kart, 8 colori e 4 piste | Giochi |
 | Memory spaziale | Sei coppie da ritrovare | Giochi |
 | Puzzle scorrevole | Nove caselle da rimettere in ordine | Giochi |
 | Xilofono | Otto note da suonare | Musica |
@@ -76,6 +76,32 @@ sistema e i suoni si spengono dall'area genitori.
 Il tempo passato sui giochi **conta nel limite giornaliero** come quello delle
 app installate: il tetto non si aggira passando ai giochi di casa. Se il tempo
 finisce mentre il bambino gioca, il blocco prende il posto del gioco.
+
+### Il gioco dei kart, in tre dimensioni
+
+Il kart e le piste sono disegnati in **OpenGL ES 2.0**, senza motori di gioco e
+senza modelli da caricare (`games/gl/`):
+
+- la scocca del kart e una **carena** che passa per otto sezioni, quindi il
+  pianale si allarga in mezzo e il muso va a punta; le ruote sono cilindri con
+  il cerchione, e sopra c'e un pilota col casco. Il colore e un parametro: per
+  questo se ne possono scegliere ventiquattro combinazioni senza avere
+  ventiquattro disegni;
+- ogni pezzo e appeso alla trasformazione del kart intero, non ruota per conto
+  proprio: altrimenti in curva il kart si smonta in volo;
+- ogni pista ha la **sua scenografia**, generata lungo la strada: palazzi con
+  finestre e marciapiedi in citta, palme e mare alla spiaggia, alberi al prato,
+  pianeti con gli anelli nello spazio. Casa e albero prendono altezza e colore
+  da un numero ricavato dalla loro posizione sulla strada, non dal caso, se no
+  a ogni fotogramma cambierebbero faccia;
+- lo sterzo e l'**accelerometro** (non il sensore di prossimita, che dice solo
+  vicino o lontano). Gli assi del sensore non ruotano con lo schermo, quindi
+  vanno convertiti con la rotazione del display; c'e un interruttore "sterzo al
+  contrario" e si puo sempre guidare col dito.
+
+Perche non un motore 3D: Filament o libGDX porterebbero decine di megabyte di
+libreria nativa dentro un'app che deve restare residente come home del tablet, e
+vorrebbero comunque i modelli dei mezzi in un file. Qui un kart sono numeri.
 
 ### Com'e fatta la parte giocabile
 
