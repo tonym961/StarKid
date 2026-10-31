@@ -9,6 +9,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
 import android.os.UserManager
+import android.provider.Settings
 import it.iotatec.starkid.MainActivity
 
 /**
@@ -48,33 +49,66 @@ object Kiosk {
             "${context.packageName}/${KidsDeviceAdminReceiver::class.java.name}"
 
     /**
+     * Il pacchetto delle impostazioni di sistema, chiesto ad Android invece
+     * che scritto a mano: non su tutti i dispositivi si chiama
+     * `com.android.settings`.
+     */
+    fun settingsPackage(context: Context): String? = runCatching {
+        context.packageManager
+            .resolveActivity(Intent(Settings.ACTION_SETTINGS), 0)
+            ?.activityInfo
+            ?.packageName
+    }.getOrNull()
+
+    /**
+     * Quali politiche non sono riuscite. Vuoto vuol dire tutto a posto; si
+     * mostra al genitore nella schermata del kiosk, perche una politica che
+     * fallisce in silenzio e peggio di una che non c'e: si crede che il
+     * tablet sia bloccato e non lo e.
+     */
+    @Volatile
+    var lastFailures: List<String> = emptyList()
+        private set
+
+    /**
      * Applica le politiche del kiosk. Da richiamare a ogni modifica della
      * whitelist, perche le app permesse devono poter girare in lock task.
+     *
+     * [allowSettings] apre un varco per le impostazioni di sistema. Si usa
+     * solo mentre il genitore e dentro la sua area, protetta dal PIN, e si
+     * richiude appena esce: un varco permanente sarebbe la via d'uscita dal
+     * kiosk per chiunque sappia dove toccare.
      */
-    fun applyPolicies(context: Context, allowedPackages: Set<String>) {
+    fun applyPolicies(context: Context, allowedPackages: Set<String>, allowSettings: Boolean = false) {
         if (!isDeviceOwner(context)) return
         val dpm = policyManager(context)
         val admin = admin(context)
         val app = context.applicationContext
+        val failures = mutableListOf<String>()
 
-        runCatching {
-            dpm.setLockTaskPackages(admin, (allowedPackages + app.packageName).toTypedArray())
+        fun attempt(what: String, block: () -> Unit) {
+            runCatching(block).onFailure { failures.add(what) }
+        }
+
+        val settings = if (allowSettings) settingsPackage(context) else null
+        attempt("elenco delle app ammesse") {
+            val packages = allowedPackages + app.packageName + listOfNotNull(settings)
+            dpm.setLockTaskPackages(admin, packages.toTypedArray())
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            runCatching {
-                // Il tasto Home resta attivo e riporta al launcher; tutto il
-                // resto (recenti, notifiche, barra di stato) resta chiuso.
-                dpm.setLockTaskFeatures(
-                    admin,
-                    DevicePolicyManager.LOCK_TASK_FEATURE_HOME or
-                        DevicePolicyManager.LOCK_TASK_FEATURE_KEYGUARD,
-                )
+            attempt("blocco di notifiche e recenti") {
+                // Si accende SOLO il tasto Home: tutto quello che non e
+                // elencato qui resta spento, comprese le notifiche, la tendina,
+                // le app recenti e il menu di spegnimento.
+                dpm.setLockTaskFeatures(admin, DevicePolicyManager.LOCK_TASK_FEATURE_HOME)
             }
+        } else {
+            failures.add("blocco di notifiche e recenti (serve Android 9 o piu recente)")
         }
 
         // Home senza possibilita di scelta: il launcher e l'unica opzione.
-        runCatching {
+        attempt("home fissa sul launcher") {
             val home = IntentFilter(Intent.ACTION_MAIN).apply {
                 addCategory(Intent.CATEGORY_HOME)
                 addCategory(Intent.CATEGORY_DEFAULT)
@@ -86,12 +120,27 @@ object Kiosk {
             )
         }
 
-        runCatching { dpm.setUninstallBlocked(admin, app.packageName, true) }
-        runCatching { dpm.setStatusBarDisabled(admin, true) }
-        runCatching { dpm.addUserRestriction(admin, UserManager.DISALLOW_SAFE_BOOT) }
-        runCatching { dpm.addUserRestriction(admin, UserManager.DISALLOW_FACTORY_RESET) }
-        runCatching { dpm.addUserRestriction(admin, UserManager.DISALLOW_ADD_USER) }
-        runCatching { dpm.addUserRestriction(admin, UserManager.DISALLOW_UNINSTALL_APPS) }
+        attempt("disinstallazione bloccata") { dpm.setUninstallBlocked(admin, app.packageName, true) }
+        attempt("barra di stato nascosta") { dpm.setStatusBarDisabled(admin, true) }
+        attempt("avvio in modalita sicura bloccato") {
+            dpm.addUserRestriction(admin, UserManager.DISALLOW_SAFE_BOOT)
+        }
+        attempt("ripristino di fabbrica bloccato") {
+            dpm.addUserRestriction(admin, UserManager.DISALLOW_FACTORY_RESET)
+        }
+        attempt("nuovi utenti bloccati") {
+            dpm.addUserRestriction(admin, UserManager.DISALLOW_ADD_USER)
+        }
+        attempt("disinstallazioni bloccate") {
+            dpm.addUserRestriction(admin, UserManager.DISALLOW_UNINSTALL_APPS)
+        }
+        // Senza questa, dalla tendina o da una notifica si arriva alle
+        // impostazioni e da li si esce da tutto.
+        attempt("modifica degli account bloccata") {
+            dpm.addUserRestriction(admin, UserManager.DISALLOW_MODIFY_ACCOUNTS)
+        }
+
+        lastFailures = failures
     }
 
     /** Rimuove le politiche: il tablet torna a comportarsi normalmente. */

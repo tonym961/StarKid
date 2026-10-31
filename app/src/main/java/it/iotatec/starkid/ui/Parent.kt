@@ -50,6 +50,8 @@ import it.iotatec.starkid.data.AppCategory
 import it.iotatec.starkid.data.AppEntry
 import it.iotatec.starkid.data.BACKGROUND_PHOTO
 import it.iotatec.starkid.data.CHECKED_ON
+import it.iotatec.starkid.data.HOME_ALL
+import it.iotatec.starkid.data.HOME_CATEGORIES
 import it.iotatec.starkid.data.KidsConfig
 import it.iotatec.starkid.data.NotRecommended
 import it.iotatec.starkid.data.Recommendation
@@ -77,6 +79,7 @@ class ParentActions(
     val openLook: () -> Unit,
     val openGames: () -> Unit,
     val openRecommended: () -> Unit,
+    val openSystemSettings: () -> Unit,
     val changePin: () -> Unit,
     val pauseGuard: () -> Unit,
     val openHomeSettings: () -> Unit,
@@ -204,6 +207,20 @@ fun ParentHome(
                 OutlinedButton(onClick = actions.pauseGuard, modifier = Modifier.fillMaxWidth()) {
                     Text("Sospendi il controllo per 10 minuti")
                 }
+                Spacer(Modifier.size(10.dp))
+                OutlinedButton(
+                    onClick = actions.openSystemSettings,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text("Impostazioni di sistema")
+                }
+                Text(
+                    text = "Col kiosk acceso le impostazioni si aprono solo da qui, e solo " +
+                        "mentre sei in quest'area: appena torni dal bambino, la porta si " +
+                        "richiude.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
                 Text(
                     text = "Utile per fare manutenzione sul tablet senza che il blocco si rimetta in mezzo.",
                     style = MaterialTheme.typography.bodyMedium,
@@ -732,6 +749,7 @@ fun LookScreen(
     onPickPhoto: () -> Unit,
     onRemovePhoto: () -> Unit,
     onAvatar: (String) -> Unit,
+    onHomeLayout: (String) -> Unit,
     onBack: () -> Unit,
 ) {
     val skin = Skins.of(config.skin)
@@ -756,6 +774,33 @@ fun LookScreen(
                         backgroundId = config.background,
                         photo = photo,
                         modifier = Modifier.widthIn(max = 380.dp).fillMaxWidth(),
+                    )
+                }
+            }
+
+            SectionCard("Schermata principale") {
+                Text(
+                    text = "Come si apre la schermata del bambino.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.size(12.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    LayoutCard(
+                        title = "A scomparti",
+                        blurb = "Prima le categorie, poi si entra. Meno cose insieme " +
+                            "davanti agli occhi.",
+                        selected = config.homeLayout == HOME_CATEGORIES,
+                        onClick = { onHomeLayout(HOME_CATEGORIES) },
+                        modifier = Modifier.weight(1f),
+                    )
+                    LayoutCard(
+                        title = "Tutto in vista",
+                        blurb = "Tutte le app e i giochi sulle pagine, con la barra " +
+                            "delle categorie in alto.",
+                        selected = config.homeLayout == HOME_ALL,
+                        onClick = { onHomeLayout(HOME_ALL) },
+                        modifier = Modifier.weight(1f),
                     )
                 }
             }
@@ -834,6 +879,35 @@ fun LookScreen(
                 }
             }
             Spacer(Modifier.size(24.dp))
+        }
+    }
+}
+
+@Composable
+private fun LayoutCard(
+    title: String,
+    blurb: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Card(
+        onClick = onClick,
+        modifier = modifier,
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+        ),
+        border = if (selected) BorderStroke(3.dp, MaterialTheme.colorScheme.primary) else null,
+    ) {
+        Column(Modifier.padding(14.dp)) {
+            Text(title, style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.size(4.dp))
+            Text(
+                text = blurb,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }

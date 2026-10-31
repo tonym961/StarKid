@@ -52,6 +52,16 @@ data class KidsConfig(
     val playDate: String = "",
     /** Suoni dei giochi di StarKid. */
     val soundOn: Boolean = true,
+    /** [HOME_CATEGORIES] oppure [HOME_ALL]. */
+    val homeLayout: String = HOME_CATEGORIES,
+    /**
+     * Indirizzo del server di gestione, consegnato al provisioning. Vuoto
+     * vuol dire che questo tablet non parla con nessuno, ed e il valore
+     * predefinito: la sincronizzazione e una cosa che si accende, non un
+     * comportamento di fabbrica.
+     */
+    val serverUrl: String = "",
+    val serverToken: String = "",
 )
 
 /**
@@ -96,6 +106,9 @@ class Prefs private constructor(context: Context) {
         playMinutes = sp.getInt(KEY_PLAY_MINUTES, 0),
         playDate = sp.getString(KEY_PLAY_DATE, "") ?: "",
         soundOn = sp.getBoolean(KEY_SOUND, true),
+        homeLayout = sp.getString(KEY_HOME_LAYOUT, HOME_CATEGORIES) ?: HOME_CATEGORIES,
+        serverUrl = sp.getString(KEY_SERVER_URL, "") ?: "",
+        serverToken = sp.getString(KEY_SERVER_TOKEN, "") ?: "",
     )
 
     private fun edit(block: SharedPreferences.Editor.() -> Unit) {
@@ -166,6 +179,13 @@ class Prefs private constructor(context: Context) {
     fun setAvatar(emoji: String) = edit { putString(KEY_AVATAR, emoji) }
 
     fun setSoundOn(on: Boolean) = edit { putBoolean(KEY_SOUND, on) }
+
+    fun setHomeLayout(layout: String) = edit { putString(KEY_HOME_LAYOUT, layout) }
+
+    fun setServer(url: String, token: String) = edit {
+        putString(KEY_SERVER_URL, url.trim())
+        putString(KEY_SERVER_TOKEN, token.trim())
+    }
 
     fun toggleGame(gameId: String) {
         val next = current.disabledGames.toMutableSet()
@@ -264,6 +284,9 @@ class Prefs private constructor(context: Context) {
         private const val KEY_PLAY_MINUTES = "play_minutes"
         private const val KEY_PLAY_DATE = "play_date"
         private const val KEY_SOUND = "sound_on"
+        private const val KEY_HOME_LAYOUT = "home_layout"
+        private const val KEY_SERVER_URL = "server_url"
+        private const val KEY_SERVER_TOKEN = "server_token"
 
         @Volatile
         private var instance: Prefs? = null

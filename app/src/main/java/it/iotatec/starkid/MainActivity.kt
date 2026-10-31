@@ -211,9 +211,20 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        LaunchedEffect(config.allowedPackages, config.kioskEnabled) {
+        // Le politiche del kiosk si riapplicano anche quando si cambia
+        // schermata: le impostazioni di sistema si aprono solo mentre il
+        // genitore e nella sua area, e la porta si richiude appena esce.
+        LaunchedEffect(config.allowedPackages, config.kioskEnabled, screen) {
             if (config.kioskEnabled) {
-                Kiosk.applyPolicies(this@MainActivity, config.allowedPackages)
+                val inParentArea = screen != Screen.HOME &&
+                    screen != Screen.GAME &&
+                    screen != Screen.PIN_GATE &&
+                    screen != Screen.PIN_SETUP
+                Kiosk.applyPolicies(
+                    context = this@MainActivity,
+                    allowedPackages = config.allowedPackages,
+                    allowSettings = inParentArea,
+                )
             }
         }
 
@@ -353,6 +364,7 @@ class MainActivity : ComponentActivity() {
                     prefs.clearPhotoBackground(skin.backgrounds.first().id)
                 },
                 onAvatar = { prefs.setAvatar(it) },
+                onHomeLayout = { prefs.setHomeLayout(it) },
                 onBack = { screen = Screen.PARENT },
             )
 
@@ -425,6 +437,7 @@ class MainActivity : ComponentActivity() {
         openLook = { onNavigate(Screen.LOOK) },
         openGames = { onNavigate(Screen.GAMES) },
         openRecommended = { onNavigate(Screen.RECOMMENDED) },
+        openSystemSettings = { openSettings(Intent(Settings.ACTION_SETTINGS)) },
         changePin = { onNavigate(Screen.CHANGE_PIN) },
         pauseGuard = { prefs.pauseGuard(10) },
         openHomeSettings = {

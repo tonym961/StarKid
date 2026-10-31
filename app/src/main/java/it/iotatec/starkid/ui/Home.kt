@@ -23,6 +23,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.ChevronLeft
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Lock
@@ -56,6 +57,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import it.iotatec.starkid.data.AppCategory
 import it.iotatec.starkid.data.AppEntry
+import it.iotatec.starkid.data.HOME_CATEGORIES
 import it.iotatec.starkid.data.KidsConfig
 import it.iotatec.starkid.games.GameDef
 import kotlinx.coroutines.delay
@@ -100,6 +102,7 @@ fun HomeScreen(
     onParentArea: () -> Unit,
 ) {
     val skin = LocalSkin.current
+    val byCategory = config.homeLayout == HOME_CATEGORIES
     var chosen by remember { mutableStateOf<AppCategory?>(null) }
 
     // I giochi di StarKid vengono per primi: sono gli unici che funzionano
@@ -140,27 +143,44 @@ fun HomeScreen(
             )
             Spacer(Modifier.size(12.dp))
 
-            if (tiles.isEmpty()) {
-                EmptyState(skin, Modifier.weight(1f))
-            } else {
-                if (categories.size > 1) {
-                    CategoryBar(
+            when {
+                tiles.isEmpty() -> EmptyState(skin, Modifier.weight(1f))
+
+                // A categorie: la schermata si apre sugli scomparti, non su
+                // tutto. Si entra in uno, si gioca, si torna indietro.
+                byCategory && active == null && categories.size > 1 -> key("categorie") {
+                    CategoryPages(
                         categories = categories,
-                        active = active,
-                        onPick = { chosen = if (it == active) null else it },
-                    )
-                    Spacer(Modifier.size(10.dp))
-                }
-                // Cambiando categoria il pager deve ripartire dalla prima
-                // pagina: con key() lo stato si ricrea da zero.
-                key(active) {
-                    TilePages(
-                        tiles = visible,
+                        countOf = { category -> tiles.count { categoryOf(it) == category } },
                         skin = skin,
-                        onOpenApp = onOpenApp,
-                        onOpenGame = onOpenGame,
+                        onOpen = { chosen = it },
                         modifier = Modifier.weight(1f),
                     )
+                }
+
+                else -> {
+                    if (byCategory) {
+                        BackToCategories(skin, active) { chosen = null }
+                        Spacer(Modifier.size(10.dp))
+                    } else if (categories.size > 1) {
+                        CategoryBar(
+                            categories = categories,
+                            active = active,
+                            onPick = { chosen = if (it == active) null else it },
+                        )
+                        Spacer(Modifier.size(10.dp))
+                    }
+                    // Cambiando categoria il pager deve ripartire dalla prima
+                    // pagina: con key() lo stato si ricrea da zero.
+                    key(active) {
+                        TilePages(
+                            tiles = visible,
+                            skin = skin,
+                            onOpenApp = onOpenApp,
+                            onOpenGame = onOpenGame,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
                 }
             }
         }
@@ -287,6 +307,99 @@ private fun ParentDoor(onParentArea: () -> Unit) {
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(28.dp),
         )
+    }
+}
+
+/**
+ * La schermata a scomparti: pochi riquadri grandi, uno per categoria, con
+ * quante cose ci sono dentro. Per un bambino piccolo sette bersagli grandi
+ * sono piu facili di venti piccoli, e il nome della categoria si impara.
+ */
+@Composable
+private fun CategoryPages(
+    categories: List<AppCategory>,
+    countOf: (AppCategory) -> Int,
+    skin: Skin,
+    onOpen: (AppCategory) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    BoxWithConstraints(modifier.fillMaxWidth()) {
+        val columns = (maxWidth / 260.dp).toInt().coerceIn(2, 4)
+        val rows = ((categories.size + columns - 1) / columns).coerceAtLeast(1)
+        val iconSize = ((maxHeight / rows) * 0.34f).coerceIn(44.dp, 110.dp)
+        Column(Modifier.fillMaxSize()) {
+            for (row in 0 until rows) {
+                Row(Modifier.weight(1f).fillMaxWidth()) {
+                    for (column in 0 until columns) {
+                        Box(Modifier.weight(1f).fillMaxHeight().padding(10.dp)) {
+                            val category = categories.getOrNull(row * columns + column)
+                            if (category != null) {
+                                val background = skin.tileColors[
+                                    category.ordinal.mod(skin.tileColors.size),
+                                ]
+                                Tile(
+                                    label = category.label,
+                                    background = background,
+                                    textColor = skin.tileTextColor,
+                                    onClick = { onOpen(category) },
+                                    subtitle = "${countOf(category)}",
+                                ) {
+                                    Icon(
+                                        imageVector = category.icon,
+                                        contentDescription = null,
+                                        tint = skin.tileTextColor,
+                                        modifier = Modifier.size(iconSize),
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** Dentro una categoria: un pulsante grande per tornare agli scomparti. */
+@Composable
+private fun BackToCategories(skin: Skin, category: AppCategory?, onBack: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(26.dp))
+            .background(skin.scrim)
+            .padding(horizontal = 10.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        FilledIconButton(
+            onClick = onBack,
+            modifier = Modifier.size(52.dp),
+            colors = IconButtonDefaults.filledIconButtonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+            ),
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                contentDescription = "Torna agli scomparti",
+                modifier = Modifier.size(30.dp),
+            )
+        }
+        Spacer(Modifier.width(14.dp))
+        if (category != null) {
+            Icon(
+                imageVector = category.icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(28.dp),
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(
+                text = category.label,
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
+        Spacer(Modifier.width(8.dp))
     }
 }
 
@@ -516,6 +629,7 @@ private fun Tile(
     background: Color,
     textColor: Color,
     onClick: () -> Unit,
+    subtitle: String? = null,
     icon: @Composable () -> Unit,
 ) {
     Card(
@@ -540,6 +654,13 @@ private fun Tile(
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
+            if (subtitle != null) {
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = textColor.copy(alpha = 0.75f),
+                )
+            }
         }
     }
 }

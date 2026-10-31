@@ -78,42 +78,53 @@ private fun gl(hex: Long): FloatArray {
 /** Le quattro piste: cambiano i colori, il fondo e cosa si trova per strada. */
 private data class TrackChoice(val id: String, val label: String, val look: TrackLook)
 
+/**
+ * Quattro posti nello spazio. Non sono quattro tinte diverse della stessa
+ * strada: cambiano il terreno, il cielo, cosa c'e ai bordi e quale pianeta si
+ * vede all'orizzonte.
+ */
 private val TrackChoices = listOf(
     TrackChoice(
-        "citta", "Città",
+        "luna", "Luna",
         TrackLook(
-            road = gl(0xFF4A4A4A), ground = gl(0xFF8D9B6A), line = gl(0xFFFFF59D),
-            post = gl(0xFFBDBDBD), obstacle = gl(0xFFFF8F00), prize = gl(0xFFFFD54F),
-            sky = gl(0xFF90CAF9), accent = gl(0xFFE8D6C0), scenery = Scenery.CITY,
+            road = gl(0xFF6E6E78), ground = gl(0xFF3A3A42), line = gl(0xFFF5F5F5),
+            post = gl(0xFFBDBDC6), obstacle = gl(0xFF8A8A94), prize = gl(0xFFFFD54F),
+            sky = gl(0xFF05060C), accent = gl(0xFF9AA0AE), scenery = Scenery.LUNA,
         ),
     ),
     TrackChoice(
-        "spiaggia", "Spiaggia",
+        "marte", "Marte",
         TrackLook(
-            road = gl(0xFFE2C48C), ground = gl(0xFFEFD9A8), line = gl(0xFFFFFFFF),
-            post = gl(0xFF8D6E63), obstacle = gl(0xFF8D6E63), prize = gl(0xFFFF7043),
-            sky = gl(0xFFB3E5FC), accent = gl(0xFF26C6DA), scenery = Scenery.BEACH,
+            road = gl(0xFF7A4030), ground = gl(0xFFB4552F), line = gl(0xFFFFE0B2),
+            post = gl(0xFF5D2A1C), obstacle = gl(0xFF4E342E), prize = gl(0xFF4DD0E1),
+            sky = gl(0xFFC9845C), accent = gl(0xFF8C3A20), scenery = Scenery.MARTE,
         ),
     ),
     TrackChoice(
-        "prato", "Prato",
+        "anelli", "Anelli di Saturno",
         TrackLook(
-            road = gl(0xFF9E7B63), ground = gl(0xFF7CC46F), line = gl(0xFFFFF9C4),
-            post = gl(0xFFF5F5F5), obstacle = gl(0xFF6D4C41), prize = gl(0xFFEF5350),
-            sky = gl(0xFFC8E6C9), accent = gl(0xFF2E7D32), scenery = Scenery.MEADOW,
+            road = gl(0xFF2A2F6B), ground = gl(0xFF05060F), line = gl(0xFF80D8FF),
+            post = gl(0xFF9575CD), obstacle = gl(0xFF7E6B8F), prize = gl(0xFFFFEE58),
+            sky = gl(0xFF03040A), accent = gl(0xFFE2C68C), scenery = Scenery.ANELLI,
         ),
     ),
     TrackChoice(
-        "spazio", "Spazio",
+        "colonia", "Colonia",
         TrackLook(
-            road = gl(0xFF283593), ground = gl(0xFF0B0E22), line = gl(0xFF80D8FF),
-            post = gl(0xFF7E57C2), obstacle = gl(0xFFAB47BC), prize = gl(0xFFFFEE58),
-            sky = gl(0xFF050713), accent = gl(0xFFB388FF), scenery = Scenery.SPACE,
+            road = gl(0xFF3A4152), ground = gl(0xFF161A28), line = gl(0xFF4DD0E1),
+            post = gl(0xFF90A4AE), obstacle = gl(0xFFFF8F00), prize = gl(0xFF69F0AE),
+            sky = gl(0xFF070A16), accent = gl(0xFF5C7190), scenery = Scenery.COLONIA,
         ),
     ),
 )
 
+/** Quanti giri dura la gara. */
+private val LapChoices = listOf(3, 5, 7)
+
 private enum class CarPhase { GARAGE, RACE, OVER }
+
+/** Com'e andata la gara. */
+data class RaceResult(val stars: Int, val seconds: Int, val bumps: Int)
 
 /**
  * Il gioco delle macchinine, in tre dimensioni.
@@ -129,8 +140,9 @@ fun CarGame(onBack: () -> Unit) {
     var style by remember { mutableStateOf(CarStyle.KART) }
     var paintIndex by remember { mutableStateOf(0) }
     var track by remember { mutableStateOf(TrackChoices[0]) }
+    var laps by remember { mutableStateOf(5) }
     var invert by remember { mutableStateOf(false) }
-    var lastScore by remember { mutableStateOf(0) }
+    var result by remember { mutableStateOf<RaceResult?>(null) }
     val context = LocalContext.current
 
     when (phase) {
@@ -138,11 +150,13 @@ fun CarGame(onBack: () -> Unit) {
             style = style,
             paintIndex = paintIndex,
             track = track,
+            laps = laps,
             invert = invert,
             tiltAvailable = remember { hasTiltSensor(context) },
             onStyle = { style = it },
             onPaint = { paintIndex = it },
             onTrack = { track = it },
+            onLaps = { laps = it },
             onInvert = { invert = it },
             onStart = { phase = CarPhase.RACE },
             onBack = onBack,
@@ -152,9 +166,10 @@ fun CarGame(onBack: () -> Unit) {
             style = style,
             color = Paints[paintIndex].gl,
             track = track,
+            laps = laps,
             invert = invert,
             onFinished = {
-                lastScore = it
+                result = it
                 phase = CarPhase.OVER
             },
             onBack = { phase = CarPhase.GARAGE },
@@ -165,7 +180,14 @@ fun CarGame(onBack: () -> Unit) {
             onBack = onBack,
             onRestart = { phase = CarPhase.RACE },
         ) {
-            WinBanner("Hai raccolto $lastScore premi!", onAgain = { phase = CarPhase.RACE })
+            val done = result
+            val minutes = (done?.seconds ?: 0) / 60
+            val rest = (done?.seconds ?: 0) % 60
+            WinBanner(
+                text = "Arrivato!\n$laps giri in $minutes:${"%02d".format(rest)}\n" +
+                    "${done?.stars ?: 0} stelle raccolte, ${done?.bumps ?: 0} botte",
+                onAgain = { phase = CarPhase.RACE },
+            )
         }
     }
 }
@@ -177,11 +199,13 @@ private fun Garage(
     style: CarStyle,
     paintIndex: Int,
     track: TrackChoice,
+    laps: Int,
     invert: Boolean,
     tiltAvailable: Boolean,
     onStyle: (CarStyle) -> Unit,
     onPaint: (Int) -> Unit,
     onTrack: (TrackChoice) -> Unit,
+    onLaps: (Int) -> Unit,
     onInvert: (Boolean) -> Unit,
     onStart: () -> Unit,
     onBack: () -> Unit,
@@ -273,6 +297,39 @@ private fun Garage(
             }
 
             Spacer(Modifier.height(16.dp))
+            Text(
+                text = "Quanti giri",
+                style = MaterialTheme.typography.titleLarge,
+                color = skin.colors.onBackground,
+            )
+            Spacer(Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                for (count in LapChoices) {
+                    Card(
+                        onClick = { onLaps(count) },
+                        shape = RoundedCornerShape(18.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (count == laps) skin.colors.primary
+                            else skin.colors.surface,
+                        ),
+                    ) {
+                        Text(
+                            text = "$count",
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = if (count == laps) skin.colors.onPrimary
+                            else skin.colors.onSurface,
+                            modifier = Modifier.padding(horizontal = 26.dp, vertical = 10.dp),
+                        )
+                    }
+                }
+            }
+            Text(
+                text = "Cinque giri sono circa cinque minuti di gara.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = skin.colors.onSurfaceVariant,
+            )
+
+            Spacer(Modifier.height(16.dp))
             if (tiltAvailable) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
@@ -358,8 +415,9 @@ private fun Race(
     style: CarStyle,
     color: FloatArray,
     track: TrackChoice,
+    laps: Int,
     invert: Boolean,
-    onFinished: (Int) -> Unit,
+    onFinished: (RaceResult) -> Unit,
     onBack: () -> Unit,
 ) {
     val renderer = remember {
@@ -367,33 +425,37 @@ private fun Race(
             track = track.look,
             carColor = color,
             style = style,
+            totalLaps = laps,
             onPrize = { Sfx.play(Sfx.Sound.PICK) },
             onCrash = { Sfx.play(Sfx.Sound.CRASH) },
+            onLap = { Sfx.play(Sfx.Sound.RIGHT) },
         )
     }
 
-    var hearts by remember { mutableStateOf(3) }
+    var lap by remember { mutableStateOf(1) }
     var score by remember { mutableStateOf(0) }
+    var seconds by remember { mutableStateOf(0) }
     val tilt by rememberTilt(active = true, invert = invert)
     renderer.steer = tilt
 
     // Il mondo vive nel renderer, su un altro thread: qui si legge solo
-    // quello che va scritto in cima allo schermo, dieci volte al secondo.
+    // quello che va scritto in cima allo schermo, cinque volte al secondo.
     LaunchedEffect(Unit) {
         while (true) {
-            hearts = renderer.lives
+            lap = renderer.lap
             score = renderer.score
-            if (renderer.lives <= 0) break
-            delay(100)
+            seconds = renderer.elapsed.toInt()
+            if (renderer.finished) break
+            delay(200)
         }
         Sfx.play(Sfx.Sound.WIN)
-        onFinished(renderer.score)
+        onFinished(RaceResult(renderer.score, renderer.elapsed.toInt(), renderer.bumps))
     }
 
     GameShell(
         title = track.label,
         onBack = onBack,
-        status = "❤".repeat(hearts.coerceAtLeast(0)) + "  $score",
+        status = "Giro $lap/$laps  ⭐$score  ${seconds / 60}:${"%02d".format(seconds % 60)}",
     ) {
         Box(
             modifier = Modifier

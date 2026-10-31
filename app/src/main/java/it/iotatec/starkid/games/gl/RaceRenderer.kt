@@ -8,8 +8,8 @@ import javax.microedition.khronos.opengles.GL10
 import kotlin.math.abs
 import kotlin.random.Random
 
-/** Che cosa si vede ai lati della strada. */
-enum class Scenery { CITY, BEACH, MEADOW, SPACE }
+/** Che cosa si vede ai lati della pista. Sono tutti posti nello spazio. */
+enum class Scenery { COLONIA, LUNA, MARTE, ANELLI }
 
 /** Colori di una pista, in formato OpenGL (quattro componenti da 0 a 1). */
 data class TrackLook(
@@ -37,6 +37,13 @@ private const val CAR_HALF = 4.2f
 private const val HORIZON = -260f
 
 /**
+ * Lunghezza di un giro. A velocita media fa poco piu di un minuto a giro:
+ * con cinque giri la gara dura sui cinque minuti, che e il punto — una corsa
+ * deve durare, se finisce in due minuti non e una corsa.
+ */
+private const val LAP_LENGTH = 2600f
+
+/**
  * La gara in tre dimensioni.
  *
  * Il mondo vive qui, sul thread di OpenGL, e si muove a ogni fotogramma: la
@@ -48,8 +55,10 @@ class RaceRenderer(
     private val track: TrackLook,
     private val carColor: FloatArray,
     private val style: CarStyle,
+    private val totalLaps: Int,
     private val onPrize: () -> Unit,
     private val onCrash: () -> Unit,
+    private val onLap: () -> Unit,
 ) : GLSurfaceView.Renderer {
 
     /** Sterzo da -1 a 1, scritto da fuori (inclinazione o dito). */
@@ -64,8 +73,28 @@ class RaceRenderer(
     var score = 0
         private set
 
+    /** Giro in corso, da 1 a [totalLaps]. */
     @Volatile
-    var lives = 3
+    var lap = 1
+        private set
+
+    /** Quanto manca alla fine del giro, da 0 a 1. */
+    @Volatile
+    var lapProgress = 0f
+        private set
+
+    @Volatile
+    var finished = false
+        private set
+
+    /** Secondi dall'inizio della gara. */
+    @Volatile
+    var elapsed = 0f
+        private set
+
+    /** Quante volte si e sbattuto contro qualcosa. */
+    @Volatile
+    var bumps = 0
         private set
 
     @Volatile
@@ -89,6 +118,9 @@ class RaceRenderer(
     private var tilt = 0f
     private var speed = 26f
     private var scroll = 0f
+
+    /** Secondi di rallentamento dopo una botta. */
+    private var stunned = 0f
 
     /**
      * Strada percorsa da inizio partita. Serve alla scenografia: ogni casa e
@@ -140,6 +172,7 @@ class RaceRenderer(
         drawStripes()
         drawPosts()
         drawScenery()
+        drawGates()
         drawItems()
         drawCar()
     }
@@ -154,7 +187,8 @@ class RaceRenderer(
         }
         val dt = ((now - lastFrame) / 1_000_000_000.0).toFloat().coerceAtMost(0.05f)
         lastFrame = now
-        if (!running || lives <= 0) return
+        if (!running || finished) return
+        elapsed += dt
 
         val wanted = finger
         if (wanted != null) {
@@ -167,9 +201,33 @@ class RaceRenderer(
         val target = (if (wanted != null) 0f else steer) * 0.22f
         tilt += (target - tilt) * (dt * 6f).coerceAtMost(1f)
 
-        speed = (speed + dt * 0.9f).coerceAtMost(58f)
+        // Dopo una botta si rallenta per un attimo e poi si riprende: una
+        // corsa di cinque minuti non si puo perdere al primo asteroide, e
+        // perdere tempo e una punizione che un bambino capisce senza
+        // sentirsi dire che ha sbagliato.
+        if (stunned > 0f) {
+            stunned -= dt
+            speed = (speed + dt * 6f).coerceAtMost(22f)
+        } else {
+            // Ogni giro si va un po' piu forte.
+            val top = 46f + (lap - 1) * 5f
+            speed = (speed + dt * 2.2f).coerceAtMost(top)
+        }
         distance += speed * dt
         scroll = distance % 16f
+
+        val done = (distance / LAP_LENGTH).toInt() + 1
+        lapProgress = (distance % LAP_LENGTH) / LAP_LENGTH
+        if (done > lap) {
+            lap = done
+            if (lap > totalLaps) {
+                lap = totalLaps
+                lapProgress = 1f
+                finished = true
+                return
+            }
+            onLap()
+        }
 
         sinceSpawn += dt
         val every = (26f / speed).coerceIn(0.42f, 1.1f)
@@ -192,11 +250,15 @@ class RaceRenderer(
             when {
                 hit && item.prize -> {
                     score++
+                    // Un premio da anche una spintarella.
+                    speed = (speed + 4f).coerceAtMost(70f)
                     onPrize()
                     gone.add(item)
                 }
                 hit -> {
-                    lives--
+                    bumps++
+                    stunned = 1.4f
+                    speed = 14f
                     onCrash()
                     gone.add(item)
                 }
@@ -269,14 +331,13 @@ class RaceRenderer(
      * velocita non si sente.
      */
     private fun drawScenery() {
+        drawBigPlanet()
         val period = when (track.scenery) {
-            Scenery.CITY -> 18f
-            Scenery.BEACH -> 22f
-            Scenery.MEADOW -> 14f
-            Scenery.SPACE -> 30f
+            Scenery.COLONIA -> 20f
+            Scenery.LUNA -> 16f
+            Scenery.MARTE -> 15f
+            Scenery.ANELLI -> 26f
         }
-        if (track.scenery == Scenery.BEACH) drawSea()
-
         val firstSlot = ((distance - 14f) / period).toInt()
         val lastSlot = ((distance - HORIZON) / period).toInt()
         for (slot in firstSlot..lastSlot) {
@@ -284,90 +345,106 @@ class RaceRenderer(
             for (side in intArrayOf(-1, 1)) {
                 val salt = if (side < 0) 1 else 2
                 when (track.scenery) {
-                    Scenery.CITY -> building(slot, salt, side, z)
-                    Scenery.BEACH -> if (side > 0) palm(slot, salt, side, z) else dune(slot, salt, side, z)
-                    Scenery.MEADOW -> tree(slot, salt, side, z)
-                    Scenery.SPACE -> planet(slot, salt, side, z)
+                    Scenery.COLONIA -> colonia(slot, salt, side, z)
+                    Scenery.LUNA -> luna(slot, salt, side, z)
+                    Scenery.MARTE -> marte(slot, salt, side, z)
+                    Scenery.ANELLI -> asteroide(slot, salt, side, z)
                 }
             }
         }
     }
 
-    private fun building(slot: Int, salt: Int, side: Int, z: Float) {
-        val height = 7f + hash(slot, salt) * 16f
-        val width = 5f + hash(slot, salt + 10) * 4f
-        val depth = 6f + hash(slot, salt + 20) * 5f
-        val away = ROAD_HALF + 2.5f + width / 2f + hash(slot, salt + 30) * 3f
-        val x = away * side
-        val shade = 0.55f + hash(slot, salt + 40) * 0.45f
-        val wall = floatArrayOf(
-            track.accent[0] * shade,
-            track.accent[1] * shade,
-            track.accent[2] * shade,
-            1f,
-        )
-        piece(wall, x, height / 2f, z, width, height, depth)
-        // Marciapiede, cosi le case non spuntano dal prato.
-        piece(track.post, x, 0.12f, z, width + 5f, 0.25f, depth + 4f)
-        // Tre fasce di finestre sulla facciata verso la strada.
-        val face = (away - width / 2f - 0.05f) * side
-        for (level in 1..3) {
-            val y = height * level / 4f
-            piece(track.line, face, y, z, 0.12f, height * 0.09f, depth * 0.66f)
+    /**
+     * Il pianeta grande all'orizzonte. Non scorre con la pista: sta fermo
+     * lontanissimo, come succede davvero, ed e quello che dice al bambino
+     * dove si trova senza bisogno di una scritta.
+     */
+    private fun drawBigPlanet() {
+        piece(track.accent, -46f, 30f, HORIZON - 30f, 70f, 70f, 70f, mesh = sphere)
+        if (track.scenery == Scenery.ANELLI) {
+            piece(track.prize, -46f, 30f, HORIZON - 30f, 128f, 1.2f, 128f, rotZ = 14f, mesh = cylinder)
         }
     }
 
-    private fun palm(slot: Int, salt: Int, side: Int, z: Float) {
-        val away = ROAD_HALF + 2.2f + hash(slot, salt) * 2f
+    /** Colonia: cupole abitate, torri e antenne. */
+    private fun colonia(slot: Int, salt: Int, side: Int, z: Float) {
+        val away = ROAD_HALF + 6f + hash(slot, salt) * 6f
         val x = away * side
-        val height = 4.5f + hash(slot, salt + 10) * 2.5f
-        val lean = (hash(slot, salt + 20) - 0.5f) * 10f
-        piece(track.post, x, height / 2f, z, 0.45f, height, 0.45f, rotZ = lean, mesh = cylinder)
-        // Chioma: quattro foglie larghe attorno alla cima.
-        for (leaf in 0 until 4) {
-            piece(
-                track.accent, x, height, z,
-                3.6f, 0.3f, 1.2f,
-                rotY = leaf * 45f + hash(slot, salt + 30) * 40f,
-                rotZ = 14f,
-            )
+        if (hash(slot, salt + 60) > 0.45f) {
+            // Cupola, con la base illuminata.
+            val size = 6f + hash(slot, salt + 10) * 6f
+            piece(track.accent, x, 0f, z, size, size, size, mesh = sphere)
+            piece(track.line, x, 0.4f, z, size * 0.92f, 0.5f, size * 0.92f, mesh = cylinder)
+        } else {
+            // Torre con tre fasce di oblo e l'antenna in cima.
+            val height = 8f + hash(slot, salt + 10) * 14f
+            val width = 2.6f + hash(slot, salt + 20) * 2f
+            piece(track.accent, x, height / 2f, z, width, height, width)
+            val face = (away - width / 2f - 0.06f) * side
+            for (level in 1..3) {
+                piece(track.line, face, height * level / 4f, z, 0.12f, height * 0.07f, width * 0.6f)
+            }
+            piece(track.post, x, height + 1.6f, z, 0.18f, 3.2f, 0.18f)
+            piece(track.prize, x, height + 3.3f, z, 0.7f, 0.7f, 0.7f, mesh = sphere)
+        }
+        // Piattaforma su cui poggia tutto: nello spazio non c'e un prato.
+        piece(track.road, x, 0.1f, z, 14f, 0.3f, 12f)
+    }
+
+    /** Luna: crateri e massi. */
+    private fun luna(slot: Int, salt: Int, side: Int, z: Float) {
+        val away = ROAD_HALF + 3f + hash(slot, salt) * 10f
+        val x = away * side
+        if (hash(slot, salt + 40) > 0.5f) {
+            val size = 5f + hash(slot, salt + 10) * 9f
+            // Cratere: il bordo chiaro e il fondo scuro.
+            piece(track.line, x, 0.06f, z, size, 0.3f, size, mesh = cylinder)
+            piece(track.accent, x, 0.12f, z, size * 0.72f, 0.3f, size * 0.72f, mesh = cylinder)
+        } else {
+            val size = 1.2f + hash(slot, salt + 10) * 2.6f
+            piece(track.accent, x, size * 0.35f, z, size, size * 0.8f, size, mesh = sphere)
         }
     }
 
-    private fun dune(slot: Int, salt: Int, side: Int, z: Float) {
-        val away = ROAD_HALF + 3f + hash(slot, salt) * 4f
-        val size = 3f + hash(slot, salt + 10) * 4f
-        piece(track.road, away * side, 0.2f, z, size, size * 0.5f, size, mesh = sphere)
-    }
-
-    private fun tree(slot: Int, salt: Int, side: Int, z: Float) {
-        if (hash(slot, salt + 50) < 0.35f) return
-        val away = ROAD_HALF + 2.5f + hash(slot, salt) * 7f
+    /** Marte: guglie di roccia e archi scavati dal vento. */
+    private fun marte(slot: Int, salt: Int, side: Int, z: Float) {
+        val away = ROAD_HALF + 3.5f + hash(slot, salt) * 9f
         val x = away * side
-        val height = 3.5f + hash(slot, salt + 10) * 3f
-        piece(track.obstacle, x, height * 0.3f, z, 0.5f, height * 0.6f, 0.5f, mesh = cylinder)
-        piece(track.accent, x, height * 0.75f, z, height * 0.9f, height * 0.8f, height * 0.9f, mesh = sphere)
-        piece(track.accent, x, height * 1.05f, z, height * 0.6f, height * 0.6f, height * 0.6f, mesh = sphere)
-    }
-
-    private fun planet(slot: Int, salt: Int, side: Int, z: Float) {
-        val away = ROAD_HALF + 8f + hash(slot, salt) * 14f
-        val size = 3f + hash(slot, salt + 10) * 7f
-        val height = 5f + hash(slot, salt + 20) * 14f
-        piece(track.accent, away * side, height, z, size, size, size, mesh = sphere)
-        // Un anello attorno a qualche pianeta: si riconosce al volo.
-        if (hash(slot, salt + 30) > 0.6f) {
-            piece(
-                track.prize, away * side, height, z,
-                size * 1.9f, 0.18f, size * 1.9f,
-                rotZ = 16f, mesh = cylinder,
-            )
+        val height = 4f + hash(slot, salt + 10) * 12f
+        val width = 2.5f + hash(slot, salt + 20) * 4f
+        piece(track.accent, x, height / 2f, z, width, height, width, mesh = pyramid)
+        if (hash(slot, salt + 30) > 0.7f) {
+            // Un masso appoggiato accanto, per rompere la fila di guglie.
+            piece(track.post, x + 3f * side, 1f, z + 3f, 3f, 2f, 3f, mesh = sphere)
         }
     }
 
-    /** Il mare, oltre la sabbia: una lastra azzurra che arriva all'orizzonte. */
-    private fun drawSea() {
-        piece(track.accent, 70f, 0.05f, HORIZON / 2f, 120f, 0.3f, -HORIZON + 60f)
+    /** Anelli: asteroidi che galleggiano a varie altezze. */
+    private fun asteroide(slot: Int, salt: Int, side: Int, z: Float) {
+        val away = ROAD_HALF + 5f + hash(slot, salt) * 16f
+        val size = 1.5f + hash(slot, salt + 10) * 5f
+        val height = 1f + hash(slot, salt + 20) * 16f
+        piece(track.accent, away * side, height, z, size, size * 0.8f, size, mesh = sphere)
+        if (hash(slot, salt + 30) > 0.72f) {
+            piece(track.post, away * side, height + size, z, size * 0.5f, size * 0.5f, size * 0.5f, mesh = sphere)
+        }
+    }
+
+    /**
+     * Il traguardo di ogni giro: due piloni e una traversa che si attraversa.
+     * Senza qualcosa da attraversare, "giro 2 di 5" e solo un numero.
+     */
+    private fun drawGates() {
+        for (number in 1..totalLaps) {
+            val z = distance - number * LAP_LENGTH
+            if (z < HORIZON || z > 12f) continue
+            val colour = if (number == totalLaps) track.prize else track.line
+            piece(colour, -ROAD_HALF - 0.9f, 3f, z, 0.6f, 6f, 0.6f)
+            piece(colour, ROAD_HALF + 0.9f, 3f, z, 0.6f, 6f, 0.6f)
+            piece(colour, 0f, 6.2f, z, ROAD_HALF * 2f + 2.4f, 0.7f, 0.5f)
+            // Striscia a terra, cosi si vede anche guardando la pista.
+            piece(colour, 0f, 0.09f, z, ROAD_HALF * 2f, 0.1f, 1.2f)
+        }
     }
 
     private fun drawItems() {

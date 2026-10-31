@@ -13,6 +13,13 @@ const val SKIN_SPACE = "spaziale"
 /** Lo sfondo e la foto del genitore e non una tinta del tema. */
 const val BACKGROUND_PHOTO = "foto"
 
+/**
+ * Come si apre la schermata del bambino: sulle categorie, da cui si entra, o
+ * direttamente su tutto quello che c'e.
+ */
+const val HOME_CATEGORIES = "categorie"
+const val HOME_ALL = "tutte"
+
 /** Categorie della barra in alto, come sul tablet di un bambino. */
 enum class AppCategory(val id: String) {
     GAMES("giochi"),
