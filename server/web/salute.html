@@ -5,14 +5,39 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex, nofollow">
+<!-- La stessa Content-Security-Policy delle altre pagine, verbatim. Niente
+     rete: nessun font scaricato, nessuna icona remota, nessun framework. Se
+     una grafica avesse bisogno di allargare questa riga, si cambia la
+     grafica. -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; connect-src 'self'; form-action 'none'; base-uri 'none'">
 <title>Servizio - StarKid</title>
 <link rel="icon" href="icona.svg" type="image/svg+xml">
 <link rel="stylesheet" href="app.css">
 </head>
 <body>
+
+<!-- Foglio di icone, incollato inline come prima cosa dentro <body>: non si
+     carica con <use href="icone.svg#...">, perche i riferimenti esterni in
+     <use> non funzionano in Chrome e in Safari (non e la CSP, e un limite dei
+     browser). Qui stanno solo i quattro symbol che questa pagina usa davvero:
+     gli altri dodici sono in icone.svg, da cui si copiano all'occorrenza.
+     Nell'h1 va ico-occhio e NON ico-spunta: la spunta si chiama "Fatto" ed e
+     un verdetto, e questa pagina mostra il suo titolo anche quando sotto ci
+     sono tre avvisi rossi. Un'icona che dice "tutto a posto" sopra una pagina
+     che dice il contrario e peggio di nessuna icona. L'occhio dice cosa si fa
+     qui - si da un'occhiata - e vale in tutti e due i casi. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" aria-hidden="true" focusable="false"><defs>
+  <symbol id="ico-tablet" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Tablet</title><rect x="4" y="2.5" width="16" height="19" rx="2.5"/><path d="M10 18.5h4"/></symbol>
+  <symbol id="ico-ingranaggio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Impostazioni</title><circle cx="12" cy="12" r="6.6"/><circle cx="12" cy="12" r="2.4"/><path d="M12 5.4V2.8M12 21.2v-2.6M18.6 12h2.6M2.8 12h2.6M16.67 7.33l1.84-1.84M5.49 18.51l1.84-1.84M16.67 16.67l1.84 1.84M5.49 5.49l1.84 1.84"/></symbol>
+  <symbol id="ico-avviso" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Attenzione</title><path d="M10.3 4.8a2 2 0 0 1 3.4 0l7.4 12.9a2 2 0 0 1-1.7 3H4.6a2 2 0 0 1-1.7-3l7.4-12.9z"/><path d="M12 9.5v4.5"/><path d="M12 17.6h.01"/></symbol>
+  <symbol id="ico-occhio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Mostra</title><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+</defs></svg>
+
 <a class="salta" href="#principale">Salta al contenuto</a>
 
+<!-- La barra e identica su tutte le pagine, ed e notte in tutti e due i temi:
+     e la sola costante dell'insegna. Qui la voce "Servizio" prende .attiva da
+     sola, perche avvia() in app.js confronta l'href col nome del file. -->
 <header class="barra">
   <a class="marchio" href="tablets.html">Star<span>Kid</span></a>
   <nav>
@@ -26,38 +51,84 @@
 
   <div class="intestazione-pagina">
     <div>
-      <h1>Il servizio</h1>
-      <p class="tenue">Come sta la macchina che tiene le configurazioni.</p>
+      <h1><svg class="icona" aria-hidden="true"><use href="#ico-occhio"/></svg> Come sta il servizio</h1>
+      <p class="tenue">Un controllo rapido, non un pannello da sistemista: se i
+      cinque numeri sono verdi e qui sotto non compare nessun avviso, la
+      macchina che tiene le configurazioni sta facendo il suo lavoro e non c'e
+      niente da fare.</p>
     </div>
-    <button type="button" class="bottone secondario piccolo" id="ricarica">Ricarica</button>
+    <!-- Dentro .riga-bottoni come in tablets.html, anche se qui il bottone e
+         uno solo: le due pagine sorelle devono mettere lo stesso comando
+         nello stesso posto, e senza il contenitore questo finiva allineato
+         in modo diverso. -->
+    <div class="riga-bottoni">
+      <button type="button" class="bottone secondario piccolo" id="ricarica">Ricarica</button>
+    </div>
   </div>
 
+  <!-- Gli avvisi che la pagina costruisce (certificato in scadenza, backup
+       vecchio, servizio muto, limiti di tempo rotti su un tablet) finiscono
+       qui, in cima, prima dei numeri: un avviso che spiega cosa fare vale piu
+       di un numero rosso. Il JS lo svuota e lo rinasconde a ogni ricarica. -->
   <div id="messaggio" class="nascosto" aria-live="polite"></div>
 
+  <!-- I cinque numeri sono una striscia unica e non cinque tessere: i filetti
+       nascono dal gap, quindi si separano da sole a qualunque numero di
+       colonne, e sul telefono diventano una colonna sola. Per questo l'ordine
+       e quello della fretta: prima se il servizio risponde, poi se un tablet
+       e sparito, poi le cose che si guardano una volta al mese.
+       VINCOLO: .valore deve restare figlio diretto di .numero, perche
+       pagina-salute.js scrive ok/attesa/guasto (e il title) sul parentNode di
+       ogni #n-*. Non si reimpacchetta niente qui dentro. -->
   <div class="numeri" id="numeri">
     <div class="numero"><span class="valore" id="n-servizio">...</span><span class="nome">Servizio</span></div>
-    <div class="numero"><span class="valore" id="n-certificato">...</span><span class="nome">Giorni al certificato</span></div>
+    <div class="numero"><span class="valore" id="n-zitti">...</span><span class="nome">Tablet zitti</span></div>
     <div class="numero"><span class="valore" id="n-backup">...</span><span class="nome">Ultimo backup</span></div>
+    <div class="numero"><span class="valore" id="n-certificato">...</span><span class="nome">Giorni al certificato</span></div>
     <div class="numero"><span class="valore" id="n-database">...</span><span class="nome">Database</span></div>
-    <div class="numero"><span class="valore" id="n-zitti">...</span><span class="nome">Tablet che non si fanno sentire</span></div>
   </div>
 
-  <section class="carta">
-    <h2>Tablet che non si fanno sentire</h2>
-    <p class="piccolo tenue">Un tablet si fa vivo da solo. Se tace da piu di un
-    giorno: o e spento, o non ha rete, o StarKid non gira piu.</p>
-    <div id="zitti"><p class="caricamento">Carico...</p></div>
-  </section>
+  <p class="piccolo tenue">Il pallino davanti a un numero dice come leggerlo:
+  verde a posto, ambra da tenere d'occhio, rosso da sistemare. Dove non c'e
+  nessun pallino non c'e nessun giudizio. Un punto di domanda non e un guasto:
+  vuol dire che questo server non espone quel dato.</p>
 
-  <section class="carta">
-    <h2>Dettagli</h2>
-    <div id="dettagli"><p class="caricamento">Carico...</p></div>
-  </section>
+  <div class="griglia">
+
+    <section class="carta">
+      <h2><svg class="icona" aria-hidden="true"><use href="#ico-tablet"/></svg> Tablet che non si fanno sentire</h2>
+      <p class="piccolo tenue">Un tablet si fa vivo da solo, piu volte al
+      giorno. Se tace da piu di un giorno: o e spento, o non ha rete, o StarKid
+      non gira piu. E non e un dettaglio: finche tace, la configurazione
+      che hai salvato resta in attesa e sul tablet vale ancora quella di
+      prima.</p>
+      <div id="zitti" aria-live="polite">
+        <p class="caricamento">Sto guardando quando si sono fatti sentire...</p>
+      </div>
+      <div class="riga-bottoni">
+        <a class="bottone secondario piccolo" href="tablets.html">Apri l'elenco dei tablet</a>
+      </div>
+    </section>
+
+    <section class="carta">
+      <h2><svg class="icona" aria-hidden="true"><use href="#ico-ingranaggio"/></svg> Il servizio, nel dettaglio</h2>
+      <p class="piccolo tenue">Che versione gira e da quando e in piedi. E,
+      quando uno dei numeri qui sopra non arriva, il motivo per cui manca:
+      spesso non e un guasto, e un server piu vecchio dei file di questa
+      pagina.</p>
+      <div id="dettagli">
+        <p class="caricamento">Sto chiedendo al server come sta...</p>
+      </div>
+    </section>
+
+  </div>
 
   <noscript>
     <div class="avviso guasto">
       <h3>Serve JavaScript</h3>
-      <p>I numeri di questa pagina si chiedono al server e si mostrano qui.</p>
+      <p>I numeri di questa pagina si chiedono al server e si mostrano qui:
+      senza JavaScript restano i puntini. Non c'e niente da scaricare da altri
+      siti per farla funzionare: il codice e tutto su questo server.</p>
     </div>
   </noscript>
 

@@ -11,6 +11,31 @@
 <link rel="stylesheet" href="app.css">
 </head>
 <body>
+
+<!-- ===================== foglio di icone, incollato inline ================
+     Lo stesso blocco di icone.svg, parola per parola, come in galleria.html.
+     Il file non si carica da fuori: un <use> che punta a icone.svg non
+     funziona in Chrome e in Safari. Non e la CSP, e un limite dei browser -
+     ed e il motivo per cui il foglio va incollato qui dentro. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" aria-hidden="true" focusable="false"><defs>
+  <symbol id="ico-tablet" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Tablet</title><rect x="4" y="2.5" width="16" height="19" rx="2.5"/><path d="M10 18.5h4"/></symbol>
+  <symbol id="ico-piu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Aggiungi</title><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="ico-matita" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Modifica</title><path d="M4 20l1-4.5L16 4.5a2.12 2.12 0 0 1 3 3L8 18.5 4 20z"/><path d="M14.5 6l3.5 3.5"/></symbol>
+  <symbol id="ico-cestino" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Cancella</title><path d="M4 7h16"/><path d="M9.5 7V4.5h5V7"/><path d="M6 7l1 13h10l1-13"/><path d="M10 11v6M14 11v6"/></symbol>
+  <symbol id="ico-qr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Codice QR</title><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3.5v3.5H14z"/><path d="M21 14v2M21 20.5v.5M14 21h3"/></symbol>
+  <symbol id="ico-uscita" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Esci</title><path d="M9.5 20.5H5.5A1.5 1.5 0 0 1 4 19V5a1.5 1.5 0 0 1 1.5-1.5h4"/><path d="M15.5 8l4 4-4 4"/><path d="M19.5 12H9"/></symbol>
+  <symbol id="ico-avviso" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Attenzione</title><path d="M10.3 4.8a2 2 0 0 1 3.4 0l7.4 12.9a2 2 0 0 1-1.7 3H4.6a2 2 0 0 1-1.7-3l7.4-12.9z"/><path d="M12 9.5v4.5"/><path d="M12 17.6h.01"/></symbol>
+  <symbol id="ico-spunta" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Fatto</title><path d="M4.5 12.5l5 5 10-11"/></symbol>
+  <symbol id="ico-orologio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Orario</title><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5.2l3.6 2.3"/></symbol>
+  <symbol id="ico-luna" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Notte</title><path d="M20 14.6A8.6 8.6 0 0 1 9.4 4 8.6 8.6 0 1 0 20 14.6z"/></symbol>
+  <symbol id="ico-razzo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Spaziale</title><path d="M12 2.6c3 2.6 4.6 6.2 4.6 9.9L15 16.5H9L7.4 12.5C7.4 8.8 9 5.2 12 2.6z"/><circle cx="12" cy="9.6" r="1.7"/><path d="M9 16.5l-2.6 1.6.6 3 2.6-1.8M15 16.5l2.6 1.6-.6 3-2.6-1.8"/></symbol>
+  <symbol id="ico-stella" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Stella</title><path d="M12 4.1l2.4 5.2 5.5.7-4 3.8 1 5.6-4.9-2.7-4.9 2.7 1-5.6-4-3.8 5.5-.7z"/></symbol>
+  <symbol id="ico-ingranaggio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Impostazioni</title><circle cx="12" cy="12" r="6.6"/><circle cx="12" cy="12" r="2.4"/><path d="M12 5.4V2.8M12 21.2v-2.6M18.6 12h2.6M2.8 12h2.6M16.67 7.33l1.84-1.84M5.49 18.51l1.84-1.84M16.67 16.67l1.84 1.84M5.49 5.49l1.84 1.84"/></symbol>
+  <symbol id="ico-occhio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Mostra</title><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="ico-scarica" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Scarica</title><path d="M12 3.5v11"/><path d="M7.5 10.5L12 15l4.5-4.5"/><path d="M4 18.5h16"/></symbol>
+  <symbol id="ico-copia" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Copia</title><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M6 15H5.5A1.5 1.5 0 0 1 4 13.5V5.5A1.5 1.5 0 0 1 5.5 4h8A1.5 1.5 0 0 1 15 5.5V6"/></symbol>
+</defs></svg>
+
 <a class="salta" href="#principale">Salta al contenuto</a>
 
 <header class="barra">
@@ -24,32 +49,71 @@
 
 <main id="principale">
 
+  <!-- Il comando di ritorno, e deve restare esattamente
+       main > p.piccolo > a[href="tablets.html"]: e cosi che app.css lo veste
+       da pillola da 44px. Serve perche su questa pagina nessuna voce di nav
+       si accende - avvia() in app.js confronta l'href col nome del file e
+       nessun link punta a tablet.html - e senza di lui la pagina non avrebbe
+       nessun ancoraggio di navigazione. -->
   <p class="piccolo"><a href="tablets.html">&larr; Tutti i tablet</a></p>
 
   <div class="intestazione-pagina">
     <div>
+      <!-- La riga sopra il titolo dice dove sei, perche #titolo diventa il
+           nome del tablet appena il server risponde e da solo non lo dice. -->
+      <p class="piccolo tenue"><svg class="icona" aria-hidden="true"><use href="#ico-ingranaggio"/></svg> Configurazione del tablet</p>
       <h1 id="titolo">Tablet</h1>
+      <!-- Il JS riscrive questo testo per intero (revisione pubblicata,
+           revisione che sta sul tablet, ultimo contatto): niente figli qui
+           dentro, sparirebbero. -->
       <p class="tenue" id="sottotitolo">Carico la configurazione...</p>
     </div>
   </div>
 
   <div id="messaggio" class="nascosto" aria-live="polite"></div>
+
+  <!-- Contenitore nudo: ci finiscono cartelloLimiti() e listaSpie(), cioe
+       l'allarme dei limiti e le cinque spie. Fuori da una scheda, ul.spie e
+       una carta notturna col filetto d'oro tutt'intorno: e il racconto del
+       tablet, e sta prima del modulo perche prima di cambiare qualcosa si
+       guarda com'e adesso. -->
   <div id="cartello"></div>
+
+  <div class="avviso">
+    <h3>Si pubblica una revisione alla volta</h3>
+    <p>Quello che cambi qui non arriva subito sul tablet. Quando salvi, il
+    server pubblica una revisione nuova: il tablet se la prende al prossimo
+    collegamento e poi dice lui se l'ha applicata o se ha rifiutato qualcosa.
+    La strada e una sola, da qui al tablet, e nessuna revisione si cancella:
+    in fondo alla pagina c'e tutto lo storico.</p>
+  </div>
 
   <form id="modulo" class="nascosto" method="post" novalidate>
 
     <fieldset class="carta">
-      <legend>Come si vede</legend>
+      <legend>Aspetto</legend>
+      <h2><svg class="icona" aria-hidden="true"><use href="#ico-occhio"/></svg> Come si vede il tablet</h2>
+      <p class="piccolo tenue">Sono le prime cose che il bambino incontra
+      quando accende: che tinte ha davanti, che sfondo, come sono messe le app
+      e come sta il tablet in mano.</p>
 
       <div class="campo">
-        <label>Tema</label>
-        <div id="temi"></div>
+        <!-- label senza for, usata come intestazione del gruppo: e lo stesso
+             modo in cui sono etichettati gli sfondi e i giorni. I due
+             provini li costruisce pagina-tablet.js dentro #temi. -->
+        <label id="etichetta-tema">Tema</label>
+        <div id="temi" role="radiogroup" aria-labelledby="etichetta-tema"></div>
+        <span class="aiuto">Cambiare tema cambia anche gli sfondi: ogni tema
+        ha i suoi e non si mescolano.</span>
       </div>
 
       <div class="campo">
         <label id="etichetta-sfondo">Sfondo</label>
-        <div class="sfondi" id="sfondi" role="radiogroup" aria-labelledby="etichetta-sfondo"></div>
-        <span class="aiuto">Solo le tinte del tema scelto. La foto di sfondo si mette sul tablet: la fotografia di un bambino non deve passare da un server.</span>
+        <div class="sfondi" id="sfondi" role="radiogroup" aria-labelledby="etichetta-sfondo"
+             aria-describedby="aiuto-sfondo errore-sfondo"></div>
+        <span class="aiuto" id="aiuto-sfondo">Solo le tinte del tema scelto. La foto di sfondo
+        si mette sul tablet: la fotografia di un bambino non deve passare da
+        un server.</span>
         <div class="errore-campo nascosto" id="errore-sfondo"></div>
       </div>
 
@@ -57,25 +121,43 @@
         <div class="campo">
           <label for="schermata">Schermata</label>
           <select id="schermata"></select>
+          <!-- Il testo lo scrive il JS, uno per ogni schermata. -->
           <span class="aiuto" id="aiuto-schermata"></span>
         </div>
         <div class="campo">
           <label for="orientamento">Orientamento</label>
           <select id="orientamento"></select>
-          <span class="aiuto">Come sta il tablet in mano al bambino.</span>
+          <span class="aiuto">Come sta il tablet in mano al bambino. Con
+          Automatico decide lui girandolo.</span>
         </div>
       </div>
     </fieldset>
 
     <fieldset class="carta">
-      <legend>Quanto e quando</legend>
+      <legend>Tempo</legend>
+      <h2><svg class="icona" aria-hidden="true"><use href="#ico-orologio"/></svg> Quanto puo stare sul tablet</h2>
+      <p class="piccolo tenue">Questi sono i minuti. Le ore in cui il tablet
+      si accende sono il riquadro qui sotto, e le due cose valgono insieme:
+      dentro la fascia, e per i minuti che restano.</p>
 
       <div class="campo">
         <label for="limite">Limite giornaliero (minuti)</label>
-        <input type="number" id="limite" min="0" max="1440" step="5" inputmode="numeric">
+        <input type="number" id="limite" min="0" max="1440" step="5" inputmode="numeric"
+               aria-describedby="aiuto-limite errore-limite_giornaliero">
+        <!-- Il JS riscrive questo testo per intero aggiungendo davanti la
+             durata in parole: il seguito deve restare uguale a quello che
+             scrive aggiornaAiutoLimite(). -->
         <span class="aiuto" id="aiuto-limite">0 significa nessun limite. Il tempo dei giochi di StarKid conta come quello delle altre app.</span>
         <div class="errore-campo nascosto" id="errore-limite_giornaliero"></div>
       </div>
+    </fieldset>
+
+    <fieldset class="carta">
+      <legend>Orario</legend>
+      <h2><svg class="icona" aria-hidden="true"><use href="#ico-luna"/></svg> In quali ore, e in quali giorni</h2>
+      <p class="piccolo tenue">Senza fascia il tablet si accende a qualunque
+      ora, fino a quando i minuti non finiscono. Con la fascia, anche l'ora
+      deve essere quella giusta.</p>
 
       <label class="interruttore" for="fascia-attiva">
         <input type="checkbox" id="fascia-attiva">
@@ -84,36 +166,58 @@
         </span>
       </label>
 
+      <!-- Il JS mette e toglie .nascosto da questo div quando si tocca
+           l'interruttore qui sopra. -->
       <div id="fascia-dettagli">
         <div class="due-colonne">
           <div class="campo">
             <label for="fascia-inizio">Dalle</label>
-            <input type="time" id="fascia-inizio" step="300">
+            <input type="time" id="fascia-inizio" step="300"
+                   aria-describedby="errore-fascia.inizio">
             <div class="errore-campo nascosto" id="errore-fascia.inizio"></div>
           </div>
           <div class="campo">
             <label for="fascia-fine">Alle</label>
-            <input type="time" id="fascia-fine" step="300">
+            <input type="time" id="fascia-fine" step="300"
+                   aria-describedby="aiuto-fascia-fine errore-fascia.fine">
+            <span class="aiuto" id="aiuto-fascia-fine">La fine deve venire dopo l'inizio: per adesso
+            da qui la fascia non puo passare la mezzanotte.</span>
             <div class="errore-campo nascosto" id="errore-fascia.fine"></div>
           </div>
         </div>
         <div class="campo">
           <label id="etichetta-giorni">Giorni</label>
-          <div class="giorni" id="giorni" role="group" aria-labelledby="etichetta-giorni"></div>
+          <div class="giorni" id="giorni" role="group" aria-labelledby="etichetta-giorni"
+               aria-describedby="aiuto-giorni errore-fascia.giorni"></div>
+          <span class="aiuto" id="aiuto-giorni">Almeno uno: sono i giorni in cui la fascia
+          vale.</span>
           <div class="errore-campo nascosto" id="errore-fascia.giorni"></div>
         </div>
       </div>
+
+      <!-- Sta fuori da #fascia-dettagli, e di proposito: i due .errore-campo
+           della fascia stanno dentro, quindi a fascia spenta non si vedono,
+           ma il controllo guarda l'orario e i giorni comunque. Questa riga e
+           l'unico modo di dirlo senza toccare il JavaScript. -->
+      <p class="piccolo tenue">Orario e giorni restano scritti anche a fascia
+      spenta, e vengono controllati comunque. Se un salvataggio si ferma sulla
+      fascia, riaccendila: il campo segnato in rosso e qui dentro.</p>
     </fieldset>
 
     <fieldset class="carta">
       <legend>Kiosk</legend>
+      <h2><svg class="icona" aria-hidden="true"><use href="#ico-tablet"/></svg> Il tablet chiuso su StarKid</h2>
+      <p class="piccolo tenue">Col kiosk il tablet diventa StarKid e
+      nient'altro. Senza kiosk i limiti di tempo funzionano comunque, ma il
+      bambino puo uscire dal launcher.</p>
 
       <div class="avviso" id="nota-kiosk">
         <h3>Il kiosk non e simmetrico</h3>
         <p>Spegnerlo e immediato: il tablet lo spegne appena riceve la
         configurazione. Accenderlo e una <strong>richiesta</strong>: il tablet
         lo accende solo se StarKid e Device Owner, altrimenti risponde che
-        l'ha rifiutato e lo vedi scritto qui sopra.</p>
+        l'ha rifiutato. Se fra le spie del tablet Device Owner risulta spento,
+        succedera esattamente questo.</p>
       </div>
 
       <label class="interruttore" for="kiosk">
@@ -126,16 +230,27 @@
       <label class="interruttore" for="kiosk_recenti">
         <input type="checkbox" id="kiosk_recenti">
         <span>Lascia il tasto delle app recenti
-          <span class="aiuto">Vale solo col kiosk accesso: serve ai bambini piu grandi che passano fra due app permesse.</span>
+          <span class="aiuto">Vale solo col kiosk acceso: serve ai bambini piu grandi che passano fra due app permesse.</span>
         </span>
       </label>
     </fieldset>
 
     <fieldset class="carta">
-      <legend>Giochi di StarKid</legend>
-      <p class="piccolo tenue">Togli la spunta per spegnere un gioco. Spenti non compaiono nella griglia del bambino.</p>
-      <div class="lista-caselle" id="giochi"></div>
-      <div class="errore-campo nascosto" id="errore-giochi_spenti"></div>
+      <legend>Giochi</legend>
+      <h2 id="etichetta-giochi"><svg class="icona" aria-hidden="true"><use href="#ico-stella"/></svg> I giochi di StarKid</h2>
+      <p class="piccolo tenue">Sono gli undici giochi che StarKid ha dentro di
+      se. Togli la spunta per spegnerne uno: spento non compare nella griglia
+      del bambino.</p>
+
+      <!-- Il .campo tiene #errore-giochi_spenti e le caselle dentro lo stesso
+           genitore: pagina-tablet.js parte dal .errore-campo e cerca il primo
+           controllo nel parentNode per segnarlo. Senza il .campo arriverebbe
+           a #suoni, che non c'entra. -->
+      <div class="campo">
+        <div class="lista-caselle" id="giochi" role="group" aria-labelledby="etichetta-giochi"
+             aria-describedby="errore-giochi_spenti"></div>
+        <div class="errore-campo nascosto" id="errore-giochi_spenti"></div>
+      </div>
 
       <label class="interruttore" for="suoni">
         <input type="checkbox" id="suoni">
@@ -147,16 +262,32 @@
 
     <fieldset class="carta">
       <legend>App permesse</legend>
+      <h2><svg class="icona" aria-hidden="true"><use href="#ico-spunta"/></svg> Le altre app che puo aprire</h2>
+      <p class="piccolo tenue">Oltre ai giochi di StarKid, solo queste. Tutto
+      il resto resta chiuso anche se e installato sul tablet.</p>
+
       <div class="campo">
         <label for="app">Nomi dei pacchetti, uno per riga</label>
         <textarea id="app" spellcheck="false" autocapitalize="none"
-                  placeholder="com.esempio.gioco&#10;org.esempio.disegno"></textarea>
-        <span class="aiuto">Il nome del pacchetto si legge sul tablet, in Area genitori &gt; App permesse. Se qui l'elenco e vuoto, al bambino restano i giochi di StarKid.</span>
+                  placeholder="com.esempio.gioco&#10;org.esempio.disegno"
+                  aria-describedby="aiuto-app errore-app_permesse"></textarea>
+        <span class="aiuto" id="aiuto-app">Il nome del pacchetto si legge sul tablet, in Area
+        genitori &gt; App permesse, e si scrive per intero, con i punti. Se
+        qui l'elenco e vuoto, al bambino restano i giochi di StarKid.</span>
         <div class="errore-campo nascosto" id="errore-app_permesse"></div>
       </div>
     </fieldset>
 
-    <div class="carta riga-bottoni">
+    <!-- Carta e riga insieme, come prima: in app.css .riga-bottoni viene
+         dopo .carta e vince su display, quindi questa resta una carta che
+         dispone i bottoni in fila.
+         Nessuno dei tre bottoni porta un'icona, e non e una scelta di questa
+         riga: e la regola di tutta la UI (vedi "LA REGOLA DELLE ICONE NEI
+         BOTTONI" in app.css, paragrafo 8). Su #salva sarebbe anche una mina,
+         perche SK.occupato() rimette il testo con textContent mentre pubblica
+         e un figlio <svg> verrebbe cancellato per sempre al primo
+         salvataggio. -->
+    <div class="carta riga-bottoni barra-salva">
       <button type="submit" class="bottone" id="salva">Salva: pubblica una nuova revisione</button>
       <button type="button" class="bottone secondario" id="scarica">Scarica configurazione (JSON)</button>
       <button type="button" class="bottone fantasma" id="annulla">Annulla le modifiche</button>
@@ -164,8 +295,11 @@
   </form>
 
   <section class="carta" id="sezione-storico">
-    <h2>Storico</h2>
-    <p class="piccolo tenue">Le ultime dieci revisioni. "Torna a questa" ne pubblica una nuova con lo stesso contenuto: la storia non si cancella.</p>
+    <h2><svg class="icona" aria-hidden="true"><use href="#ico-matita"/></svg> Storico delle revisioni</h2>
+    <p class="piccolo tenue">Le ultime dieci. "Torna a questa" non cancella
+    niente: pubblica una revisione nuova con lo stesso contenuto di quella, e
+    il tablet se la prende al prossimo collegamento. La storia non si
+    riscrive.</p>
     <div id="storico"><p class="caricamento">Carico lo storico...</p></div>
   </section>
 
@@ -173,7 +307,7 @@
     <div class="avviso guasto">
       <h3>Serve JavaScript</h3>
       <p>La configurazione si legge e si scrive dal browser. Attiva
-      JavaScript per questo indirizzo.</p>
+      JavaScript per questo indirizzo. Niente viene caricato da altri siti.</p>
     </div>
   </noscript>
 

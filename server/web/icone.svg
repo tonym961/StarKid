@@ -1,0 +1,137 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" aria-hidden="true" focusable="false">
+<!--
+  StarKid - foglio di icone della web UI del genitore.
+  ===========================================================================
+
+  COME SI USA, e non c'e un altro modo.
+  Questo file NON si carica con <use href="icone.svg#ico-stella">: i
+  riferimenti esterni in <use> non funzionano in Chrome e in Safari, e la
+  Content-Security-Policy delle pagine (default-src 'none') non c'entra
+  niente, e un limite dei browser. Quindi il contenuto di questo <svg> si
+  INCOLLA inline nella pagina, una volta sola, come prima cosa dentro <body>,
+  e poi si richiama:
+
+      <svg class="icona" aria-hidden="true"><use href="#ico-stella"/></svg>
+
+  Per un'icona che porta significato da sola (un bottone con la sola icona)
+  si toglie aria-hidden e si mette un aria-label sul bottone: il <title>
+  dentro ogni symbol serve ai lettori di schermo che seguono il <use>, ma non
+  sostituisce l'etichetta del comando.
+
+  DISEGNO. Tutte su griglia 24x24, tratto da 2px, estremi e angoli tondi,
+  nessun riempimento: sono disegnate a mano per questo progetto, non prese da
+  una libreria. Il colore NON sta qui dentro: arriva da currentColor, quindi
+  un'icona dentro .barra diventa notturna da sola e un'icona dentro
+  .bottone.pericolo diventa rossa da sola. Le misure e il tratto li fissa la
+  classe .icona in app.css; le stesse proprieta sono ripetute qui come
+  attributi di presentazione, cosi il disegno si vede anche senza quella
+  classe (gli attributi di presentazione perdono contro il CSS, quindi .icona
+  continua a vincere).
+
+  Le due stelle del sistema grafico (quella piena della testata e quella
+  vuota del medaglione) NON stanno qui: sono maschere data URI dentro
+  app.css, perche devono funzionare come ::before di elementi che il
+  JavaScript non tocca. ico-stella e la stessa forma, per quando serve
+  un'icona in mezzo al testo; con .icona.piena si riempie.
+-->
+<defs>
+
+  <symbol id="ico-tablet" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <title>Tablet</title>
+    <rect x="4" y="2.5" width="16" height="19" rx="2.5"/>
+    <path d="M10 18.5h4"/>
+  </symbol>
+
+  <symbol id="ico-piu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <title>Aggiungi</title>
+    <path d="M12 5v14M5 12h14"/>
+  </symbol>
+
+  <symbol id="ico-matita" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <title>Modifica</title>
+    <path d="M4 20l1-4.5L16 4.5a2.12 2.12 0 0 1 3 3L8 18.5 4 20z"/>
+    <path d="M14.5 6l3.5 3.5"/>
+  </symbol>
+
+  <symbol id="ico-cestino" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <title>Cancella</title>
+    <path d="M4 7h16"/>
+    <path d="M9.5 7V4.5h5V7"/>
+    <path d="M6 7l1 13h10l1-13"/>
+    <path d="M10 11v6M14 11v6"/>
+  </symbol>
+
+  <symbol id="ico-qr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <title>Codice QR</title>
+    <rect x="3" y="3" width="7" height="7" rx="1"/>
+    <rect x="14" y="3" width="7" height="7" rx="1"/>
+    <rect x="3" y="14" width="7" height="7" rx="1"/>
+    <path d="M14 14h3.5v3.5H14z"/>
+    <path d="M21 14v2M21 20.5v.5M14 21h3"/>
+  </symbol>
+
+  <symbol id="ico-uscita" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <title>Esci</title>
+    <path d="M9.5 20.5H5.5A1.5 1.5 0 0 1 4 19V5a1.5 1.5 0 0 1 1.5-1.5h4"/>
+    <path d="M15.5 8l4 4-4 4"/>
+    <path d="M19.5 12H9"/>
+  </symbol>
+
+  <symbol id="ico-avviso" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <title>Attenzione</title>
+    <path d="M10.3 4.8a2 2 0 0 1 3.4 0l7.4 12.9a2 2 0 0 1-1.7 3H4.6a2 2 0 0 1-1.7-3l7.4-12.9z"/>
+    <path d="M12 9.5v4.5"/>
+    <path d="M12 17.6h.01"/>
+  </symbol>
+
+  <symbol id="ico-spunta" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <title>Fatto</title>
+    <path d="M4.5 12.5l5 5 10-11"/>
+  </symbol>
+
+  <symbol id="ico-orologio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <title>Orario</title>
+    <circle cx="12" cy="12" r="8.5"/>
+    <path d="M12 7v5.2l3.6 2.3"/>
+  </symbol>
+
+  <symbol id="ico-luna" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <title>Notte</title>
+    <path d="M20 14.6A8.6 8.6 0 0 1 9.4 4 8.6 8.6 0 1 0 20 14.6z"/>
+  </symbol>
+
+  <symbol id="ico-razzo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <title>Spaziale</title>
+    <path d="M12 2.6c3 2.6 4.6 6.2 4.6 9.9L15 16.5H9L7.4 12.5C7.4 8.8 9 5.2 12 2.6z"/>
+    <circle cx="12" cy="9.6" r="1.7"/>
+    <path d="M9 16.5l-2.6 1.6.6 3 2.6-1.8M15 16.5l2.6 1.6-.6 3-2.6-1.8"/>
+  </symbol>
+
+  <symbol id="ico-stella" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <title>Stella</title>
+    <path d="M12 4.1l2.4 5.2 5.5.7-4 3.8 1 5.6-4.9-2.7-4.9 2.7 1-5.6-4-3.8 5.5-.7z"/>
+  </symbol>
+
+  <symbol id="ico-ingranaggio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Impostazioni</title><circle cx="12" cy="12" r="6.6"/><circle cx="12" cy="12" r="2.4"/><path d="M12 5.4V2.8M12 21.2v-2.6M18.6 12h2.6M2.8 12h2.6M16.67 7.33l1.84-1.84M5.49 18.51l1.84-1.84M16.67 16.67l1.84 1.84M5.49 5.49l1.84 1.84"/></symbol>
+
+  <symbol id="ico-occhio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <title>Mostra</title>
+    <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/>
+    <circle cx="12" cy="12" r="3"/>
+  </symbol>
+
+  <symbol id="ico-scarica" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <title>Scarica</title>
+    <path d="M12 3.5v11"/>
+    <path d="M7.5 10.5L12 15l4.5-4.5"/>
+    <path d="M4 18.5h16"/>
+  </symbol>
+
+  <symbol id="ico-copia" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <title>Copia</title>
+    <rect x="9" y="9" width="11" height="11" rx="2"/>
+    <path d="M6 15H5.5A1.5 1.5 0 0 1 4 13.5V5.5A1.5 1.5 0 0 1 5.5 4h8A1.5 1.5 0 0 1 15 5.5V6"/>
+  </symbol>
+
+</defs>
+</svg>

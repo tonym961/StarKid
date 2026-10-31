@@ -7,13 +7,43 @@
 <meta name="robots" content="noindex, nofollow">
 <!-- Tutto da questo server e niente altro: nessuno script, nessun carattere
      tipografico e nessuna immagine da fuori. default-src 'none' spegne anche
-     le connessioni che qualcuno riuscisse a far fare alla pagina. -->
+     le connessioni che qualcuno riuscisse a far fare alla pagina, e
+     form-action 'none' impedisce che il modulo qui sotto parta da solo verso
+     un altro indirizzo se il JavaScript non arriva in tempo. -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; connect-src 'self'; form-action 'none'; base-uri 'none'">
 <title>Accesso - StarKid</title>
+<!-- La barra del telefono prende lo stesso fondo della pagina: in chiaro la
+     carta, in scuro il cielo. Sono gli stessi valori di --sfondo in app.css. -->
+<meta name="theme-color" content="#F3F0F9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#070B1E" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="icona.svg" type="image/svg+xml">
 <link rel="stylesheet" href="app.css">
 </head>
 <body>
+
+<!-- ===================== foglio di icone, incollato inline ==================
+     Copiato da icone.svg, che va INCOLLATO e non caricato: <use
+     href="icone.svg#..."> non funziona in Chrome e in Safari, e non e la CSP,
+     e un limite dei browser. Qui stanno solo i cinque simboli che questa
+     pagina usa davvero, verbatim: l'accesso e la pagina piu leggera di tutte
+     e non ha motivo di portarsi dietro le altre undici. Il colore non e nel
+     disegno, arriva da currentColor: la stessa icona e tenue sulla notte e
+     rossa dentro un avviso guasto, da sola. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" aria-hidden="true" focusable="false"><defs>
+  <symbol id="ico-tablet" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Tablet</title><rect x="4" y="2.5" width="16" height="19" rx="2.5"/><path d="M10 18.5h4"/></symbol>
+  <symbol id="ico-orologio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Orario</title><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5.2l3.6 2.3"/></symbol>
+  <symbol id="ico-qr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Codice QR</title><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3.5v3.5H14z"/><path d="M21 14v2M21 20.5v.5M14 21h3"/></symbol>
+  <symbol id="ico-ingranaggio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Impostazioni</title><circle cx="12" cy="12" r="6.6"/><circle cx="12" cy="12" r="2.4"/><path d="M12 5.4V2.8M12 21.2v-2.6M18.6 12h2.6M2.8 12h2.6M16.67 7.33l1.84-1.84M5.49 18.51l1.84-1.84M16.67 16.67l1.84 1.84M5.49 5.49l1.84 1.84"/></symbol>
+  <symbol id="ico-avviso" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Attenzione</title><path d="M10.3 4.8a2 2 0 0 1 3.4 0l7.4 12.9a2 2 0 0 1-1.7 3H4.6a2 2 0 0 1-1.7-3l7.4-12.9z"/><path d="M12 9.5v4.5"/><path d="M12 17.6h.01"/></symbol>
+</defs></svg>
+
+<!-- =========================== pannello di accesso =========================
+     main.stretta E il pannello: app.css lo riconosce da qui e gli mette la
+     notte, le stelle, il raggio da 24px e la stella d'oro sopra il titolo -
+     cioe il rettangolo del logo. I token notturni stanno sui FIGLI DIRETTI e
+     non su main.stretta, perche dentro c'e form.carta, che e carta bianca:
+     per questo tutto il testo che sta sulla notte e in un <h1>, in un <p> o
+     in un .avviso, e tutto il resto sta dentro il modulo. -->
 <main id="principale" class="stretta">
 
   <h1>Star<span class="tenue">Kid</span></h1>
@@ -22,17 +52,27 @@
   <div id="messaggio" class="nascosto" aria-live="polite"></div>
 
   <form class="carta" id="modulo-accesso" method="post" novalidate>
+    <h2>Entra come genitore</h2>
+    <p class="piccolo tenue">Nome utente e password restano fra te e questo
+    server: la pagina non parla con nessun altro indirizzo, e la sessione dura
+    poco di proposito.</p>
+
     <div class="campo">
       <label for="utente">Nome utente</label>
       <input type="text" id="utente" name="utente" autocomplete="username"
-             autocapitalize="none" spellcheck="false" required>
-      <span class="aiuto">Il nome utente, non l'indirizzo email.</span>
+             autocapitalize="none" spellcheck="false" required
+             aria-describedby="aiuto-utente errore-utente">
+      <span class="aiuto" id="aiuto-utente">Il nome utente, non l'indirizzo email.</span>
       <div class="errore-campo nascosto" id="errore-utente"></div>
     </div>
 
     <div class="campo">
       <label for="password">Password</label>
-      <input type="password" id="password" name="password" autocomplete="current-password" required>
+      <input type="password" id="password" name="password" autocomplete="current-password" required
+             aria-describedby="aiuto-password errore-password">
+      <span class="aiuto" id="aiuto-password">Dopo qualche tentativo sbagliato il server fa
+      aspettare sempre un po' di piu: non e un guasto, e cosi che tiene fuori
+      chi prova le password a macchina.</span>
       <div class="errore-campo nascosto" id="errore-password"></div>
     </div>
 
@@ -40,15 +80,35 @@
   </form>
 
   <p class="piccolo tenue">
-    C'e un solo account e si crea sul server da riga di comando: qui non ci si
-    puo iscrivere, e non c'e nessun recupero password da questa pagina.
-    Se l'hai perduta, serve una sessione SSH sul server.
+    <svg class="icona" aria-hidden="true"><use href="#ico-tablet"/></svg>
+    <strong>I tablet di casa.</strong> Uno per bambino, con il suo nome, il suo
+    tema e i giochi che gli hai lasciato.
+  </p>
+
+  <p class="piccolo tenue">
+    <svg class="icona" aria-hidden="true"><use href="#ico-orologio"/></svg>
+    <strong>Orari e limiti.</strong> La fascia in cui il tablet si accende e i
+    minuti al giorno; li rispetta anche quando resta senza rete.
+  </p>
+
+  <p class="piccolo tenue">
+    <svg class="icona" aria-hidden="true"><use href="#ico-qr"/></svg>
+    <strong>Un tablet nuovo.</strong> Si arruola inquadrando un codice QR, una
+    volta sola, e da quel momento lo configuri da qui anche se sei fuori.
+  </p>
+
+  <p class="piccolo tenue">
+    <svg class="icona" aria-hidden="true"><use href="#ico-ingranaggio"/></svg>
+    <strong>Un solo account.</strong> Si crea sul server da riga di comando:
+    qui non ci si iscrive e la password non si cambia. Se l'hai perduta serve
+    una sessione SSH - ed e la stessa ragione per cui da questa pagina non ci
+    entra nessun altro.
   </p>
 
   <noscript>
-    <div class="avviso guasto">
+    <div class="avviso guasto" role="alert">
       <h3>Serve JavaScript</h3>
-      <p>Questa pagina lavora nel browser - e il motivo per cui il nome del
+      <p>Questa pagina lavora nel browser - ed e il motivo per cui il nome del
       bambino e la password del Wi-Fi non arrivano al server. Attiva
       JavaScript per questo indirizzo: niente viene caricato da altri siti.</p>
     </div>

@@ -1,4 +1,38 @@
 <!doctype html>
+<!--
+  tablets.html - l'elenco dei tablet.
+  ===========================================================================
+  E la pagina che il genitore apre piu spesso, e il piu delle volte solo per
+  guardare. Per questo l'ordine e questo e non un altro: prima l'allarme, poi
+  le schede, e l'aiuto in fondo e chiuso - chi apre la pagina venti volte non
+  deve scavalcarlo venti volte.
+
+  Le schede NON stanno qui dentro: le disegna pagina-tablets.js dentro
+  #elenco. Qui ci sono l'impalcatura e i punti dove il JavaScript scrive.
+
+  QUELLO CHE IL JAVASCRIPT CERCA IN QUESTA PAGINA, e che quindi non si puo
+  rinominare ne togliere:
+    app.js (avvia)     #esci; e '.barra nav a', di cui confronta l'href col
+                       nome del file aperto per accendere .attiva - percio il
+                       collegamento "Tablet" deve restare href="tablets.html"
+                       esatto, senza cartelle davanti e senza query.
+    pagina-tablets.js  #ricarica (gli attacca il click), #sottotitolo (ci
+                       scrive "3 tablet."), #messaggio (gli errori),
+                       #riepilogo (il cartello rosso di tutta la pagina),
+                       #elenco (lo svuota e ci mette la .griglia di schede).
+
+  #messaggio, #riepilogo e #elenco restano contenitori NUDI, senza classi di
+  aspetto: lo stile ce l'hanno gli avvisi e le schede che il JS mette dentro,
+  e se lo mettessimo anche qui si sommerebbe due volte.
+
+  La Content-Security-Policy e quella delle altre quattro pagine, verbatim.
+  Dentro non c'e un solo attributo di stile in linea, nessun foglio scritto
+  dentro la pagina, nessun riferimento a un altro sito e nessun carattere da
+  scaricare: la CSP li bloccherebbe tutti e la pagina si presenterebbe rotta.
+  Tutto l'aspetto sta in app.css, le icone sono qui sotto, e si apre identica
+  anche senza rete.
+  ===========================================================================
+-->
 <html lang="it">
 <head>
 <meta charset="utf-8">
@@ -6,11 +40,24 @@
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex, nofollow">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; connect-src 'self'; form-action 'none'; base-uri 'none'">
-<title>Tablet - StarKid</title>
+<title>I tuoi tablet - StarKid</title>
 <link rel="icon" href="icona.svg" type="image/svg+xml">
 <link rel="stylesheet" href="app.css">
 </head>
 <body>
+
+<!-- Foglio di icone, incollato inline come prima cosa dentro <body>: non si
+     carica con <use href="icone.svg#...">, perche i riferimenti esterni in
+     <use> non funzionano in Chrome e in Safari (non e la CSP, e un limite dei
+     browser). Qui stanno solo i due symbol che questa pagina usa davvero: gli
+     altri quattordici restano in icone.svg, da cui si copiano se servono.
+     Il colore non sta nel disegno, arriva da currentColor: la stessa icona
+     viene rossa dentro un avviso guasto e viola dentro un bottone. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" aria-hidden="true" focusable="false"><defs>
+  <symbol id="ico-tablet" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Tablet</title><rect x="4" y="2.5" width="16" height="19" rx="2.5"/><path d="M10 18.5h4"/></symbol>
+  <symbol id="ico-avviso" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Attenzione</title><path d="M10.3 4.8a2 2 0 0 1 3.4 0l7.4 12.9a2 2 0 0 1-1.7 3H4.6a2 2 0 0 1-1.7-3l7.4-12.9z"/><path d="M12 9.5v4.5"/><path d="M12 17.6h.01"/></symbol>
+</defs></svg>
+
 <a class="salta" href="#principale">Salta al contenuto</a>
 
 <header class="barra">
@@ -26,8 +73,11 @@
 
   <div class="intestazione-pagina">
     <div>
-      <h1>I tuoi tablet</h1>
-      <p class="tenue" id="sottotitolo">Carico...</p>
+      <h1><svg class="icona" aria-hidden="true"><use href="#ico-tablet"/></svg> I tuoi tablet</h1>
+      <!-- #sottotitolo: qui ci scrive pagina-tablets.js ("3 tablet.",
+           "Nessun tablet, per ora.", "Elenco non disponibile."). Il testo di
+           partenza dura il tempo di una chiamata, ma deve essere vero. -->
+      <p class="tenue" id="sottotitolo">Sto contando...</p>
     </div>
     <div class="riga-bottoni">
       <button type="button" class="bottone secondario piccolo" id="ricarica">Ricarica</button>
@@ -35,20 +85,76 @@
     </div>
   </div>
 
+  <!-- Gli errori della pagina: ci scrive SK.mostraErrore, e nasce nascosto. -->
   <div id="messaggio" class="nascosto" aria-live="polite"></div>
+
+  <!-- Il cartello di tutta la pagina. Se su un tablet i limiti di tempo non
+       stanno funzionando, qui arriva un .avviso.guasto con role="alert" e
+       l'elenco dei tablet che riguarda. Sta in cima, sopra le schede, perche
+       e la ragione per cui vale la pena aprire questo sito: non e un
+       avvisino giallo in un angolo, ed e la prima cosa che si legge. -->
   <div id="riepilogo"></div>
+
+  <!-- Sopra l'elenco e non in fondo alla pagina: senza JavaScript l'unica
+       cosa che si vedrebbe e la riga "sto chiedendo al server", che
+       resterebbe li per sempre a dire una cosa falsa. -->
+  <noscript>
+    <div class="avviso guasto">
+      <h3>Serve JavaScript</h3>
+      <p>Questa pagina non e un foglio stampato: chiede l'elenco al server e
+      lo disegna qui mentre la guardi. Senza JavaScript resta vuota. Niente
+      arriva da altri siti - tutto quello che serve e su questo server.</p>
+    </div>
+  </noscript>
 
   <div id="elenco" aria-live="polite">
     <p class="caricamento">Sto chiedendo al server l'elenco dei tablet...</p>
   </div>
 
-  <noscript>
-    <div class="avviso guasto">
-      <h3>Serve JavaScript</h3>
-      <p>Questa pagina chiede i dati al server e li mostra qui: senza
-      JavaScript resta vuota. Niente viene caricato da altri siti.</p>
-    </div>
-  </noscript>
+  <!-- L'aiuto sta in fondo e chiuso. Non e burocrazia: sulle schede ci sono
+       due superfici diverse e una stella che cambia forma, e chi non sa
+       perche se lo chiede una volta sola. .no-stampa perche su carta conta
+       l'elenco, non le istruzioni. -->
+  <div class="carta no-stampa">
+    <details>
+      <summary>Come si legge una scheda</summary>
+
+      <p><strong>Sulla carta bianca</strong> c'e quello che il server sa per
+      certo: il nome che gli hai dato, la revisione della configurazione che
+      hai pubblicato tu e quella che il tablet ha davvero applicato.</p>
+
+      <p><strong>Nella fascia stellata in fondo</strong> ci sono le cinque
+      spie, e quelle il server non le puo verificare: le dice il tablet di se
+      stesso, ed e per questo che sopra c'e scritto quando le ha dette. Una
+      stella piena e una spia accesa; un cerchio vuoto e una spia spenta; un
+      cerchio tratteggiato vuol dire che il tablet non l'ha mai detta.</p>
+
+      <p><strong>Quattro di quelle spie tengono in piedi i limiti di
+      tempo.</strong> La quinta, staccata da una riga, e il device owner:
+      senza di lei il kiosk non si accende e StarKid si puo disinstallare dal
+      tablet, ma i limiti di tempo continuano a funzionare. Sono due guasti
+      diversi e si leggono in modo diverso.</p>
+
+      <p><strong>La stella in alto a destra</strong> riassume la scheda, per
+      quando i tablet sono tanti: piena e dorata se non c'e niente in
+      sospeso, vuota e color ambra se qualcosa sta aspettando, vuota e rossa
+      se qualcosa non funziona. Il colore non parla mai da solo - la stessa
+      cosa e sempre scritta anche in parole, nell'etichetta sotto il nome e
+      nelle spie.</p>
+
+      <p><strong>Il cartello rosso</strong> compare in cima alla pagina e di
+      nuovo sulla scheda che riguarda: e lo stesso avviso, ripetuto dove
+      serve. I tablet con un problema stanno sempre per primi nell'elenco,
+      prima di quelli a posto.</p>
+
+      <p class="piccolo tenue">L'elenco e la fotografia del momento in cui
+      hai aperto la pagina: non si aggiorna da solo, e un tablet spento o
+      senza rete resta quello di prima finche non si fa vivo. Tocca Ricarica
+      per richiederlo al server. Se invece il sospetto e sul server - backup,
+      certificato, spazio sul disco - risponde la pagina
+      <a href="salute.html">Servizio</a>.</p>
+    </details>
+  </div>
 
 </main>
 <script src="app.js"></script>

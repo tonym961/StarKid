@@ -1,0 +1,953 @@
+<!doctype html>
+<!--
+  ===========================================================================
+  QUESTA PAGINA NON E DEL PRODOTTO.
+  ===========================================================================
+  galleria.html non e una delle cinque pagine di StarKid: non chiede niente al
+  server, non carica app.js, non ha sessione e non va collegata da nessuna
+  voce di nav. Serve a due persone:
+    - chi rifa le cinque pagine, per copiare la struttura giusta di ogni
+      pezzo invece di inventarsela;
+    - chi rivede il lavoro, per vedere tutti gli stati insieme senza dover
+      rompere un tablet per far comparire un allarme.
+  Il contenuto e finto: nomi, date, revisioni e QR sono inventati.
+  Si puo cancellare, o lasciare fuori dal deploy, senza che il prodotto se ne
+  accorga. Insieme a lei si possono cancellare le tre classi dell'appendice
+  in fondo ad app.css (.lastra, .nome-classe, .coppia-temi), che esistono
+  solo per questa pagina.
+
+  Due cose che a guardare il codice sembrano sbagli e non lo sono:
+    1. Ci sono DUE elementi <main>. Il pannello di accesso si vede solo se e
+       davvero un "main.stretta", perche e cosi che app.css lo riconosce, e
+       main.stretta non si puo annidare dentro un altro main. Su una pagina
+       del prodotto non si farebbe; qui si accetta.
+    2. Il foglio di icone e incollato qui dentro invece di essere letto da
+       icone.svg: <use href="icone.svg#..."> non funziona in Chrome e in
+       Safari. Vedi il commento in cima a icone.svg.
+  ===========================================================================
+-->
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex, nofollow">
+<!-- La stessa CSP delle cinque pagine, verbatim: se un pezzo di grafica
+     funziona qui, funziona anche la. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; connect-src 'self'; form-action 'none'; base-uri 'none'">
+<title>Galleria dei pezzi - StarKid</title>
+<link rel="icon" href="icona.svg" type="image/svg+xml">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<!-- ===================== foglio di icone, incollato inline ================ -->
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" aria-hidden="true" focusable="false"><defs>
+  <symbol id="ico-tablet" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Tablet</title><rect x="4" y="2.5" width="16" height="19" rx="2.5"/><path d="M10 18.5h4"/></symbol>
+  <symbol id="ico-piu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Aggiungi</title><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="ico-matita" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Modifica</title><path d="M4 20l1-4.5L16 4.5a2.12 2.12 0 0 1 3 3L8 18.5 4 20z"/><path d="M14.5 6l3.5 3.5"/></symbol>
+  <symbol id="ico-cestino" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Cancella</title><path d="M4 7h16"/><path d="M9.5 7V4.5h5V7"/><path d="M6 7l1 13h10l1-13"/><path d="M10 11v6M14 11v6"/></symbol>
+  <symbol id="ico-qr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Codice QR</title><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3.5v3.5H14z"/><path d="M21 14v2M21 20.5v.5M14 21h3"/></symbol>
+  <symbol id="ico-uscita" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Esci</title><path d="M9.5 20.5H5.5A1.5 1.5 0 0 1 4 19V5a1.5 1.5 0 0 1 1.5-1.5h4"/><path d="M15.5 8l4 4-4 4"/><path d="M19.5 12H9"/></symbol>
+  <symbol id="ico-avviso" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Attenzione</title><path d="M10.3 4.8a2 2 0 0 1 3.4 0l7.4 12.9a2 2 0 0 1-1.7 3H4.6a2 2 0 0 1-1.7-3l7.4-12.9z"/><path d="M12 9.5v4.5"/><path d="M12 17.6h.01"/></symbol>
+  <symbol id="ico-spunta" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Fatto</title><path d="M4.5 12.5l5 5 10-11"/></symbol>
+  <symbol id="ico-orologio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Orario</title><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5.2l3.6 2.3"/></symbol>
+  <symbol id="ico-luna" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Notte</title><path d="M20 14.6A8.6 8.6 0 0 1 9.4 4 8.6 8.6 0 1 0 20 14.6z"/></symbol>
+  <symbol id="ico-razzo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Spaziale</title><path d="M12 2.6c3 2.6 4.6 6.2 4.6 9.9L15 16.5H9L7.4 12.5C7.4 8.8 9 5.2 12 2.6z"/><circle cx="12" cy="9.6" r="1.7"/><path d="M9 16.5l-2.6 1.6.6 3 2.6-1.8M15 16.5l2.6 1.6-.6 3-2.6-1.8"/></symbol>
+  <symbol id="ico-stella" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Stella</title><path d="M12 4.1l2.4 5.2 5.5.7-4 3.8 1 5.6-4.9-2.7-4.9 2.7 1-5.6-4-3.8 5.5-.7z"/></symbol>
+  <symbol id="ico-ingranaggio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Impostazioni</title><circle cx="12" cy="12" r="6.6"/><circle cx="12" cy="12" r="2.4"/><path d="M12 5.4V2.8M12 21.2v-2.6M18.6 12h2.6M2.8 12h2.6M16.67 7.33l1.84-1.84M5.49 18.51l1.84-1.84M16.67 16.67l1.84 1.84M5.49 5.49l1.84 1.84"/></symbol>
+  <symbol id="ico-occhio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Mostra</title><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="ico-scarica" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Scarica</title><path d="M12 3.5v11"/><path d="M7.5 10.5L12 15l4.5-4.5"/><path d="M4 18.5h16"/></symbol>
+  <symbol id="ico-copia" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Copia</title><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M6 15H5.5A1.5 1.5 0 0 1 4 13.5V5.5A1.5 1.5 0 0 1 5.5 4h8A1.5 1.5 0 0 1 15 5.5V6"/></symbol>
+</defs></svg>
+
+<a class="salta" href="#principale">Salta al contenuto</a>
+
+<!-- ============================ .barra (vera) ============================ -->
+<header class="barra">
+  <a class="marchio" href="galleria.html">Star<span>Kid</span></a>
+  <nav>
+    <a href="galleria.html" class="attiva">Con .attiva</a>
+    <a href="tablets.html">Senza</a>
+  </nav>
+  <button type="button" id="esci" class="bottone fantasma">Esci</button>
+</header>
+
+<main id="principale">
+
+  <div class="intestazione-pagina">
+    <div>
+      <h1>Galleria dei pezzi</h1>
+      <p class="tenue">Ogni componente in ogni stato, col nome della classe a
+      fianco. Questa pagina non e del prodotto: i dati sono inventati.</p>
+    </div>
+    <div class="riga-bottoni">
+      <a class="bottone secondario piccolo" href="index.html">Vedi l'accesso vero</a>
+    </div>
+  </div>
+
+  <div class="avviso">
+    <h3>Come si legge</h3>
+    <p>Il riquadro grigio in carattere monospaziato sopra ogni esempio e la
+    classe o il selettore da scrivere nell'HTML. Le classi scritte dal
+    JavaScript sono segnate <strong>[JS]</strong>: quelle non si possono
+    rinominare, perche app.js o un pagina-*.js le cerca per logica.</p>
+    <p class="piccolo tenue">Il tema segue quello del sistema operativo. Dove
+    serve vedere i due temi insieme, l'esempio e doppio: il secondo riquadro
+    ha <span class="mono">data-tema="scuro"</span> addosso.</p>
+  </div>
+
+  <!-- ====================================================== 1. tipografia -->
+  <section class="carta">
+    <h2>1. Tipografia e utilita di testo</h2>
+    <p><span class="nome-classe">h1 / h2 / h3</span></p>
+    <h1>Titolo di pagina (h1)</h1>
+    <h2>Titolo di sezione (h2)</h2>
+    <h3>Titolo di blocco (h3)</h3>
+    <p>Corpo del testo: 16px, interlinea 1,55. Nessuna riga oltre i 70
+    caratteri, perche <span class="mono">main</span> resta a 62rem. Niente
+    testo giustificato.</p>
+    <p><span class="nome-classe">.tenue [JS]</span>
+      <span class="tenue">Testo tenue: secondario, mai un'informazione che
+      serve da sola.</span></p>
+    <p><span class="nome-classe">.piccolo [JS]</span>
+      <span class="piccolo">Testo piccolo: 14px, il minimo per un corpo di
+      testo.</span></p>
+    <p><span class="nome-classe">.piccolo.tenue [JS]</span>
+      <span class="piccolo tenue">Didascalia: e la combinazione che il JS usa
+      di piu.</span></p>
+    <p><span class="nome-classe">.mono [JS]</span>
+      <span class="mono">9f2c41ab7e0d4c8fb13a60e5d72c8a41</span></p>
+    <p><span class="nome-classe">.centrato [JS]</span></p>
+    <p class="centrato">Centrato.</p>
+    <p><span class="nome-classe">.caricamento [JS]</span></p>
+    <p class="caricamento">Sto chiedendo al server l'elenco dei tablet...</p>
+    <p><span class="nome-classe">.nascosto [JS]</span>
+      <span class="tenue">display:none !important. Il JS accende e spegne i
+      pezzi con questa, quindi non si usa per altro.</span></p>
+    <p><span class="nome-classe">.no-stampa [JS]</span>
+      <span class="tenue">Spento dentro @media print.</span></p>
+    <p><span class="nome-classe">pre</span></p>
+    <pre>{
+  "tema": "spaziale",
+  "limite_giornaliero": 45
+}</pre>
+    <p class="piccolo tenue">Sopra c'e anche <span class="mono">.salta</span>:
+    e il primo elemento della pagina, sta fuori schermo e compare in alto a
+    sinistra premendo Tab appena caricata la pagina.</p>
+  </section>
+
+  <!-- ========================================================= 2. bottoni -->
+  <section class="carta">
+    <h2>2. Bottoni</h2>
+    <p class="piccolo tenue">Altezza 44px per tutti, <strong>anche per
+    .piccolo</strong>: si stringe in larghezza e di corpo, mai in altezza.
+    Niente gradienti, niente <span class="mono">filter: brightness()</span>.</p>
+
+    <p><span class="nome-classe">.bottone [JS]</span></p>
+    <div class="riga-bottoni">
+      <button type="button" class="bottone">Primario</button>
+      <button type="button" class="bottone" disabled>Primario [disabled]</button>
+      <a class="bottone" href="galleria.html">Primario, ma e un link</a>
+      <button type="button" class="bottone"><svg class="icona" aria-hidden="true"><use href="#ico-piu"/></svg>Con icona</button>
+    </div>
+
+    <p><span class="nome-classe">.bottone.secondario [JS]</span></p>
+    <div class="riga-bottoni">
+      <button type="button" class="bottone secondario">Secondario</button>
+      <button type="button" class="bottone secondario" disabled>Secondario [disabled]</button>
+    </div>
+
+    <p><span class="nome-classe">.bottone.fantasma [JS]</span></p>
+    <div class="riga-bottoni">
+      <button type="button" class="bottone fantasma">Fantasma</button>
+      <button type="button" class="bottone fantasma" disabled>Fantasma [disabled]</button>
+    </div>
+
+    <p><span class="nome-classe">.bottone.pericolo [JS]</span></p>
+    <div class="riga-bottoni">
+      <button type="button" class="bottone pericolo">Cancella</button>
+      <button type="button" class="bottone pericolo"><svg class="icona" aria-hidden="true"><use href="#ico-cestino"/></svg>Cancella</button>
+    </div>
+
+    <p><span class="nome-classe">.bottone.piccolo [JS]</span></p>
+    <div class="riga-bottoni">
+      <button type="button" class="bottone piccolo">Primario piccolo</button>
+      <button type="button" class="bottone secondario piccolo">Configura</button>
+      <button type="button" class="bottone pericolo piccolo">Cancella</button>
+      <button type="button" class="bottone fantasma piccolo">Annulla</button>
+    </div>
+
+    <p><span class="nome-classe">.riga-bottoni [JS]</span>
+      <span class="piccolo tenue">Flex, va a capo, gap 8px. E anche quello che
+      tiene insieme etichetta e didascalia in cima a una scheda.</span></p>
+  </section>
+
+  <!-- ====================================================== 3. contenitori -->
+  <section class="carta">
+    <h2>3. Contenitori e griglie</h2>
+    <p><span class="nome-classe">.carta [JS]</span>
+      <span class="piccolo tenue">Questo blocco e una .carta.</span></p>
+
+    <p><span class="nome-classe">.griglia [JS]</span></p>
+    <div class="griglia">
+      <div class="carta"><h3>Colonna</h3><p class="piccolo tenue">auto-fill, minimo 19rem.</p></div>
+      <div class="carta"><h3>Colonna</h3><p class="piccolo tenue">A 360px diventa una sola.</p></div>
+    </div>
+
+    <p><span class="nome-classe">.due-colonne</span></p>
+    <div class="due-colonne">
+      <div class="campo">
+        <label for="g-ora-a">Dalle</label>
+        <input type="time" id="g-ora-a" step="300" value="08:30">
+      </div>
+      <div class="campo">
+        <label for="g-ora-b">Alle</label>
+        <input type="time" id="g-ora-b" step="300" value="19:00">
+      </div>
+    </div>
+    <p class="piccolo tenue">In tema scuro l'orologio nativo deve essere
+    scuro: se e una casella bianca, manca
+    <span class="mono">color-scheme</span> su <span class="mono">:root</span>.</p>
+  </section>
+
+  <!-- ========================================================= fieldset -->
+  <fieldset class="carta">
+    <legend>fieldset + legend</legend>
+    <p><span class="nome-classe">fieldset.carta / legend</span></p>
+    <p>Il maiuscoletto spaziato esiste in un posto solo in tutta la UI: la
+    <span class="mono">legend</span>. Il <span class="mono">min-width:0</span>
+    su fieldset non e estetico: senza, a 360px la pagina scorre di lato.</p>
+  </fieldset>
+
+  <!-- ============================================================ 4. campi -->
+  <section class="carta">
+    <h2>4. Campi</h2>
+    <p class="piccolo tenue">Altezza 48px, corpo 16px pieni (sotto, iOS
+    ingrandisce da solo e la pagina salta). Il bordo e sempre
+    <span class="mono">--bordo-forte</span>, che passa il 3:1 su carta, su
+    sfondo e su carta-alt.</p>
+
+    <p><span class="nome-classe">.campo &gt; label + controllo + .aiuto + .errore-campo [JS]</span></p>
+    <div class="campo">
+      <label for="g-nome">Nome del tablet</label>
+      <input type="text" id="g-nome" value="tablet blu">
+      <span class="aiuto"><strong>Non il nome del bambino.</strong> Serve solo
+      a te per riconoscerlo nell'elenco.</span>
+      <div class="errore-campo nascosto" id="g-errore-nome"></div>
+    </div>
+
+    <p><span class="nome-classe">[aria-invalid="true"] + .errore-campo [JS]</span>
+      <span class="piccolo tenue">L'attributo lo mette il JS. Il
+      .errore-campo resta FRATELLO del controllo dentro il .campo: non si
+      reimpacchetta, perche pagina-tablet.js risale al parentNode per trovare
+      il controllo.</span></p>
+    <div class="campo">
+      <label for="g-limite">Limite giornaliero (minuti)</label>
+      <input type="number" id="g-limite" min="0" max="1440" step="5" value="1500" aria-invalid="true">
+      <div class="errore-campo">Il limite non puo superare 1440 minuti.</div>
+    </div>
+
+    <div class="due-colonne">
+      <div class="campo">
+        <label for="g-pwd">password</label>
+        <input type="password" id="g-pwd" value="segretissima">
+      </div>
+      <div class="campo">
+        <label for="g-url">url</label>
+        <input type="url" id="g-url" value="https://starkid.esempio.it">
+      </div>
+    </div>
+
+    <div class="campo">
+      <label for="g-select">select</label>
+      <select id="g-select">
+        <option>A scomparti</option>
+        <option>Tutto in vista</option>
+      </select>
+      <span class="aiuto">Il chevron e l'unico disegno con una tinta cucita
+      dentro: una maschera coprirebbe il testo.</span>
+    </div>
+
+    <div class="campo">
+      <label for="g-ro">[readonly]</label>
+      <input type="text" id="g-ro" readonly value="non si scrive qui">
+    </div>
+    <div class="campo">
+      <label for="g-dis">[disabled]</label>
+      <input type="text" id="g-dis" disabled value="spento">
+    </div>
+
+    <div class="campo">
+      <label for="g-textarea">textarea</label>
+      <textarea id="g-textarea" spellcheck="false">com.esempio.gioco
+org.esempio.disegno</textarea>
+      <span class="aiuto">Monospaziata a 14px: sono nomi di pacchetto, non
+      prosa.</span>
+    </div>
+
+    <p><span class="nome-classe">.segreto [JS]</span></p>
+    <div class="campo">
+      <label for="token">Codice di arruolamento</label>
+      <div class="segreto">
+        <input type="text" id="token" readonly class="mono" value="SK-4F2A-91BD-77C0">
+        <button type="button" class="bottone secondario piccolo"><svg class="icona" aria-hidden="true"><use href="#ico-copia"/></svg>Copia</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================= 5. caselle e scelte -->
+  <section class="carta">
+    <h2>5. Caselle, pallini, scelte</h2>
+    <p class="piccolo tenue">Disegnati a mano con
+    <span class="mono">appearance:none</span>: non si usa
+    <span class="mono">accent-color</span>, perche su fondo scuro Chrome tinge
+    di cachi i controlli NON spuntati e su una pagina con undici giochi si
+    vede. La spunta e un bordo ruotato, non un'immagine, quindi segue il
+    token.</p>
+
+    <p><span class="nome-classe">input[type=checkbox] / input[type=radio]</span></p>
+    <div class="riga-bottoni">
+      <input type="checkbox" id="g-c1" aria-label="casella spenta">
+      <input type="checkbox" id="g-c2" checked aria-label="casella spuntata">
+      <input type="checkbox" id="g-c3" disabled aria-label="casella spenta e disattivata">
+      <input type="checkbox" id="g-c4" checked disabled aria-label="casella spuntata e disattivata">
+      <input type="radio" name="g-r" id="g-r1" aria-label="pallino spento">
+      <input type="radio" name="g-r" id="g-r2" checked aria-label="pallino scelto">
+      <input type="radio" name="g-r2" id="g-r3" disabled aria-label="pallino disattivato">
+    </div>
+
+    <p><span class="nome-classe">.interruttore [JS]</span>
+      <span class="piccolo tenue">La riga intera e cliccabile, anche col
+      pollice: 48px di altezza minima.</span></p>
+    <label class="interruttore" for="g-kiosk">
+      <input type="checkbox" id="g-kiosk">
+      <span>Blocca il tablet su StarKid
+        <span class="aiuto">Niente barra di sistema, niente altre app, niente
+        disinstallazione.</span>
+      </span>
+    </label>
+    <label class="interruttore" for="g-suoni">
+      <input type="checkbox" id="g-suoni" checked>
+      <span>Suoni accesi
+        <span class="aiuto">I suoni dei giochi, sintetizzati sul tablet.</span>
+      </span>
+    </label>
+
+    <p><span class="nome-classe">.lista-caselle &gt; .casella [JS]</span></p>
+    <div class="lista-caselle">
+      <label class="casella" for="gioco-macchinine"><input type="checkbox" id="gioco-macchinine" checked><span>Macchinine</span></label>
+      <label class="casella" for="gioco-memory"><input type="checkbox" id="gioco-memory" checked><span>Memory spaziale</span></label>
+      <label class="casella" for="gioco-puzzle"><input type="checkbox" id="gioco-puzzle"><span>Puzzle scorrevole</span></label>
+      <label class="casella" for="gioco-xilofono"><input type="checkbox" id="gioco-xilofono" checked><span>Xilofono</span></label>
+    </div>
+
+    <p><span class="nome-classe">#temi &gt; .interruttore [JS: gli id li genera pagina-tablet.js]</span>
+      <span class="piccolo tenue">I provini sono i gradienti veri dei due
+      temi: il genitore vede cosa sceglie invece di leggere due nomi.</span></p>
+    <div class="campo">
+      <label>Tema</label>
+      <div id="temi">
+        <label class="interruttore" for="tema-pulito">
+          <input type="radio" name="tema" id="tema-pulito" value="pulito" checked>
+          <span>Pulito<span class="aiuto">Tinte chiare, nessuna decorazione.</span></span>
+        </label>
+        <label class="interruttore" for="tema-spaziale">
+          <input type="radio" name="tema" id="tema-spaziale" value="spaziale">
+          <span>Spaziale<span class="aiuto">Cielo stellato, pianeti e razzi.</span></span>
+        </label>
+      </div>
+    </div>
+
+    <p><span class="nome-classe">.sfondi &gt; label &gt; .provino.&lt;id&gt; [JS]</span>
+      <span class="piccolo tenue">Il pallino RESTA visibile: il bordo colorato
+      usa :has(), e su un browser vecchio senza pallino non si capirebbe piu
+      quale sfondo e scelto.</span></p>
+    <div class="campo">
+      <label id="g-et-sfondo">Sfondo (tema Pulito)</label>
+      <div class="sfondi" id="sfondi" role="radiogroup" aria-labelledby="g-et-sfondo">
+        <label for="sfondo-lilla"><span class="provino lilla" aria-hidden="true"></span><input type="radio" name="sfondo" id="sfondo-lilla" checked>Lilla</label>
+        <label for="sfondo-cielo"><span class="provino cielo" aria-hidden="true"></span><input type="radio" name="sfondo" id="sfondo-cielo">Cielo</label>
+        <label for="sfondo-prato"><span class="provino prato" aria-hidden="true"></span><input type="radio" name="sfondo" id="sfondo-prato">Prato</label>
+        <label for="sfondo-tramonto"><span class="provino tramonto" aria-hidden="true"></span><input type="radio" name="sfondo" id="sfondo-tramonto">Tramonto</label>
+      </div>
+    </div>
+    <div class="campo">
+      <label id="g-et-sfondo2">Sfondo (tema Spaziale)</label>
+      <div class="sfondi" role="radiogroup" aria-labelledby="g-et-sfondo2">
+        <label for="sfondo-notte"><span class="provino notte" aria-hidden="true"></span><input type="radio" name="sfondo2" id="sfondo-notte" checked>Notte</label>
+        <label for="sfondo-nebulosa"><span class="provino nebulosa" aria-hidden="true"></span><input type="radio" name="sfondo2" id="sfondo-nebulosa">Nebulosa</label>
+        <label for="sfondo-marte"><span class="provino marte" aria-hidden="true"></span><input type="radio" name="sfondo2" id="sfondo-marte">Marte</label>
+        <label for="sfondo-orbita"><span class="provino orbita" aria-hidden="true"></span><input type="radio" name="sfondo2" id="sfondo-orbita">Orbita</label>
+      </div>
+    </div>
+
+    <p><span class="nome-classe">.giorni &gt; label[for=giorno-N] [JS]</span>
+      <span class="piccolo tenue">A 360px: 4 per riga, 44x44 ciascuno.</span></p>
+    <div class="campo">
+      <label id="g-et-giorni">Giorni</label>
+      <div class="giorni" id="giorni" role="group" aria-labelledby="g-et-giorni">
+        <label for="giorno-1" title="lunedi"><input type="checkbox" id="giorno-1" checked>Lun</label>
+        <label for="giorno-2" title="martedi"><input type="checkbox" id="giorno-2" checked>Mar</label>
+        <label for="giorno-3" title="mercoledi"><input type="checkbox" id="giorno-3" checked>Mer</label>
+        <label for="giorno-4" title="giovedi"><input type="checkbox" id="giorno-4" checked>Gio</label>
+        <label for="giorno-5" title="venerdi"><input type="checkbox" id="giorno-5" checked>Ven</label>
+        <label for="giorno-6" title="sabato"><input type="checkbox" id="giorno-6">Sab</label>
+        <label for="giorno-7" title="domenica"><input type="checkbox" id="giorno-7">Dom</label>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================= 6. etichette -->
+  <section class="carta">
+    <h2>6. Etichette di stato</h2>
+    <p class="piccolo tenue">Il fondo si tinge soltanto col velo, non col
+    colore pieno: e la differenza fra una pagina calma e un albero di Natale.
+    Niente maiuscoletto, perche <span class="mono">statoDi()</span> produce
+    frasi e non parole.</p>
+
+    <p><span class="nome-classe">.etichetta / .ok / .attesa / .guasto [JS]</span></p>
+    <p class="riga-bottoni">
+      <span class="etichetta">Senza notizie</span>
+      <span class="etichetta ok">Attivo</span>
+      <span class="etichetta attesa">Zitto da 30 ore</span>
+      <span class="etichetta guasto">Zitto da 4 giorni</span>
+      <span class="etichetta attesa">Mai arrivato</span>
+    </p>
+
+    <p><span class="nome-classe">.etichetta.lunga [JS]</span>
+      <span class="piccolo tenue">Raggio 8px e non 999px: su tre righe una
+      pillola si sfonda.</span></p>
+    <p><span class="etichetta lunga ok">Revisione 7 applicata</span></p>
+    <p><span class="etichetta lunga attesa">Il tablet ha la revisione 6, sul server c'e la 7: la prendera al prossimo collegamento</span></p>
+    <p><span class="etichetta lunga guasto">Revisione 7 RIFIUTATA dal tablet</span></p>
+  </section>
+
+  <!-- ========================================================== 7. avvisi -->
+  <section class="carta">
+    <h2>7. Avvisi</h2>
+    <p class="piccolo tenue">Il colore sta nel filetto e nel titolo, non nel
+    testo da leggere: il corpo resta sempre <span class="mono">--testo</span>.</p>
+
+    <p><span class="nome-classe">.avviso [JS]</span></p>
+    <div class="avviso">
+      <h3>Il kiosk non e simmetrico</h3>
+      <p>Spegnerlo e immediato. Accenderlo e una
+      <strong>richiesta</strong>: il tablet lo accende solo se StarKid e
+      Device Owner.</p>
+    </div>
+
+    <p><span class="nome-classe">.avviso.ok [JS]</span></p>
+    <div class="avviso ok">
+      <h3>Il tablet e stato creato</h3>
+      <p>"tablet blu" e sul server. Ora serve il QR.</p>
+    </div>
+
+    <p><span class="nome-classe">.avviso.attesa [JS]</span></p>
+    <div class="avviso attesa">
+      <h3>Il tablet non ha accettato tutto</h3>
+      <ul>
+        <li><strong>kiosk: </strong>Serve che StarKid sia device owner del tablet, e non lo e.</li>
+        <li><strong>app_permesse: </strong>Una delle app dell'elenco non e installata sul tablet.</li>
+      </ul>
+    </div>
+
+    <p><span class="nome-classe">.avviso.guasto [JS]</span></p>
+    <div class="avviso guasto">
+      <h3>Non ho potuto salvare</h3>
+      <p>Nel frattempo qualcuno ha salvato una revisione piu recente.
+      Ricarica la pagina, guarda com'e adesso e rifai la modifica.</p>
+    </div>
+
+    <p><span class="nome-classe">.avviso.guasto.avviso-grosso [JS: cartelloLimiti()]</span>
+      <span class="piccolo tenue">Il cartello in cima alla pagina. Nessuna
+      animazione, nessun lampeggio: dentro una scheda lo stesso cartello non
+      si alza (vedi la sezione 8).</span></p>
+    <div class="avviso guasto avviso-grosso" role="alert">
+      <h3>I limiti di tempo su questo tablet <strong>NON</strong> stanno funzionando</h3>
+      <p class="piccolo">Il tablet ha detto che gli manca questo:</p>
+      <ul>
+        <li><strong>Launcher predefinito</strong> - Il tasto Home non riporta a
+        StarKid: il bambino esce e resta fuori. <span class="tenue">Sul
+        tablet: Impostazioni &gt; App &gt; App predefinite &gt; App Home &gt;
+        StarKid.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ====================================================== 8. schede tablet -->
+  <section class="carta">
+    <h2>8. Scheda di un tablet, e i tre stati del medaglione</h2>
+    <p class="piccolo tenue">Il medaglione in alto a destra e l'unico posto
+    dove l'oro sta sulla carta, perche sotto l'oro c'e sempre la notte. Tre
+    forme, non tre colori: piena d'oro (tutto a posto), vuota ambra (qualcosa
+    in attesa), vuota rossa (qualcosa di rotto). Lo stato non e MAI solo nel
+    colore: e scritto anche nell'etichetta e nelle spie, quindi un browser
+    senza <span class="mono">:has()</span> perde il colpo d'occhio e non
+    l'informazione.</p>
+    <p><span class="nome-classe">article.tablet [JS: pagina-tablets.js]</span></p>
+  </section>
+
+  <div class="griglia">
+
+    <!-- sano: stella piena d'oro -->
+    <article class="tablet">
+      <h2><a href="galleria.html">tablet blu</a></h2>
+      <div class="riga-bottoni">
+        <span class="etichetta ok">Attivo</span>
+        <span class="piccolo tenue">visto 4 minuti fa</span>
+      </div>
+      <dl class="dati">
+        <dt>Configurazione</dt>
+        <dd><span class="etichetta lunga ok">Revisione 7 applicata</span></dd>
+        <dt>Identificativo</dt>
+        <dd class="mono piccolo">9f2c41ab7e0d4c8fb13a60e5d72c8a41</dd>
+      </dl>
+      <div>
+        <p class="piccolo tenue">Secondo il tablet, 4 minuti fa.</p>
+        <ul class="spie">
+          <li class="spia accesa">Launcher predefinito</li>
+          <li class="spia accesa">Accesso ai dati di utilizzo</li>
+          <li class="spia accesa">Mostra sopra le altre app</li>
+          <li class="spia accesa">Servizio di controllo attivo</li>
+          <li class="spia accesa">Controllo del tablet (Device Owner)</li>
+        </ul>
+      </div>
+      <p class="piccolo tenue">Spie aggiornate 4 minuti fa (31/10/2026, 21:25)</p>
+      <div class="riga-bottoni">
+        <a class="bottone secondario piccolo" href="galleria.html">Configura</a>
+        <button type="button" class="bottone pericolo piccolo">Cancella</button>
+      </div>
+    </article>
+
+    <!-- mai arrivato: stella vuota ambra -->
+    <article class="tablet">
+      <h2><a href="galleria.html">tablet del salotto</a></h2>
+      <div class="riga-bottoni">
+        <span class="etichetta attesa">Mai arrivato</span>
+        <span class="piccolo tenue">visto mai</span>
+      </div>
+      <dl class="dati">
+        <dt>Configurazione</dt>
+        <dd><span class="etichetta lunga attesa">Nessuna configurazione ancora applicata (pubblicata: revisione 1)</span></dd>
+        <dt>Identificativo</dt>
+        <dd class="mono piccolo">0c71d8e94a2b45f6ae3012bb7f44cd09</dd>
+      </dl>
+      <div>
+        <p class="piccolo tenue">Secondo il tablet (non ha ancora mandato niente).</p>
+        <ul class="spie">
+          <li class="spia ignota">Launcher predefinito<span class="piccolo"> (mai detto)</span></li>
+          <li class="spia ignota">Accesso ai dati di utilizzo<span class="piccolo"> (mai detto)</span></li>
+          <li class="spia ignota">Mostra sopra le altre app<span class="piccolo"> (mai detto)</span></li>
+          <li class="spia ignota">Servizio di controllo attivo<span class="piccolo"> (mai detto)</span></li>
+          <li class="spia ignota">Controllo del tablet (Device Owner)<span class="piccolo"> (mai detto)</span></li>
+        </ul>
+      </div>
+      <p class="piccolo tenue">Il tablet non ha ancora mandato le sue spie: fino a quel momento non si sa se i limiti funzionano.</p>
+      <div class="riga-bottoni">
+        <a class="bottone secondario piccolo" href="galleria.html">Configura</a>
+        <button type="button" class="bottone pericolo piccolo">Cancella</button>
+      </div>
+    </article>
+
+    <!-- allarme: stella vuota rossa, filetto rosso interno, cartello -->
+    <article class="tablet allarme">
+      <h2><a href="galleria.html">tablet della cucina</a></h2>
+      <div class="riga-bottoni">
+        <span class="etichetta guasto">Zitto da 4 giorni</span>
+        <span class="piccolo tenue">visto 4 giorni fa</span>
+      </div>
+      <div class="avviso guasto avviso-grosso" role="alert">
+        <h3>I limiti di tempo su questo tablet <strong>NON</strong> stanno funzionando</h3>
+        <p class="piccolo">Il tablet ha detto che gli manca questo:</p>
+        <ul>
+          <li><strong>Accesso ai dati di utilizzo</strong> - Senza questo
+          StarKid non sa quanto tempo e stato usato il tablet.
+          <span class="tenue">Sul tablet: Impostazioni &gt; App &gt; Accesso
+          speciale &gt; Accesso ai dati di utilizzo &gt; StarKid.</span></li>
+        </ul>
+      </div>
+      <dl class="dati">
+        <dt>Configurazione</dt>
+        <dd><span class="etichetta lunga guasto">Revisione 4 RIFIUTATA dal tablet</span></dd>
+        <dt>Identificativo</dt>
+        <dd class="mono piccolo">5b8033cf1d6e4a72b90fe1a2c3d45e67</dd>
+      </dl>
+      <div class="avviso attesa">
+        <h3>Il tablet non ha accettato tutto</h3>
+        <ul><li><strong>kiosk: </strong>Serve che StarKid sia device owner del tablet, e non lo e.</li></ul>
+      </div>
+      <div>
+        <p class="piccolo tenue">Secondo il tablet, 4 giorni fa.</p>
+        <ul class="spie">
+          <li class="spia accesa">Launcher predefinito</li>
+          <li class="spia spenta" title="Senza questo StarKid non sa quanto tempo e stato usato il tablet.">Accesso ai dati di utilizzo</li>
+          <li class="spia accesa">Mostra sopra le altre app</li>
+          <li class="spia ignota">Servizio di controllo attivo<span class="piccolo"> (mai detto)</span></li>
+          <li class="spia spenta" title="Senza Device Owner il kiosk non si puo accendere e StarKid si puo disinstallare.">Controllo del tablet (Device Owner)</li>
+        </ul>
+      </div>
+      <p class="piccolo tenue">Spie aggiornate 4 giorni fa (27/10/2026, 07:12)</p>
+      <div class="riga-bottoni">
+        <a class="bottone secondario piccolo" href="galleria.html">Configura</a>
+        <button type="button" class="bottone pericolo piccolo">Cancella</button>
+      </div>
+    </article>
+
+    <!-- stato vuoto dell'elenco -->
+    <div class="carta centrato">
+      <h2>Qui non c'e ancora niente</h2>
+      <p><span class="nome-classe">.carta.centrato [JS]</span></p>
+      <p>Aggiungi il primo tablet: il server ti da un codice di arruolamento e
+      la pagina ti disegna il QR.</p>
+      <a class="bottone" href="galleria.html">Aggiungi un tablet</a>
+    </div>
+
+  </div>
+
+  <!-- ======================================================= 9. fascia spie -->
+  <section class="carta">
+    <h2>9. La fascia notturna, fuori da una scheda</h2>
+    <p class="piccolo tenue">Su tablet.html la fascia sta dentro
+    <span class="mono">#cartello</span>, cioe fuori da ogni scheda: li non ha
+    margini negativi e il filetto d'oro le gira intorno. Dentro una scheda va
+    invece a filo dei bordi e il filetto resta solo in cima - ed e quella
+    linea d'orizzonte che separa i fatti del server dal racconto del
+    tablet.</p>
+    <p><span class="nome-classe">ul.spie &gt; li.spia.accesa / .spenta / .ignota [JS: listaSpie()]</span></p>
+    <div id="cartello">
+      <div>
+        <p class="piccolo tenue">Secondo il tablet, 11 minuti fa.</p>
+        <ul class="spie">
+          <li class="spia accesa">Launcher predefinito</li>
+          <li class="spia spenta" title="Senza questo StarKid non sa quanto tempo e stato usato il tablet.">Accesso ai dati di utilizzo</li>
+          <li class="spia accesa">Mostra sopra le altre app</li>
+          <li class="spia ignota">Servizio di controllo attivo<span class="piccolo"> (mai detto)</span></li>
+          <li class="spia accesa">Controllo del tablet (Device Owner)</li>
+        </ul>
+      </div>
+    </div>
+    <p class="piccolo tenue">La quinta spia e <span class="mono">device_owner</span>,
+    la sola con <span class="mono">limiti:false</span>: ha un filetto sopra,
+    perche senza di essa il kiosk non si accende ma i limiti di tempo
+    funzionano. Il filetto viene da
+    <span class="mono">.spia:nth-child(5)</span>, cioe dall'ordine fisso
+    dell'array SPIE in app.js: zero righe di JavaScript.</p>
+  </section>
+
+  <!-- ======================================================= 10. registri -->
+  <section class="carta">
+    <h2>10. Dati, storico, numeri</h2>
+
+    <p><span class="nome-classe">dl.dati [JS]</span>
+      <span class="piccolo tenue">Sotto i 480px va su una colonna sola: un
+      identificativo da 32 caratteri in 230px si spezza male.</span></p>
+    <dl class="dati">
+      <dt>Configurazione</dt>
+      <dd><span class="etichetta lunga ok">Revisione 7 applicata</span></dd>
+      <dt>Identificativo</dt>
+      <dd class="mono piccolo">9f2c41ab7e0d4c8fb13a60e5d72c8a41</dd>
+      <dt>Ultimo contatto</dt>
+      <dd>31/10/2026, 21:25</dd>
+    </dl>
+
+    <p><span class="nome-classe">ul.storico &gt; li &gt; .rev + .quando + azione [JS]</span>
+      <span class="piccolo tenue">Niente zebratura: su fondo scuro impasta.
+      Sotto i 560px l'azione passa sotto, cosi il bottone non si strizza.</span></p>
+    <ul class="storico">
+      <li>
+        <span class="rev">rev 7</span>
+        <span class="quando">31/10/2026, 20:48</span>
+        <span class="etichetta ok">in uso</span>
+      </li>
+      <li>
+        <span class="rev">rev 6</span>
+        <span class="quando">29/10/2026, 18:03</span>
+        <button type="button" class="bottone secondario piccolo">Torna a questa</button>
+        <details>
+          <summary class="piccolo">Com'era</summary>
+          <pre>{
+  "revisione": 6,
+  "tema": "pulito",
+  "limite_giornaliero": 60
+}</pre>
+        </details>
+      </li>
+      <li>
+        <span class="rev">rev 5</span>
+        <span class="quando">data non detta</span>
+        <button type="button" class="bottone secondario piccolo">Torna a questa</button>
+      </li>
+    </ul>
+  </section>
+
+  <p><span class="nome-classe">.numeri &gt; .numero &gt; .valore + .nome [JS: pagina-salute.js]</span>
+    <span class="piccolo tenue">Una striscia unica: i filetti nascono dal
+    gap, quindi si separano da sole a qualunque numero di colonne. Il pallino
+    compare solo quando lo stato c'e, cosi non e mai il solo colore a
+    parlare. <strong>.valore deve restare figlio diretto di .numero</strong>:
+    pagina-salute.js scrive ok/attesa/guasto sul parentNode.</span></p>
+  <div class="numeri">
+    <div class="numero ok"><span class="valore">in piedi</span><span class="nome">Servizio</span></div>
+    <div class="numero attesa"><span class="valore">14</span><span class="nome">Giorni al certificato</span></div>
+    <div class="numero guasto"><span class="valore">mai</span><span class="nome">Ultimo backup</span></div>
+    <div class="numero"><span class="valore">1,4 MB</span><span class="nome">Database</span></div>
+    <div class="numero attesa"><span class="valore">1</span><span class="nome">Tablet che non si fanno sentire</span></div>
+  </div>
+
+  <!-- ============================================================ 11. QR -->
+  <section class="carta">
+    <h2>11. Il QR</h2>
+    <p class="piccolo tenue">Una piastra bianca, un passepartout notturno da
+    10px e un filo d'oro da 1px sul bordo del passepartout. La piastra resta
+    bianca nei due temi: un lettore ha bisogno del contrasto in quel verso.
+    Il disegno qui sotto e finto, ma e un vero SVG come quelli di qr.js.</p>
+    <p><span class="nome-classe">.qr-scatola / .qr-cornice / .qr-lato [JS]</span></p>
+    <div class="qr-scatola">
+      <div>
+        <div class="qr-cornice" id="qr-cornice">
+          <svg viewBox="0 0 29 29" shape-rendering="crispEdges" role="img" aria-label="Disegno di esempio, non e un vero codice QR">
+            <rect width="29" height="29" fill="#ffffff"/>
+            <path fill="#000000" d="M4,4h7v1h-7zM4,10h7v1h-7zM4,5h1v5h-1zM10,5h1v5h-1zM6,6h3v3h-3zM18,4h7v1h-7zM18,10h7v1h-7zM18,5h1v5h-1zM24,5h1v5h-1zM20,6h3v3h-3zM4,18h7v1h-7zM4,24h7v1h-7zM4,19h1v5h-1zM10,19h1v5h-1zM6,20h3v3h-3zM12,10h1v1h-1zM14,10h1v1h-1zM16,10h1v1h-1zM10,12h1v1h-1zM10,14h1v1h-1zM10,16h1v1h-1zM12,4h1v1h-1zM13,6h1v1h-1zM12,8h1v1h-1zM14,5h1v1h-1zM15,7h1v1h-1zM16,4h1v1h-1zM16,8h1v1h-1zM4,12h1v1h-1zM6,13h1v1h-1zM8,12h1v1h-1zM5,15h1v1h-1zM7,16h1v1h-1zM4,16h1v1h-1zM12,12h1v1h-1zM14,13h1v1h-1zM16,12h1v1h-1zM18,13h1v1h-1zM20,12h1v1h-1zM22,13h1v1h-1zM24,12h1v1h-1zM13,14h1v1h-1zM15,15h1v1h-1zM17,14h1v1h-1zM19,15h1v1h-1zM21,14h1v1h-1zM23,15h1v1h-1zM12,16h1v1h-1zM14,17h1v1h-1zM16,16h1v1h-1zM18,17h1v1h-1zM20,16h1v1h-1zM22,17h1v1h-1zM24,16h1v1h-1zM13,18h1v1h-1zM15,19h1v1h-1zM17,18h1v1h-1zM19,19h1v1h-1zM21,18h1v1h-1zM23,19h1v1h-1zM12,20h1v1h-1zM14,21h1v1h-1zM16,20h1v1h-1zM18,21h1v1h-1zM20,20h1v1h-1zM22,21h1v1h-1zM24,20h1v1h-1zM13,22h1v1h-1zM15,23h1v1h-1zM17,22h1v1h-1zM19,23h1v1h-1zM21,22h1v1h-1zM23,23h1v1h-1zM12,24h1v1h-1zM16,24h1v1h-1zM20,24h1v1h-1zM24,24h1v1h-1z"/>
+          </svg>
+        </div>
+        <p class="piccolo tenue centrato" id="qr-dettagli">versione 9, correzione M, 53x53 moduli</p>
+      </div>
+      <div class="qr-lato">
+        <p><span class="nome-classe">.misura [JS] / .misura.quasi / .misura.troppo</span></p>
+        <div class="misura" id="misura">
+          <p class="piccolo" id="misura-testo">612 byte su 1273 - correzione M</p>
+          <div class="barra-misura"><div class="riempimento" id="misura-riempimento"></div></div>
+        </div>
+        <p class="piccolo tenue">Il riempimento e a zero: la larghezza la
+        scrive pagina-nuovo.js via CSSOM (che la CSP non blocca), e si muove
+        solo mentre il genitore digita. I tre colori sono --ok, poi --attesa
+        con <span class="mono">.quasi</span>, poi --guasto con
+        <span class="mono">.troppo</span>.</p>
+        <div class="riga-bottoni">
+          <!-- Senza icona: la galleria e il foglio di riferimento, quindi
+               deve mostrare la regola che vale (paragrafo 8 di app.css: un
+               bottone non porta mai un'icona), non quella di prima. -->
+          <button type="button" class="bottone secondario">Scarica QR (PNG)</button>
+          <button type="button" class="bottone fantasma">Stampa</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================== 12. icone -->
+  <section class="carta">
+    <h2>12. Icone (icone.svg)</h2>
+    <p class="piccolo tenue">Tutte su griglia 24x24, tratto da 2px, estremi
+    tondi, nessun riempimento, disegnate per questo progetto. Il colore
+    arriva da <span class="mono">currentColor</span>: la stessa icona dentro
+    la barra diventa notturna da sola. Il foglio si incolla inline nella
+    pagina, perche <span class="mono">&lt;use href="icone.svg#..."&gt;</span>
+    non funziona in Chrome e in Safari.</p>
+    <p><span class="nome-classe">.icona / .icona.grande / .icona.piena</span></p>
+    <div class="lista-caselle">
+      <p><svg class="icona" aria-hidden="true"><use href="#ico-tablet"/></svg> <span class="mono">ico-tablet</span></p>
+      <p><svg class="icona" aria-hidden="true"><use href="#ico-piu"/></svg> <span class="mono">ico-piu</span></p>
+      <p><svg class="icona" aria-hidden="true"><use href="#ico-matita"/></svg> <span class="mono">ico-matita</span></p>
+      <p><svg class="icona" aria-hidden="true"><use href="#ico-cestino"/></svg> <span class="mono">ico-cestino</span></p>
+      <p><svg class="icona" aria-hidden="true"><use href="#ico-qr"/></svg> <span class="mono">ico-qr</span></p>
+      <p><svg class="icona" aria-hidden="true"><use href="#ico-uscita"/></svg> <span class="mono">ico-uscita</span></p>
+      <p><svg class="icona" aria-hidden="true"><use href="#ico-avviso"/></svg> <span class="mono">ico-avviso</span></p>
+      <p><svg class="icona" aria-hidden="true"><use href="#ico-spunta"/></svg> <span class="mono">ico-spunta</span></p>
+      <p><svg class="icona" aria-hidden="true"><use href="#ico-orologio"/></svg> <span class="mono">ico-orologio</span></p>
+      <p><svg class="icona" aria-hidden="true"><use href="#ico-luna"/></svg> <span class="mono">ico-luna</span></p>
+      <p><svg class="icona" aria-hidden="true"><use href="#ico-razzo"/></svg> <span class="mono">ico-razzo</span></p>
+      <p><svg class="icona" aria-hidden="true"><use href="#ico-stella"/></svg> <span class="mono">ico-stella</span></p>
+      <p><svg class="icona" aria-hidden="true"><use href="#ico-ingranaggio"/></svg> <span class="mono">ico-ingranaggio</span></p>
+      <p><svg class="icona" aria-hidden="true"><use href="#ico-occhio"/></svg> <span class="mono">ico-occhio</span></p>
+      <p><svg class="icona" aria-hidden="true"><use href="#ico-scarica"/></svg> <span class="mono">ico-scarica</span></p>
+      <p><svg class="icona" aria-hidden="true"><use href="#ico-copia"/></svg> <span class="mono">ico-copia</span></p>
+    </div>
+    <p class="riga-bottoni">
+      <svg class="icona grande" aria-hidden="true"><use href="#ico-razzo"/></svg>
+      <span class="mono">.icona.grande</span>
+      <svg class="icona piena" aria-hidden="true"><use href="#ico-stella"/></svg>
+      <span class="mono">.icona.piena</span>
+    </p>
+  </section>
+
+  <!-- ====================================================== 13. due temi -->
+  <section class="carta">
+    <h2>13. Gli stessi pezzi nei due temi</h2>
+    <p class="piccolo tenue">Il secondo riquadro ha
+    <span class="mono">data-tema="scuro"</span>: e lo stesso attributo che si
+    puo mettere su <span class="mono">&lt;html&gt;</span> per forzare il tema
+    senza toccare le pagine. Si vede la cosa che conta: in tema scuro la carta
+    sta sul cielo a 1,46:1, e tutto il distacco lo fanno il bordo da 1px, la
+    riga di luce in cima e <strong>l'assenza di stelle sulla carta</strong>.
+    Il cielo ha le stelle, la carta non le ha mai: la differenza non e la
+    luminanza, e il materiale.</p>
+    <p><span class="nome-classe">.coppia-temi &gt; .lastra (solo galleria)</span></p>
+  </section>
+
+  <div class="coppia-temi">
+    <div class="lastra">
+      <p class="piccolo tenue">Tema del sistema</p>
+      <article class="tablet">
+        <h2><a href="galleria.html">tablet blu</a></h2>
+        <div class="riga-bottoni">
+          <span class="etichetta ok">Attivo</span>
+          <span class="piccolo tenue">visto 4 minuti fa</span>
+        </div>
+        <dl class="dati">
+          <dt>Configurazione</dt>
+          <dd><span class="etichetta lunga ok">Revisione 7 applicata</span></dd>
+        </dl>
+        <div>
+          <p class="piccolo tenue">Secondo il tablet, 4 minuti fa.</p>
+          <ul class="spie">
+            <li class="spia accesa">Launcher predefinito</li>
+            <li class="spia accesa">Accesso ai dati di utilizzo</li>
+            <li class="spia accesa">Mostra sopra le altre app</li>
+            <li class="spia accesa">Servizio di controllo attivo</li>
+            <li class="spia accesa">Controllo del tablet (Device Owner)</li>
+          </ul>
+        </div>
+        <div class="riga-bottoni">
+          <a class="bottone secondario piccolo" href="galleria.html">Configura</a>
+          <button type="button" class="bottone pericolo piccolo">Cancella</button>
+        </div>
+      </article>
+      <div class="campo">
+        <label for="g-t1">Un campo</label>
+        <input type="text" id="g-t1" value="tablet blu">
+        <span class="aiuto">Il campo e scavato, non appoggiato.</span>
+      </div>
+      <div class="riga-bottoni">
+        <button type="button" class="bottone">Salva</button>
+        <button type="button" class="bottone secondario">Scarica</button>
+        <button type="button" class="bottone pericolo">Cancella</button>
+      </div>
+    </div>
+
+    <div class="lastra" data-tema="scuro">
+      <p class="piccolo tenue">Forzato: data-tema="scuro"</p>
+      <article class="tablet">
+        <h2><a href="galleria.html">tablet blu</a></h2>
+        <div class="riga-bottoni">
+          <span class="etichetta ok">Attivo</span>
+          <span class="piccolo tenue">visto 4 minuti fa</span>
+        </div>
+        <dl class="dati">
+          <dt>Configurazione</dt>
+          <dd><span class="etichetta lunga ok">Revisione 7 applicata</span></dd>
+        </dl>
+        <div>
+          <p class="piccolo tenue">Secondo il tablet, 4 minuti fa.</p>
+          <ul class="spie">
+            <li class="spia accesa">Launcher predefinito</li>
+            <li class="spia spenta" title="Senza questo StarKid non sa quanto tempo e stato usato il tablet.">Accesso ai dati di utilizzo</li>
+            <li class="spia accesa">Mostra sopra le altre app</li>
+            <li class="spia ignota">Servizio di controllo attivo<span class="piccolo"> (mai detto)</span></li>
+            <li class="spia accesa">Controllo del tablet (Device Owner)</li>
+          </ul>
+        </div>
+        <div class="riga-bottoni">
+          <a class="bottone secondario piccolo" href="galleria.html">Configura</a>
+          <button type="button" class="bottone pericolo piccolo">Cancella</button>
+        </div>
+      </article>
+      <div class="campo">
+        <label for="g-t2">Un campo</label>
+        <input type="text" id="g-t2" value="tablet blu">
+        <span class="aiuto">Il campo e scavato, non appoggiato.</span>
+      </div>
+      <div class="riga-bottoni">
+        <button type="button" class="bottone">Salva</button>
+        <button type="button" class="bottone secondario">Scarica</button>
+        <button type="button" class="bottone pericolo">Cancella</button>
+      </div>
+    </div>
+  </div>
+
+  <section class="carta">
+    <h2>14. Verifiche da fare prima di dire che e fatto</h2>
+    <ol>
+      <li>A 360x760, su tutte e cinque le pagine:
+      <span class="mono">document.documentElement.scrollWidth ===
+      document.documentElement.clientWidth</span>. Il punto piu a rischio e il
+      fieldset di tablet.html.</li>
+      <li>A 360px, nessun bersaglio sotto i 44px: in particolare
+      <span class="mono">.bottone.piccolo</span> su ogni scheda, le caselle
+      dei giorni e le voci di nav.</li>
+      <li>Nei due temi, sulle cinque pagine: niente testo illeggibile dentro
+      <span class="mono">form.carta</span> nella pagina di accesso. E
+      l'errore piu facile da fare, e viene dal mettere i token notturni su
+      <span class="mono">main.stretta</span> invece che sui suoi figli
+      diretti.</li>
+      <li><span class="mono">input[type=time]</span> in tema scuro: se
+      l'orologio nativo e una casella bianca, manca
+      <span class="mono">color-scheme</span>.</li>
+      <li>Con la tastiera, su ogni pagina: ogni elemento a fuoco ha un anello
+      visibile, e dentro la fascia notturna e dentro la barra l'anello e
+      d'oro.</li>
+      <li>Grep sull'HTML e sul CSS finiti: zero
+      <span class="mono">style="</span>, zero
+      <span class="mono">&lt;style</span>, zero
+      <span class="mono">@import</span>, zero
+      <span class="mono">@font-face</span>, e ogni
+      <span class="mono">url(</span> nel CSS comincia per
+      <span class="mono">data:</span>. Se ne esce uno, la CSP lo blocca e la
+      pagina si presenta rotta.</li>
+      <li>Nessun file del prodotto diverso da app.css risulta modificato:
+      app.js e i cinque pagina-*.js restano byte per byte come sono.</li>
+    </ol>
+  </section>
+
+</main>
+
+<!-- =========================== pannello di accesso ======================== -->
+<!-- Secondo <main>: il pannello si vede solo se e davvero "main.stretta", e
+     main.stretta non si annida. Vedi la nota in cima al file. -->
+<main class="stretta" aria-label="Esempio della pagina di accesso">
+
+  <h1>Star<span class="tenue">Kid</span></h1>
+  <p class="tenue">I tablet dei tuoi bambini, da qui.</p>
+
+  <div id="messaggio" aria-live="polite">
+    <div class="avviso guasto" role="alert">
+      <h3>Non sono entrato</h3>
+      <p>Nome utente o password non vanno bene. Dopo qualche tentativo il
+      server rallenta le risposte di proposito.</p>
+    </div>
+  </div>
+
+  <form class="carta" id="modulo-accesso" method="post" novalidate>
+    <div class="campo">
+      <label for="utente">Nome utente</label>
+      <input type="text" id="utente" name="utente" autocomplete="username"
+             autocapitalize="none" spellcheck="false" required>
+      <span class="aiuto">Il nome utente, non l'indirizzo email.</span>
+      <div class="errore-campo nascosto" id="errore-utente"></div>
+    </div>
+
+    <div class="campo">
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" autocomplete="current-password" required aria-invalid="true">
+      <div class="errore-campo">Serve la password.</div>
+    </div>
+
+    <button type="submit" class="bottone" id="entra">Entra</button>
+  </form>
+
+  <p class="piccolo tenue">
+    C'e un solo account e si crea sul server da riga di comando: qui non ci si
+    puo iscrivere, e non c'e nessun recupero password da questa pagina.
+  </p>
+
+  <p class="piccolo"><span class="nome-classe">main.stretta</span>
+  Il pannello e il rettangolo notturno di logo.svg, raggio 24px, con la carta
+  bianca del modulo sospesa sopra a 19,52:1. In tema chiaro e l'immagine piu
+  forte della UI e la prima che si vede; in tema scuro la pagina attorno e
+  anch'essa cielo, e il pannello si distingue per il bordo, l'ombra e il
+  raggio.</p>
+
+</main>
+
+</body>
+</html>

@@ -1,96 +1,313 @@
-/* StarKid - web UI del genitore
+/* StarKid - web UI del genitore. Foglio di stile unico, "Carta e cielo".
+ * ===========================================================================
  *
- * Un solo foglio di stile per tutte le pagine: nginx lo serve una volta e
- * poi sta in cache. Niente framework, niente CDN, niente font scaricati:
- * la pagina deve aprirsi anche se l'unica cosa raggiungibile e questo
- * server, e il browser del genitore non deve parlare con nessun altro.
+ * Un solo foglio per tutte le pagine: nginx lo serve una volta e poi sta in
+ * cache. Niente framework, niente CDN, niente font scaricati, niente da
+ * compilare: questo file e servito come e scritto.
  *
- * Nota per chi modifica: le pagine dichiarano una Content-Security-Policy
- * che vieta lo stile in linea. Quindi niente attributi style="" nell'HTML:
- * ogni variante e una classe qui dentro.
+ * LA REGOLA CHE REGGE TUTTO, e non si infrange mai:
+ *   ogni superficie e CARTA oppure CIELO, mai una via di mezzo, e fra le due
+ *   c'e sempre e solo un filetto di 1px d'oro.
+ *   Sulla carta sta cio che il SERVER sa per certo (nome, revisioni, ultimo
+ *   contatto, storico). Sul cielo sta cio che il TABLET dice di se e che
+ *   nessuno puo verificare: le cinque spie, come cinque stelle.
+ *   Corollario: L'ORO (--oro) ESISTE SOLO SULLA NOTTE. Su bianco fa 1,54:1.
+ *   Se una cosa deve essere d'oro, prima le si mette sotto la notte.
+ *
+ * VINCOLI DA CUI DISCENDE META DI QUESTO FILE
+ *
+ * 1. La Content-Security-Policy delle cinque pagine e, testuale:
+ *      default-src 'none'; script-src 'self'; style-src 'self';
+ *      img-src 'self' data: blob:; connect-src 'self'; form-action 'none';
+ *      base-uri 'none'
+ *    font-src NON e dichiarato, quindi eredita 'none': nessun @font-face
+ *    funziona, nemmeno un .woff2 servito da qui. Solo caratteri di sistema.
+ *    img-src ammette data:, quindi background-image e mask-image con data URI
+ *    SVG sono ammessi, e sono il SOLO modo di avere disegni in questa UI.
+ *    style-src 'self' vieta style="" e <style>: ogni variante e una classe
+ *    qui dentro. Se una grafica avesse bisogno di allargare la CSP, si cambia
+ *    la grafica.
+ *
+ * 2. Il JavaScript (app.js e i cinque pagina-*.js) cerca elementi per id e
+ *    per classe, e in qualche punto risale al parentNode. I nomi usati dalla
+ *    logica NON si possono rinominare. In particolare:
+ *      - .valore DEVE restare figlio diretto di .numero (pagina-salute.js
+ *        scrive ok/attesa/guasto sul parentNode di #n-*);
+ *      - dentro un .campo il controllo e il .errore-campo restano FRATELLI
+ *        (pagina-tablet.js parte dal .errore-campo e cerca il controllo nel
+ *        parentNode);
+ *      - .spie, .spia, .etichetta, .provino, .numero, .storico, .misura,
+ *        .avviso, .nascosto, .attiva, ok/attesa/guasto/quasi/troppo e
+ *        accesa/spenta/ignota sono scritte dal JS.
+ *
+ * 3. Telefono: 360px di larghezza senza scorrimento orizzontale, bersagli da
+ *    toccare di almeno 44px, gutter laterale di 16px fissi a ogni larghezza.
+ *
+ * 4. Leggerezza: nessuna immagine da servire, nessuna animazione che gira a
+ *    vuoto, nessun backdrop-filter, nessun blur, nessuna barra appiccicosa.
+ *    Otto data URI in tutto, tutte qui dentro, zero richieste di rete.
+ *
+ * Tutti i rapporti di contrasto nei commenti sono calcolati con la formula
+ * WCAG 2.1. Chi cambia un valore ricalcola: non si arrotonda a occhio.
  */
 
-/* ---------------------------------------------------------------- colori */
+/* ===========================================================================
+   1. COLORI
+   ===========================================================================
+
+   I token di tema stanno in due blocchi gemelli. Il secondo blocco esiste per
+   poter FORZARE il tema senza toccare le pagine: basta un attributo
+   data-tema="scuro" (o "chiaro") su <html>, che e un attributo e non uno
+   stile in linea, quindi la CSP non c'entra. Lo stesso attributo funziona
+   anche su un contenitore qualsiasi, e per questo galleria.html riesce a
+   mostrare i due temi nella stessa pagina.
+
+   La notte e l'oro NON sono token di tema: sono il materiale "cielo", e in
+   tema chiaro e in tema scuro valgono gli stessi numeri. E l'unica costante
+   del marchio. */
 
 :root {
-  /* Le tinte vengono dal tema "Pulito" dell'app sul tablet, cosi il
-     genitore ritrova gli stessi colori che vede il bambino. */
-  --sfondo: #f7f5fb;
-  --carta: #ffffff;
-  --carta-alt: #f2effa;
-  --bordo: #ded7ee;
-  --bordo-forte: #c3b8e0;
-  --testo: #1d1b26;
-  --testo-tenue: #5d5873;
-  --accento: #5b3fd1;
-  --accento-chiaro: #ece6ff;
-  --accento-testo: #ffffff;
-  --ok: #1f7a43;
-  --ok-sfondo: #e4f5ea;
-  --attesa: #8a6100;
-  --attesa-sfondo: #fdf2d8;
-  --guasto: #a3232b;
-  --guasto-sfondo: #fde8e8;
-  --ombra: 0 1px 2px rgba(29, 27, 38, .06), 0 6px 18px rgba(29, 27, 38, .07);
-  --raggio: 14px;
-  --raggio-piccolo: 9px;
+  /* color-scheme non e un dettaglio: senza, in tema scuro Chrome disegna una
+     casella bianca dentro input[type=time] e barre di scorrimento chiare.
+     Con questo, spinner, orologio e barre seguono il tema nativamente. */
+  color-scheme: light dark;
+
+  /* ---- le otto data URI, dichiarate una volta sola --------------------
+     Le maschere sono disegni NERI senza colore dentro: il colore arriva da
+     background-color, cosi nessuna tinta e cucita in una stringa e nessuna
+     icona va alla deriva quando si ritocca un token. Il chevron del select e
+     l'unica eccezione dichiarata (vedi --chevron piu sotto e il paragrafo
+     12.2): un'immagine di sfondo non puo ereditare currentColor. */
+
+  /* Stelle fitte: 420x420, 24 cerchi, r 1 / 1.2 / 1.6, opacita .20/.34/.50. */
+  --stelle-fitte: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420'%3E%3Cg fill='white'%3E%3Ccircle cx='17' cy='53' r='1' opacity='.34'/%3E%3Ccircle cx='64' cy='19' r='1.2' opacity='.5'/%3E%3Ccircle cx='113' cy='87' r='1' opacity='.2'/%3E%3Ccircle cx='148' cy='34' r='1.6' opacity='.34'/%3E%3Ccircle cx='196' cy='121' r='1' opacity='.5'/%3E%3Ccircle cx='231' cy='61' r='1.2' opacity='.2'/%3E%3Ccircle cx='273' cy='142' r='1' opacity='.34'/%3E%3Ccircle cx='319' cy='28' r='1' opacity='.5'/%3E%3Ccircle cx='358' cy='109' r='1.2' opacity='.34'/%3E%3Ccircle cx='397' cy='66' r='1' opacity='.2'/%3E%3Ccircle cx='29' cy='164' r='1.6' opacity='.5'/%3E%3Ccircle cx='83' cy='219' r='1' opacity='.34'/%3E%3Ccircle cx='131' cy='187' r='1.2' opacity='.2'/%3E%3Ccircle cx='177' cy='246' r='1' opacity='.5'/%3E%3Ccircle cx='221' cy='199' r='1' opacity='.34'/%3E%3Ccircle cx='266' cy='271' r='1.6' opacity='.2'/%3E%3Ccircle cx='311' cy='214' r='1.2' opacity='.5'/%3E%3Ccircle cx='349' cy='283' r='1' opacity='.34'/%3E%3Ccircle cx='377' cy='364' r='1' opacity='.2'/%3E%3Ccircle cx='46' cy='311' r='1.2' opacity='.34'/%3E%3Ccircle cx='97' cy='377' r='1' opacity='.5'/%3E%3Ccircle cx='152' cy='329' r='1.6' opacity='.2'/%3E%3Ccircle cx='206' cy='391' r='1' opacity='.34'/%3E%3Ccircle cx='299' cy='357' r='1.2' opacity='.5'/%3E%3C/g%3E%3C/svg%3E");
+
+  /* Stelle larghe: 790x790, 7 cerchi r 1.9. I due periodi (420 e 790) non
+     coincidono di proposito: su un telefono il motivo non si legge mai. */
+  --stelle-larghe: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='790' height='790'%3E%3Cg fill='white' opacity='.62'%3E%3Ccircle cx='71' cy='203' r='1.9'/%3E%3Ccircle cx='298' cy='97' r='1.9'/%3E%3Ccircle cx='512' cy='341' r='1.9'/%3E%3Ccircle cx='167' cy='588' r='1.9'/%3E%3Ccircle cx='639' cy='166' r='1.9'/%3E%3Ccircle cx='401' cy='703' r='1.9'/%3E%3Ccircle cx='713' cy='529' r='1.9'/%3E%3C/g%3E%3C/svg%3E");
+
+  /* Stella piena: e esattamente il path di icona.svg, copiato tale e quale,
+     quindi la stella della testata e la stella della linguetta del browser
+     sono la stessa stella. */
+  --m-stella-piena: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 5.5l3.2 6.9 7.3.9-5.4 5.1 1.4 7.4L16 22.2l-6.5 3.6 1.4-7.4-5.4-5.1 7.3-.9z'/%3E%3C/svg%3E");
+
+  /* Stella vuota: lo stesso path, solo contornato. Serve a dire "manca una
+     stella" invece di "una stella ha cambiato colore": e la forma, non il
+     colore, a portare l'informazione. */
+  --m-stella-vuota: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 5.5l3.2 6.9 7.3.9-5.4 5.1 1.4 7.4L16 22.2l-6.5 3.6 1.4-7.4-5.4-5.1 7.3-.9z' fill='none' stroke='black' stroke-width='2.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+
+  /* ---- tema chiaro: LA CARTA (ed e il tema Pulito dell'app) ---------- */
+  --sfondo: #F3F0F9;
+  --carta: #FFFFFF;
+  --carta-alt: #F6ECFF;          /* Lilac di Skin.kt */
+  --bordo: #DFD6EE;              /* 1,40:1 - filo decorativo, MAI il solo
+                                    contorno di un controllo */
+  --bordo-forte: #8E7BBE;        /* bordo di OGNI controllo: 3,67:1 su carta,
+                                    3,25:1 su sfondo, 3,20:1 su carta-alt.
+                                    WCAG 1.4.11 (3:1) passa su tutte tre.
+                                    Il vecchio #c3b8e0 faceva 1,84:1 e non
+                                    passava: era un bug, non una preferenza. */
+  --testo: #2B1B46;              /* Ink - 15,58:1 su carta, 13,83:1 su sfondo */
+  --testo-tenue: #574668;        /* 8,46:1 su carta, 7,40:1 su carta-alt */
+  --accento: #6C4AB6;            /* Grape, primary di Pulito - 6,38:1 */
+  --accento-vivo: #5E3EA4;
+  --accento-testo: #FFFFFF;      /* su --accento: 6,38:1 */
+  --accento-velo: #EFE7FF;
+  --anello: #553795;             /* anello di fuoco - 8,87:1 su carta */
+  --ok: #0F6B3F;                 /* 6,57:1 */
+  --ok-velo: #E3F5EA;
+  --attesa: #7A4E00;             /* 7,20:1 */
+  --attesa-velo: #FFF4DC;
+  --guasto: #A6241B;             /* 7,27:1 */
+  --guasto-velo: #FDEBE9;
+  --campo: #FFFFFF;
+
+  /* --luce in tema chiaro non deve disegnare niente, ma NON puo essere
+     "none": in "box-shadow: a, b, none" la parola none invalida l'intera
+     dichiarazione e si perderebbe anche --ombra. Quindi un'ombra nulla. */
+  --luce: 0 0 0 0 transparent;
+  --ombra: 0 1px 2px rgba(43, 27, 70, .06), 0 8px 24px rgba(43, 27, 70, .08);
+
+  /* Il fondo stellato non esiste in tema chiaro: la pagina e carta. */
+  --cielo-pagina: none;
+
+  /* Il chevron del select, nel colore di --testo-tenue chiaro. E l'unico
+     disegno con una tinta cucita dentro, in due punti (qui e nel blocco
+     scuro): dichiarato apposta perche si sappia. */
+  --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 6l5 5 5-5' fill='none' stroke='%23574668' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+
+  /* ---- LA NOTTE: valori fissi, identici nei due temi ------------------ */
+  --notte: #070B1E;              /* SpaceInk: lo stesso fondo del logo */
+  --oro: #FFC846;                /* il "Kid" del logo - 12,65:1 sulla notte */
+  --oro-alto: #FFE57F;           /* alto del gradiente oro del logo */
+  --notte-testo: #EAEEFF;        /* 16,90:1 sulla notte */
+  --notte-tenue: #B6C1E8;        /* 10,96:1 */
+  --notte-bordo: #28325C;        /* solo filetto interno */
+  --notte-forte: #717FC0;        /* bordo di un controllo sulla notte 5,11:1 */
+  --spenta: #FF8A80;             /* 8,55:1 */
+  --ignota: #9AA6CE;             /* 8,11:1 */
+  --attesa-notte: #F2C75C;       /* 12,18:1 */
+  /* Il verde esisteva per la carta e non per la notte, e la notte invece ha
+     un avviso "ok": quello di "Sei uscito" sulla pagina di accesso. In tema
+     chiaro --ok e #0F6B3F, che sul velo notturno dell'avviso (#161A2C) fa
+     2,62:1 - un titolo praticamente invisibile. Questo e lo stesso verde che
+     il tema scuro usa gia: 11,52:1 sulla notte, 10,17:1 sul velo. */
+  --ok-notte: #6FDC9B;           /* 11,52:1 */
+
+  /* ---- spaziatura: passo 4, otto gradini, nient'altro ---------------- */
+  --s1: 4px;  --s2: 8px;  --s3: 12px; --s4: 16px;
+  --s5: 20px; --s6: 24px; --s7: 32px; --s8: 48px;
+
+  /* ---- raggi --------------------------------------------------------- */
+  --r-carta: 16px;
+  --r-controllo: 10px;
+  --r-piccolo: 6px;
+  --r-pillola: 999px;
+
+  /* ---- tipografia: tre pile, tutte di sistema ------------------------ */
+  --font-testo: system-ui, -apple-system, "Segoe UI Variable Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  /* La stessa pila dichiarata dentro docs/logo.svg. Dove Verdana c'e la
+     testata e identica al logo; su Android non c'e e si cade su Roboto.
+     Costo accettato: sono due parole, e un font non si puo scaricare. */
+  --font-marchio: Verdana, "DejaVu Sans", system-ui, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Mono", SFMono-Regular, Consolas, "Liberation Mono", monospace;
 }
 
+/* Tema scuro: IL CIELO (ed e il tema Spaziale dell'app). In tema scuro la
+   pagina E il cielo, e la carta ci galleggia sopra. */
 @media (prefers-color-scheme: dark) {
-  :root {
-    /* E il tema "Spaziale": notte, non grigio. */
-    --sfondo: #0b0f22;
-    --carta: #151a33;
-    --carta-alt: #1d2340;
-    --bordo: #2b3357;
-    --bordo-forte: #3e4877;
-    --testo: #eef0fb;
-    --testo-tenue: #a8aecd;
-    --accento: #a994ff;
-    --accento-chiaro: #251f45;
-    --accento-testo: #10132a;
-    --ok: #6fdc9b;
-    --ok-sfondo: #10301f;
-    --attesa: #f2c75c;
-    --attesa-sfondo: #352a0f;
-    --guasto: #ff9a9a;
-    --guasto-sfondo: #3a1718;
-    --ombra: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 22px rgba(0, 0, 0, .35);
+  :root:not([data-tema="chiaro"]) {
+    --sfondo: #070B1E;           /* identico a --notte: nessuna cucitura */
+    --carta: #212C5A;            /* 1,46:1 sul cielo. Non e un valore di
+                                    Skin.kt: sta fra surface #161E42 e
+                                    surfaceVariant #28325C e serve a far
+                                    galleggiare la carta sul cielo. */
+    --carta-alt: #2A3566;        /* testo #EAEEFF su di esso: 10,10:1 */
+    --bordo: #45507F;            /* 2,52:1 sul cielo, 1,72:1 sulla carta */
+    --bordo-forte: #717FC0;      /* 3,50:1 su carta, 5,11:1 sul cielo */
+    --testo: #EAEEFF;            /* 11,56:1 su carta, 16,90:1 sul cielo */
+    --testo-tenue: #B6C1E8;      /* 7,51:1 su carta */
+    --accento: #8FB8FF;          /* primary di Spaziale - 6,66:1 su carta */
+    --accento-vivo: #A8C7FF;
+    --accento-testo: #0A1330;    /* su --accento: 9,11:1 */
+    --accento-velo: #263768;
+    --anello: #A8C7FF;
+    --ok: #6FDC9B;               /* 8,59:1 */
+    --ok-velo: #10301F;
+    --attesa: #F2C75C;           /* 9,08:1 */
+    --attesa-velo: #352A0F;
+    --guasto: #FF8A80;           /* 6,38:1 */
+    --guasto-velo: #3A1718;
+    --campo: #141C42;            /* piu scuro della carta: il campo e
+                                    SCAVATO, non appoggiato. Testo 14,3:1 */
+    /* La riga di luce e la cosa piu economica che fa sembrare una superficie
+       scura illuminata invece che bucata, ed e cio che tiene la carta
+       staccata dal cielo a 1,46:1. */
+    --luce: inset 0 1px 0 rgba(234, 238, 255, .10);
+    --ombra: 0 1px 2px rgba(0, 0, 0, .5), 0 10px 28px rgba(0, 0, 0, .45);
+    --cielo-pagina: var(--stelle-fitte), var(--stelle-larghe);
+    --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 6l5 5 5-5' fill='none' stroke='%23B6C1E8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   }
 }
 
-/* ----------------------------------------------------------------- base */
+/* Gemello del blocco di sopra, per forzare il cielo con data-tema="scuro".
+   Funziona su <html> (tutta la pagina) e su un contenitore qualsiasi. */
+[data-tema="scuro"] {
+  --sfondo: #070B1E;
+  --carta: #212C5A;
+  --carta-alt: #2A3566;
+  --bordo: #45507F;
+  --bordo-forte: #717FC0;
+  --testo: #EAEEFF;
+  --testo-tenue: #B6C1E8;
+  --accento: #8FB8FF;
+  --accento-vivo: #A8C7FF;
+  --accento-testo: #0A1330;
+  --accento-velo: #263768;
+  --anello: #A8C7FF;
+  --ok: #6FDC9B;
+  --ok-velo: #10301F;
+  --attesa: #F2C75C;
+  --attesa-velo: #352A0F;
+  --guasto: #FF8A80;
+  --guasto-velo: #3A1718;
+  --campo: #141C42;
+  --luce: inset 0 1px 0 rgba(234, 238, 255, .10);
+  --ombra: 0 1px 2px rgba(0, 0, 0, .5), 0 10px 28px rgba(0, 0, 0, .45);
+  --cielo-pagina: var(--stelle-fitte), var(--stelle-larghe);
+  --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 6l5 5 5-5' fill='none' stroke='%23B6C1E8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+[data-tema="scuro"] { color-scheme: dark; }
+[data-tema="chiaro"] { color-scheme: light; }
+
+/* Gli elementi che sono notte DENTRO, nei due temi. Qui i token locali si
+   ridefiniscono, e si fa UN blocco solo, e solo su elementi che contengono
+   esclusivamente notte.
+   ATTENZIONE, errore da non fare: questo blocco NON va su main.stretta.
+   main.stretta contiene form.carta, che e carta bianca: ridefinendo --testo
+   li, il testo del modulo di accesso diventerebbe #EAEEFF su bianco. Per la
+   pagina di accesso ci sono regole esplicite sui soli figli diretti (8). */
+.barra,
+ul.spie {
+  --testo: var(--notte-testo);
+  --testo-tenue: var(--notte-tenue);
+  --bordo: var(--notte-bordo);
+  --bordo-forte: var(--notte-forte);
+  --anello: var(--oro);
+  --guasto: var(--spenta);
+  --attesa: var(--attesa-notte);
+  /* Oggi dentro .barra e dentro ul.spie nessuno chiede --ok, ma la riga
+     chiude il blocco: la prossima cosa verde che entrera qui dentro
+     (un'etichetta, un numero) nasce leggibile invece di nascere a 2,62:1. */
+  --ok: var(--ok-notte);
+}
+
+/* ===========================================================================
+   2. BASE
+   =========================================================================== */
 
 * { box-sizing: border-box; }
 
-html { -webkit-text-size-adjust: 100%; }
+html {
+  -webkit-text-size-adjust: 100%;
+  background: var(--sfondo);
+}
 
 body {
   margin: 0;
-  background: var(--sfondo);
+  background-color: var(--sfondo);
+  background-image: var(--cielo-pagina);
+  background-repeat: repeat;
   color: var(--testo);
-  font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  /* 16px pieni: sotto i 16 i telefoni ingrandiscono da soli i campi di
-     testo e la pagina salta. */
+  font: 400 16px/1.55 var(--font-testo);
 }
 
-h1 { font-size: 1.6rem; line-height: 1.25; margin: 0 0 .4rem; }
-h2 { font-size: 1.22rem; line-height: 1.3; margin: 0 0 .5rem; }
-h3 { font-size: 1.02rem; margin: 0 0 .35rem; }
-
-p { margin: 0 0 .75rem; }
+/* Scala in px espliciti e non rem: con rem, chi ha abbassato la dimensione
+   base del browser si ritrova i campi sotto i 16px e iOS ingrandisce da
+   solo, facendo saltare la pagina. Mai sotto i 13px, mai un corpo di testo
+   sotto i 14px. */
+h1 { font: 700 24px/1.25 var(--font-testo); letter-spacing: -.015em; margin: 0 0 6px; }
+h2 { font: 700 20px/1.3 var(--font-testo); letter-spacing: -.01em; margin: 0 0 8px; }
+h3 { font: 700 15px/1.35 var(--font-testo); margin: 0 0 4px; }
+p  { margin: 0 0 12px; }
 p:last-child { margin-bottom: 0; }
 
-a { color: var(--accento); }
+a { color: var(--accento); text-underline-offset: 2px; }
 
 code, .mono {
-  font-family: ui-monospace, "Cascadia Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
-  font-size: .92em;
+  font-family: var(--font-mono);
   overflow-wrap: anywhere;
 }
 
+ol { margin: 0 0 12px; padding-left: 22px; }
+.carta > ul, .carta > ol, #zitti ul, #dettagli ul { margin: 6px 0 12px; padding-left: 20px; }
+li { margin-bottom: 4px; }
+
+/* FUOCO. Un solo trattamento, tre colori: --anello e #553795 in chiaro,
+   #A8C7FF in scuro, e dentro .barra e dentro ul.spie diventa oro per effetto
+   del blocco di sopra. "outline: none" non si usa da nessuna parte. */
 :focus-visible {
-  outline: 3px solid var(--accento);
+  outline: 3px solid var(--anello);
   outline-offset: 2px;
   border-radius: 4px;
 }
@@ -99,116 +316,720 @@ code, .mono {
   position: absolute;
   left: -9999px;
   top: 0;
-  background: var(--carta);
-  padding: .6rem 1rem;
   z-index: 10;
+  padding: 12px 16px;
+  background: var(--carta);
+  color: var(--testo);
+  border-radius: var(--r-controllo);
+  box-shadow: var(--ombra);
 }
-.salta:focus { left: .5rem; top: .5rem; }
+.salta:focus { left: 8px; top: 8px; }
 
+/* Utilita, con lo stesso nome e lo stesso significato di prima: il JS le
+   scrive e le pagine le usano. */
 .tenue { color: var(--testo-tenue); }
-.piccolo { font-size: .88rem; }
+.piccolo { font-size: 14px; line-height: 1.45; }
 .nascosto { display: none !important; }
 .centrato { text-align: center; }
-
-/* ------------------------------------------------------------- intestazione */
-
-.barra {
-  display: flex;
-  align-items: center;
-  gap: .75rem;
-  flex-wrap: wrap;
-  padding: .7rem 16px;
-  background: var(--carta);
-  border-bottom: 1px solid var(--bordo);
-}
-
-.marchio {
-  font-weight: 700;
-  font-size: 1.1rem;
-  color: var(--testo);
-  text-decoration: none;
-  letter-spacing: .01em;
-}
-.marchio span { color: var(--accento); }
-
-.barra nav {
-  display: flex;
-  gap: .25rem;
-  flex: 1 1 auto;
-  flex-wrap: wrap;
-}
-
-.barra nav a {
-  padding: .45rem .7rem;
-  border-radius: 999px;
-  text-decoration: none;
+.caricamento {
+  text-align: center;
+  margin: 24px 0;
+  font: 400 15px/1.5 var(--font-testo);
   color: var(--testo-tenue);
-  font-weight: 500;
-  min-height: 44px;
-  display: inline-flex;
-  align-items: center;
-}
-.barra nav a:hover { background: var(--carta-alt); color: var(--testo); }
-.barra nav a.attiva { background: var(--accento-chiaro); color: var(--accento); }
-
-/* -------------------------------------------------------------- impianto */
-
-main {
-  max-width: 62rem;
-  margin: 0 auto;
-  padding: 1.25rem 16px 4rem;
 }
 
-main.stretta { max-width: 26rem; padding-top: 3rem; }
+/* Solo due transizioni in tutto il foglio. Nient'altro si muove. */
+.bottone,
+input, select, textarea,
+.barra nav a,
+.interruttore, .casella,
+.giorni label, .sfondi label {
+  transition: background-color 120ms, border-color 120ms, color 120ms;
+}
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
+
+/* ===========================================================================
+   3. GRIGLIE E CONTENITORI
+   =========================================================================== */
+
+/* Nessuna riga di testo oltre i 70 caratteri: main resta a 62rem. */
+main { max-width: 62rem; margin: 0 auto; padding: 20px 16px 64px; }
 
 .intestazione-pagina {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 16px;
   flex-wrap: wrap;
-  margin-bottom: 1.1rem;
+  margin-bottom: 24px;
 }
+/* La colonna del titolo si ferma prima della fine della riga, cosi i comandi
+   restano accanto al titolo invece di essere spinti sotto. Senza questo,
+   pagine sorelle con lo stesso bottone lo mostravano in due posti diversi
+   solo perche una aveva il paragrafo d'apertura piu lungo dell'altra. */
+.intestazione-pagina > div:first-child { max-width: 62ch; }
 
 .carta {
   background: var(--carta);
   border: 1px solid var(--bordo);
-  border-radius: var(--raggio);
-  box-shadow: var(--ombra);
-  padding: 1.1rem;
-  margin-bottom: 1rem;
+  border-radius: var(--r-carta);
+  box-shadow: var(--ombra), var(--luce);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.carta > h2:first-child,
+.carta > h3:first-child { margin-top: 0; }
+
+fieldset {
+  /* min-width:0 NON e estetico ed e OBBLIGATORIO: senza, un fieldset non si
+     lascia stringere sotto il suo contenuto e a 360px la pagina scorre di
+     lato. Era un bug, e questo e il punto piu a rischio di tablet.html. */
+  min-width: 0;
+  border: 1px solid var(--bordo);
+  border-radius: var(--r-carta);
+  padding: 16px;
+  margin: 0 0 16px;
+  background: var(--carta);
+  box-shadow: var(--ombra), var(--luce);
 }
 
-.carta > h2:first-child, .carta > h3:first-child { margin-top: 0; }
+/* Il maiuscoletto spaziato esiste in UN posto solo in tutta la UI: qui. */
+legend {
+  font: 700 11px/1.3 var(--font-testo);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--testo-tenue);
+  padding: 0 6px;
+}
 
 .griglia {
   display: grid;
-  gap: 1rem;
+  gap: 16px;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
+  /* Ogni scheda alta quanto il suo contenuto. Senza questa riga la griglia
+     stira tutte le schede della stessa fila all'altezza della piu alta: basta
+     un tablet in allarme (che porta cartello, rimedi e campi rifiutati) e
+     quelli sani accanto diventano due rettangoli vuoti alti trecento pixel.
+     E il colpo d'occhio rovesciato: chi sta bene occupa piu spazio di chi sta
+     male. */
+  align-items: start;
 }
-
 .due-colonne {
   display: grid;
-  gap: 1rem;
+  gap: 16px;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
 }
-
 .riga-bottoni {
   display: flex;
-  gap: .6rem;
+  gap: 8px;
   flex-wrap: wrap;
   align-items: center;
 }
 
-/* -------------------------------------------------------------- bottoni */
+/* Il bottone-barra in fondo a tablet.html e <div class="carta riga-bottoni">:
+   deve restare una carta e anche una riga, quindi .riga-bottoni viene dopo
+   .carta nel foglio e vince su display. */
+
+/* La riga del salvataggio resta attaccata in fondo allo schermo.
+   Misurato: su un telefono da 390px tablet.html e alta 5841 pixel e il tasto
+   Salva sta a 5298. Il genitore cambia il limite giornaliero a 2223 e poi
+   deve scorrere tremila pixel per salvare, senza nessun appiglio per strada:
+   e il punto in cui si rinuncia, o si chiude la pagina convinti di aver
+   salvato. Altrove il foglio evita apposta position:sticky per non far
+   ridisegnare niente durante lo scorrimento; qui un elemento solo vale il
+   prezzo, perche il problema che risolve e piu grosso del costo. */
+.barra-salva {
+  position: sticky;
+  bottom: 8px;
+  z-index: 5;
+}
+
+/* La barra copre quello che le passa sotto, e sul telefono i tre bottoni si
+   impilano fino a 198px: un quarto dello schermo. Lo scroll-padding dice al
+   browser di fermarsi piu su quando porta in vista un campo - per esempio
+   saltando a un errore dopo un 422 - cosi il campo non finisce nascosto
+   proprio sotto il bottone che l'ha segnalato. */
+html { scroll-padding-bottom: 220px; }
+
+/* ===========================================================================
+   4. BARRA IN ALTO
+   ===========================================================================
+   E NOTTE IN TUTTI E DUE I TEMI, e questa e la costante del sistema: il
+   genitore apre il sito di giorno o di sera e vede sempre la stessa insegna.
+   Non e appiccicosa (niente position:sticky): zero ridisegni allo
+   scorrimento. Il filetto d'oro da 1px e la prima linea d'orizzonte. */
+
+.barra {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 8px 16px;
+  min-height: 56px;
+  background: var(--notte);
+  border-bottom: 1px solid var(--oro);
+}
+
+.marchio {
+  font: 700 18px/1 var(--font-marchio);
+  letter-spacing: -.005em;
+  color: #FFFFFF;                /* 19,52:1 sulla notte */
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+.marchio span { color: var(--oro); }   /* 12,65:1 */
+
+/* La stella del logo, lo stesso path di icona.svg, d'oro sulla notte.
+   Lo spazio dalla parola lo mette la stella con il suo margine, NON un gap
+   del flex: "Star" e <span>Kid</span> sono due elementi flex distinti, quindi
+   un gap cade anche fra loro e il nome del prodotto si legge "Star Kid". Si
+   vedeva in cima a tutte e cinque le pagine. */
+.marchio::before {
+  content: "";
+  width: 20px;
+  height: 20px;
+  margin-right: 8px;
+  flex: 0 0 auto;
+  background-color: var(--oro);
+}
+
+.barra nav { display: flex; gap: 4px; flex-wrap: wrap; }
+.barra nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: var(--r-pillola);
+  text-decoration: none;
+  color: var(--notte-tenue);     /* 10,96:1 */
+  font: 600 15px/1 var(--font-testo);
+}
+.barra nav a:hover { color: #FFFFFF; background: rgba(255, 255, 255, .08); }
+.barra nav a.attiva {
+  color: var(--notte-testo);
+  background: rgba(255, 255, 255, .10);
+  box-shadow: inset 0 -2px 0 var(--oro);   /* un filo d'oro sotto la sezione
+                                              dove sei */
+}
+
+.barra .bottone.fantasma,
+.barra #esci {
+  color: var(--notte-tenue);
+  background: transparent;
+  border-color: transparent;
+  margin-left: auto;
+}
+.barra .bottone.fantasma:hover,
+.barra #esci:hover {
+  background: rgba(255, 255, 255, .10);
+  color: var(--notte-testo);
+}
+
+/* Sotto i 560px la barra va su due righe senza toccare l'HTML: marchio +
+   Esci sulla prima, i due collegamenti sulla seconda. Altrimenti "Esci" va a
+   capo da solo e sembra un errore. */
+@media (max-width: 559px) {
+  .barra nav { order: 3; flex: 1 0 100%; }
+  .barra #esci { order: 2; }
+}
+
+/* Il buco dichiarato: su tablet.html e nuovo.html nessuna voce di nav diventa
+   .attiva, perche avvia() in app.js confronta l'href col nome del file e
+   nessun link punta a quelle due pagine. Il JS non si tocca: si veste il
+   briciolo di ritorno che c'e gia in quelle pagine come un vero comando di
+   ritorno, cosi anche loro hanno un ancoraggio invece di un link in 14px. */
+main > p.piccolo > a[href="tablets.html"] {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--bordo-forte);
+  border-radius: var(--r-pillola);
+  color: var(--testo);
+  text-decoration: none;
+}
+main > p.piccolo > a[href="tablets.html"]:hover { background: var(--carta-alt); }
+
+/* ===========================================================================
+   5. PAGINA DI ACCESSO - il pannello che e la forma del logo
+   ===========================================================================
+   main.stretta esiste SOLO in index.html, quindi e lui il pannello. In tema
+   chiaro e un rettangolo notturno centrato su un campo chiaro, con una carta
+   bianca sospesa sopra a 19,52:1: e l'immagine piu forte della UI e la prima
+   che si vede. A 360px occupa quasi tutta la larghezza e si legge come la
+   pagina. Zero modifiche a index.html. */
+
+main.stretta {
+  max-width: 26rem;
+  margin: 48px auto;
+  padding: 32px 20px;
+  background-color: var(--notte);
+  background-image: var(--stelle-fitte), var(--stelle-larghe);
+  background-repeat: repeat;
+  border: 1px solid var(--notte-bordo);
+  border-radius: 24px;           /* l'eco dell'rx=40 del rettangolo notturno
+                                    di logo.svg */
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 18px 48px rgba(4, 6, 18, .45);
+  text-align: center;
+}
+
+/* Solo i figli diretti che stanno davvero sulla notte. */
+main.stretta > h1 {
+  font: 700 26px/1.2 var(--font-marchio);
+  letter-spacing: -.01em;
+  color: #FFFFFF;
+  margin: 0 0 6px;
+}
+/* index.html scrive Star<span class="tenue">Kid</span>: questa regola deve
+   vincere su .tenue, quindi sta dopo nel foglio. */
+main.stretta > h1 span { color: var(--oro); }
+main.stretta > h1::before {
+  content: "";
+  display: block;
+  width: 44px;
+  height: 44px;
+  margin: 0 auto 12px;
+  background-color: var(--oro-alto);
+}
+main.stretta > p { color: var(--notte-tenue); }
+main.stretta > p.piccolo { color: var(--notte-tenue); text-align: left; }
+
+/* Gli avvisi che compaiono sulla notte (errore di accesso, noscript): stesso
+   impianto degli altri, ma su fondo notturno. */
+main.stretta > #messaggio .avviso,
+main.stretta > noscript .avviso {
+  background: rgba(255, 255, 255, .06);
+  border: 1px solid var(--notte-bordo);
+  border-left: 3px solid var(--notte-forte);
+  color: var(--notte-testo);
+  text-align: left;
+}
+main.stretta > #messaggio .avviso h3,
+main.stretta > noscript .avviso h3 { color: var(--notte-testo); }
+/* --ok-notte e NON --ok: qui sotto c'e la notte, e --ok in tema chiaro e il
+   verde da carta (#0F6B3F), che su questo velo fa 2,62:1 contro i 4,5:1 che
+   servono a un h3 da 15px. Il titolo "Sei uscito" si leggeva solo in tema
+   scuro, cioe nel tema in cui --ok era gia chiaro. Ora 10,17:1 in tutti e
+   due i temi. Il filetto a sinistra segue il titolo: 2,62 -> 10,17 contro i
+   3:1 di WCAG 1.4.11. Visivamente il verde bottiglia diventa verde menta,
+   ed e lo stesso verde che l'avviso "ok" ha gia in tema scuro. */
+main.stretta > #messaggio .avviso.ok { border-left-color: var(--ok-notte); }
+main.stretta > #messaggio .avviso.ok h3 { color: var(--ok-notte); }
+main.stretta > #messaggio .avviso.attesa { border-left-color: var(--attesa-notte); }
+main.stretta > #messaggio .avviso.attesa h3 { color: var(--attesa-notte); }
+main.stretta > #messaggio .avviso.guasto,
+main.stretta > noscript .avviso.guasto { border-left-color: var(--spenta); }
+main.stretta > #messaggio .avviso.guasto h3,
+main.stretta > noscript .avviso.guasto h3 { color: var(--spenta); }
+
+/* Il modulo resta carta: bianca in chiaro, #212C5A in scuro. */
+main.stretta form.carta { text-align: left; margin: 20px 0; }
+main.stretta #entra { width: 100%; min-height: 52px; font-size: 17px; }
+
+/* ===========================================================================
+   6. SCHEDA DI UN TABLET - carta, medaglione, finestra
+   ===========================================================================
+   Costruita da pagina-tablets.js. Ordine del DOM, da non cambiare:
+   h2>a | div.riga-bottoni | [cartello] | dl.dati | [avviso rifiuti] |
+   div(p.piccolo.tenue + ul.spie) | p.piccolo.tenue | div.riga-bottoni. */
+
+.tablet {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--carta);
+  border: 1px solid var(--bordo);
+  border-radius: var(--r-carta);
+  box-shadow: var(--ombra), var(--luce);
+  padding: 16px;
+  padding-right: 60px;           /* fa posto al medaglione */
+  overflow: hidden;              /* la fascia a filo non esce dal raggio */
+}
+
+/* Non piu border-left:5px, che sfondava il raggio: un'ombra interna lo
+   rispetta e non sposta di un pixel il contenuto. */
+.tablet.allarme {
+  border-color: var(--guasto);
+  box-shadow: inset 4px 0 0 var(--guasto), var(--ombra), var(--luce);
+}
+
+.tablet h2 { font: 700 18px/1.3 var(--font-testo); letter-spacing: -.01em; }
+/* Il titolo di una scheda non e un link da leggere come link: e il nome
+   della cosa. Ma resta un link, quindi deve essere anche toccabile: sul
+   telefono :hover non esiste, e un bersaglio alto 24px sta sotto i 44 che
+   servono a un dito. Il padding lo porta a 44 senza spostare il testo (i
+   margini negativi lo riassorbono) e la sottolineatura tratteggiata, tenue,
+   dice che e un link anche a chi non ha un mouse da passarci sopra.
+   Chi vuole il bottone vero ce l'ha lo stesso: "Configura", in fondo. */
+.tablet h2 a {
+  color: var(--testo);
+  display: inline-block;
+  padding: 10px 2px;
+  margin: -10px -2px;
+  text-decoration: underline dotted var(--bordo-forte);
+  text-underline-offset: 3px;
+}
+.tablet h2 a:hover,
+.tablet h2 a:focus-visible { text-decoration: underline solid currentColor; }
+
+/* IL MEDAGLIONE. E il segno distintivo, e l'unico posto dove l'oro sta sulla
+   carta - perche sotto l'oro c'e sempre la notte.
+   Il genitore non legge la pagina: la scorre cercando l'oro, e in mezzo
+   secondo sa quanti tablet stanno bene. */
+.tablet::before {
+  content: "";
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--notte);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .10);
+}
+.tablet::after {
+  content: "";
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 22px;
+  height: 22px;
+  background-color: var(--oro);  /* 1 - tutto a posto: stella piena d'oro */
+}
+
+/* 2 - c'e qualcosa in attesa: stella VUOTA ambra.
+   L'informazione e GIA nel DOM (.etichetta porta lo stato scritto da
+   statoDi(), .etichetta.lunga quello della configurazione, .spia le spie),
+   quindi bastano due regole e zero modifiche al JavaScript. */
+.tablet:has(.etichetta.attesa)::after,
+.tablet:has(.spia.ignota)::after {
+  background-color: var(--attesa-notte);
+  -webkit-mask-image: var(--m-stella-vuota);
+          mask-image: var(--m-stella-vuota);
+}
+/* 3 - c'e qualcosa di rotto: stella VUOTA rossa. Va per ultimo e vince. */
+.tablet:has(.etichetta.guasto)::after,
+.tablet:has(.spia.spenta)::after,
+.tablet.allarme::after {
+  background-color: var(--spenta);
+  -webkit-mask-image: var(--m-stella-vuota);
+          mask-image: var(--m-stella-vuota);
+}
+/* Degrado senza :has(): la stella resta d'oro sempre. Si perde il colpo
+   d'occhio, non l'informazione: lo stato e scritto in parole nell'etichetta e
+   nelle spie, e le forme sono tre (piena / vuota ambra / vuota rossa). Lo
+   stato non e MAI solo nel colore. */
+
+/* Le maschere. La prima riga di ogni coppia e per Safari fino a 15.3. */
+.marchio::before,
+main.stretta > h1::before,
+.tablet::after,
+.spia.accesa::before {
+  -webkit-mask-image: var(--m-stella-piena);
+          mask-image: var(--m-stella-piena);
+  -webkit-mask-repeat: no-repeat;
+          mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+          mask-position: center;
+  -webkit-mask-size: contain;
+          mask-size: contain;
+}
+
+/* ETICHETTE. Via il text-transform:uppercase e il letter-spacing che c'erano:
+   statoDi() produce frasi e non parole ("Zitto da 2 giorni", "Mai arrivato")
+   e una frase in maiuscoletto spaziato si legge peggio.
+   Il fondo si tinge soltanto col velo, non col colore pieno: e la differenza
+   fra una pagina calma e un albero di Natale. */
+.etichetta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: 700 13px/1.3 var(--font-testo);
+  letter-spacing: .01em;
+  padding: 5px 10px 5px 8px;
+  border-radius: var(--r-pillola);
+  background: var(--carta-alt);
+  color: var(--testo-tenue);
+  border: 1px solid var(--bordo);
+}
+.etichetta::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: 0 0 auto;
+}
+.etichetta.ok     { color: var(--ok);     background: var(--ok-velo);     border-color: var(--ok); }
+.etichetta.attesa { color: var(--attesa); background: var(--attesa-velo); border-color: var(--attesa); }
+.etichetta.guasto { color: var(--guasto); background: var(--guasto-velo); border-color: var(--guasto); }
+
+/* Su tre righe una pillola si sfonda: qui 8px e non 999px. */
+.etichetta.lunga {
+  font: 600 14px/1.4 var(--font-testo);
+  letter-spacing: 0;
+  text-transform: none;
+  border-radius: 8px;
+  white-space: normal;
+  padding: 6px 10px;
+  align-items: flex-start;
+}
+.etichetta.lunga::before { margin-top: 5px; }
+
+/* I dati del server, come righe di registro. */
+dl.dati {
+  margin: 4px 0 0;
+  display: grid;
+  gap: 2px 12px;
+  grid-template-columns: auto 1fr;
+}
+.dati dt { font: 600 13px/1.35 var(--font-testo); color: var(--testo-tenue); }
+.dati dd { font: 400 14px/1.45 var(--font-testo); margin: 0; }
+.dati dd.mono { font-family: var(--font-mono); font-size: 13px; overflow-wrap: anywhere; }
+
+/* Un identificativo da 32 caratteri esadecimali in 230px si spezza male:
+   sotto i 480px i dati vanno su una colonna sola. */
+@media (max-width: 479px) {
+  dl.dati { grid-template-columns: 1fr; gap: 0 0; }
+  .dati dt { margin-top: 6px; }
+  .dati dd { margin-bottom: 2px; }
+}
+
+/* ===========================================================================
+   7. LA FASCIA NOTTURNA - ul.spie
+   ===========================================================================
+   E il secondo segno distintivo e il cuore della direzione. ul.spie e gia
+   univocamente classato dal JS di oggi: nessuna modifica al JavaScript.
+
+   Il filetto d'oro in cima e la linea d'orizzonte: sopra la carta coi fatti
+   del server, sotto il cielo col racconto del tablet.
+   In tema scuro la fascia ha la STESSA tinta del fondo della pagina e le
+   stesse stelle: la carta e un foglio appoggiato sul cielo, e la fascia e una
+   finestra tagliata nel foglio che torna a vedere il cielo. E per questo che
+   in tema scuro il salto di luminanza di 1,46:1 non e un problema: la
+   differenza non e la luminanza, e il MATERIALE - il cielo ha le stelle, la
+   carta non le ha mai. */
+
+ul.spie {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 12px 16px 14px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 7px;
+  background-color: var(--notte);
+  background-image: var(--stelle-fitte), var(--stelle-larghe);
+  background-repeat: repeat;
+  border: 1px solid var(--oro);
+  border-radius: var(--r-carta);
+}
+
+/* Dentro una scheda la fascia va a filo dei bordi, e allora il filetto d'oro
+   resta solo in cima.
+   I margini negativi NON sono simmetrici, e questo e il punto da capire: la
+   scheda ha padding-right 60px per il medaglione, quindi per arrivare al
+   bordo destro serve -60px, non -16px. Con -16px la fascia si fermava 44px
+   prima e il taglio si vedeva. Il margine negativo arriva al bordo anche
+   attraverso il div senza padding che contiene la lista (quello tornato da
+   listaSpie), perche quel div non ha padding proprio. */
+.tablet ul.spie {
+  margin: 16px -60px 0 -16px;
+  border: 0;
+  /* Filetto d'oro SOPRA E SOTTO, e angoli vivi. La fascia non arriva in fondo
+     alla scheda: dopo di lei vengono ancora la didascalia "Spie aggiornate..."
+     e i bottoni. Con gli angoli inferiori arrotondati sembrava il fondo della
+     carta, e sotto spuntava altro contenuto: una finestra tagliata nel foglio
+     ha quattro lati, non due. */
+  border-top: 1px solid var(--oro);
+  border-bottom: 1px solid var(--oro);
+  border-radius: 0;
+}
+
+/* La didascalia della finestra. Non e un cavillo che quel testo esista: il
+   server non puo verificare le spie, le scrive il tablet, e dirlo e l'unica
+   cosa onesta che la pagina puo fare. Per questo e lui l'intestazione. */
+.tablet > div > p.piccolo.tenue:first-child { margin: 12px 0 0; }
+
+/* Qui le spie non sono piu pastiglie: sono stelle in un cielo. Si azzerano
+   fondo, bordo e padding che avevano. */
+li.spia {
+  display: flex;
+  align-items: center;
+  /* Se non ci sta, va a capo tutto intero. Senza questa riga l'etichetta piu
+     lunga ("Controllo del tablet (Device Owner)") piu il "(mai detto)" che
+     aggiunge il JS si spezzavano a meta parola, e la riga restava comunque
+     piu alta. Meglio una riga in piu, pulita. */
+  flex-wrap: wrap;
+  gap: 9px;
+  min-height: 24px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  font: 600 13px/1.3 var(--font-testo);
+  color: var(--notte-testo);
+}
+.spia::before {
+  content: "";
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+}
+
+/* Il perche di una spia spenta, scritto sotto il nome invece che in un title
+   che sul telefono non si vede. Va a capo da solo perche li.spia ha
+   flex-wrap, e il margine a sinistra lo allinea sotto il nome e non sotto la
+   stella. */
+/* Il selettore e "span.conseguenza" e non ".conseguenza" per una ragione
+   precisa: piu sotto c'e ".spia .piccolo", che ha la stessa specificita e
+   viene dopo, quindi vinceva lui e scriveva questa frase a 11px nel colore
+   che in questa UI significa "il tablet non l'ha mai detto". Cioe la cosa
+   piu importante che la scheda ha da dire usciva nel colore di quella meno
+   importante. Il tag alza la specificita quel tanto che basta. */
+.spia span.conseguenza {
+  /* Deve poter RESTRINGERSI: con "1 0 100%" la base era gia tutta la riga e i
+     24px di margine si sommavano dopo, quindi il testo usciva dalla fascia a
+     destra. Con "1 1 100%" piu min-width:0 la base resta il punto di
+     partenza ma il contenuto si adatta allo spazio che resta davvero. */
+  flex: 1 1 100%;
+  min-width: 0;
+  margin: 2px 0 2px 24px;
+  font: 400 12px/1.4 var(--font-testo);
+  color: var(--notte-testo);
+}
+
+/* Tre stati, TRE FORME oltre ai tre colori: funziona anche a chi non
+   distingue il rosso dal giallo (WCAG 1.4.1). */
+
+/* Una spia accesa e una stella d'oro. */
+.spia.accesa::before { background-color: var(--oro); }
+
+/* Spenta: NON una maschera, un cerchio vuoto. E un buco nel cielo: si vede
+   che MANCA una stella, non solo che un colore e cambiato. */
+.spia.spenta::before {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 2px solid var(--spenta);
+  background: none;
+}
+.spia.spenta { color: var(--spenta); font-weight: 700; }
+
+.spia.ignota::before {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 1px dashed var(--ignota);
+  background: none;
+}
+.spia.ignota { color: var(--ignota); }
+/* Il " (mai detto)" che aggiunge il JS. */
+.spia .piccolo { font: 400 11px/1.3 var(--font-testo); color: var(--ignota); }
+
+/* La quinta spia e device_owner, la sola con limiti:false: senza di essa il
+   kiosk non si accende e StarKid si puo disinstallare, ma i limiti di tempo
+   funzionano. L'ordine dell'array SPIE in app.js e fisso, quindi il modello
+   dei dati entra nel layout senza una riga di JS. */
+ul.spie .spia:nth-child(5) {
+  margin-top: 3px;
+  padding-top: 9px;
+  border-top: 1px solid var(--notte-bordo);
+}
+
+/* Due colonne quando la scheda e larga, una quando e stretta. Una media query
+   misurerebbe la finestra, e la fascia vive dentro una scheda da 300px:
+   serve una container query, dentro @supports perche e una dipendenza su
+   browser dal 2022-2023. Su un browser vecchio resta una colonna: rischio
+   zero. */
+@supports (container-type: inline-size) {
+  .tablet { container-type: inline-size; }
+  @container (min-width: 26rem) {
+    ul.spie { grid-template-columns: 1fr 1fr; column-gap: 16px; }
+  }
+}
+/* Su tablet.html la fascia sta dentro #cartello, fuori da ogni scheda, ed e
+   larga: li le due colonne si possono dare guardando la finestra. */
+@media (min-width: 640px) {
+  #cartello ul.spie { grid-template-columns: 1fr 1fr; column-gap: 16px; }
+}
+
+/* Costo dichiarato: sul telefono la fascia occupa circa 130px per scheda,
+   sempre, anche con tutte e cinque le spie accese. E una scelta: il colpo
+   d'occhio lo da il medaglione in alto a destra, la fascia da il dettaglio
+   quando si scende. Chiuderla quando e tutto a posto vorrebbe dire
+   aggiungere JavaScript, e non si fa. */
+
+/* ===========================================================================
+   8. BOTTONI
+   ===========================================================================
+   Niente filter: brightness(). Su fondo notturno schiarisce anche il testo e
+   sporca il contrasto: ogni stato ha un valore scritto.
+   Niente gradienti, niente ombre colorate.
+
+   LA REGOLA DELLE ICONE NEI BOTTONI, una sola e senza eccezioni:
+
+     UN BOTTONE NON PORTA MAI UN'ICONA. Dentro un bottone c'e solo il verbo.
+
+   In questa UI l'icona dice DOVE SEI: sta dentro l'h1 di ogni pagina e nei
+   titoli di sezione scritti a mano nell'HTML. Non dice CHE COSA SUCCEDERA
+   premendo. Un posto solo per un significato solo.
+
+   Gli avvisi NON ne hanno, e non e una dimenticanza: li costruisce avviso()
+   in app.js con un h3 di solo testo, e da li passa tutto quello che il
+   prodotto dice davvero - "Sei uscito", il cartello rosso dei limiti che non
+   funzionano, i campi che il tablet ha rifiutato. Metterla vorrebbe dire
+   sceglierla da JavaScript in base al tipo di avviso, cioe spostare un
+   giudizio dentro il codice. Il colore e il filetto a sinistra dicono gia
+   di che avviso si tratta.
+
+   Prima era messa a caso: dei cinque comandi principali del prodotto solo
+   "Aggiungi un tablet" aveva l'icona ("Entra", "Crea il tablet", "Salva:
+   pubblica una nuova revisione" e "Ho finito, torna all'elenco" no), e in
+   nuovo.html due .secondario con icona stavano accanto a un .fantasma senza
+   bordo ne icona: tre pesi diversi in tre bottoni affiancati.
+
+   Fra le due regole possibili - l'icona su tutti i comandi principali, o
+   l'icona su nessun bottone - si e scelta la seconda, per due ragioni che si
+   possono controllare e non per gusto:
+
+   1. icone.svg ha sedici simboli e da qui non si allunga. Per "Entra" non ne
+      ha uno: ico-uscita e la porta con la freccia che ESCE, e girarla non la
+      rende un ingresso. Per "Salva: pubblica una nuova revisione" il solo
+      candidato sarebbe ico-spunta, che vuol dire "fatto" - mentre tablet.html
+      esiste tutta per spiegare che la revisione e PUBBLICATA e non ancora
+      applicata, e che il tablet potrebbe rifiutarla. Un'icona che mente e
+      peggio di nessuna icona, e due comandi su cinque senza simbolo onesto
+      sono esattamente il difetto che si stava chiudendo.
+   2. SK.occupato() in app.js scambia il testo del bottone con textContent
+      mentre il server lavora ("Un momento...", "Creo...", "Pubblico...",
+      "Torno...", "Cancello..."): un <svg> figlio sparirebbe al primo
+      salvataggio e non tornerebbe mai piu. Ci passano #entra, #crea, #salva,
+      "Torna a questa" e "Cancella", cioe quasi tutti i comandi che contano.
+      Con questa regola app.js non si tocca e la mina non esiste.
+
+   Conseguenze applicate: via l'icona da "Aggiungi un tablet" (tablets.html),
+   da "Scarica QR (PNG)" e "Scarica JSON" (nuovo.html) e da "Scarica
+   configurazione (JSON)" (tablet.html); e in nuovo.html "Stampa" da .fantasma
+   diventa .secondario, perche scaricare il PNG, scaricare il JSON e stampare
+   sono tre azioni sorelle sullo stesso oggetto e vanno in tre bottoni dello
+   stesso peso. .fantasma resta a chi fa un passo indietro: "Esci" nella barra
+   e "Annulla le modifiche".
+
+   Il gap da 6px qui sotto resta: non serve piu a nessun bottone del prodotto,
+   serve a galleria.html, che le varianti le mostra ancora. */
 
 .bottone {
-  font: inherit;
-  font-weight: 600;
+  font: 600 16px/1.2 var(--font-testo);
   min-height: 44px;
-  padding: .55rem 1.1rem;
-  border-radius: var(--raggio-piccolo);
-  border: 1px solid transparent;
+  padding: 10px 20px;
+  border-radius: var(--r-controllo);
+  border: 1px solid var(--accento);
   background: var(--accento);
   color: var(--accento-testo);
   cursor: pointer;
@@ -216,336 +1037,628 @@ main.stretta { max-width: 26rem; padding-top: 3rem; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: .4rem;
+  gap: 6px;
 }
-.bottone:hover { filter: brightness(1.08); }
+.bottone:hover { background: var(--accento-vivo); border-color: var(--accento-vivo); }
 .bottone:active { transform: translateY(1px); }
-.bottone[disabled] { opacity: .55; cursor: progress; }
+.bottone[disabled] { opacity: .5; cursor: progress; }
+.bottone[disabled]:hover { background: var(--accento); border-color: var(--accento); }
 
 .bottone.secondario {
   background: var(--carta);
   color: var(--testo);
   border-color: var(--bordo-forte);
 }
-.bottone.secondario:hover { background: var(--carta-alt); filter: none; }
+.bottone.secondario:hover { background: var(--carta-alt); }
+.bottone.secondario[disabled]:hover { background: var(--carta); }
 
 .bottone.fantasma {
   background: transparent;
   color: var(--testo-tenue);
   border-color: transparent;
 }
-.bottone.fantasma:hover { background: var(--carta-alt); color: var(--testo); filter: none; }
+.bottone.fantasma:hover { background: var(--carta-alt); color: var(--testo); }
 
 .bottone.pericolo {
   background: transparent;
   color: var(--guasto);
   border-color: var(--guasto);
 }
-.bottone.pericolo:hover { background: var(--guasto-sfondo); filter: none; }
+.bottone.pericolo:hover { background: var(--guasto-velo); }
 
-.bottone.piccolo { min-height: 36px; padding: .3rem .7rem; font-size: .9rem; }
-
-/* ---------------------------------------------------------------- campi */
-
-label { display: block; font-weight: 600; margin-bottom: .3rem; }
-
-.campo { margin-bottom: 1rem; }
-.campo .aiuto { display: block; font-weight: 400; color: var(--testo-tenue); font-size: .88rem; margin-top: .25rem; }
-
-input[type=text], input[type=password], input[type=number], input[type=time], input[type=url], select, textarea {
-  font: inherit;
-  width: 100%;
+/* 44px di ALTEZZA anche qui, non 36: "Configura" e "Cancella" sono i bottoni
+   piu toccati di tutta la UI. Si stringe in larghezza e di corpo, mai in
+   altezza. */
+.bottone.piccolo {
   min-height: 44px;
-  padding: .5rem .65rem;
+  padding: 0 12px;
+  font-size: 14px;
+}
+
+/* ===========================================================================
+   9. CAMPI E CONTROLLI
+   =========================================================================== */
+
+input[type=text],
+input[type=password],
+input[type=number],
+input[type=time],
+input[type=url],
+select,
+textarea {
+  font: 400 16px/1.4 var(--font-testo);  /* 16px pieni e obbligatorio: sotto,
+                                            iOS ingrandisce da solo e la
+                                            pagina salta */
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 14px;
   color: var(--testo);
-  background: var(--carta);
+  background: var(--campo);              /* in tema scuro piu scuro della
+                                            carta: il campo e scavato, non
+                                            appoggiato, e si capisce che e un
+                                            posto dove si scrive */
   border: 1px solid var(--bordo-forte);
-  border-radius: var(--raggio-piccolo);
+  border-radius: var(--r-controllo);
 }
-textarea { min-height: 7rem; resize: vertical; line-height: 1.45; }
+::placeholder { color: var(--testo-tenue); opacity: 1; }
 
-input[aria-invalid="true"], select[aria-invalid="true"], textarea[aria-invalid="true"] {
+input[type=text]:hover,
+input[type=password]:hover,
+input[type=number]:hover,
+input[type=time]:hover,
+input[type=url]:hover,
+select:hover,
+textarea:hover { border-color: var(--accento); }
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible { border-color: var(--accento); }
+
+input[disabled], input[readonly],
+select[disabled], textarea[disabled], textarea[readonly] {
+  background: var(--carta-alt);
+  color: var(--testo-tenue);
+  cursor: default;
+}
+
+/* aria-invalid lo mette gia il JS sui controlli in errore. */
+input[aria-invalid="true"],
+select[aria-invalid="true"],
+textarea[aria-invalid="true"] {
+  border-width: 2px;
   border-color: var(--guasto);
-  background: var(--guasto-sfondo);
+  background: var(--guasto-velo);
 }
 
+/* Sono nomi di pacchetto, non prosa. A 16px pieni comunque: sotto i 16px
+   Safari su iPhone ingrandisce la pagina da solo appena si tocca il campo, e
+   il genitore si ritrova la pagina saltata mentre scrive. Vale per ogni
+   controllo in cui si digita, non solo per quelli di prosa. */
+textarea {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  line-height: 1.5;
+  min-height: 7rem;
+  resize: vertical;
+}
+
+/* Il chevron e una background-image e non una maschera, perche una maschera
+   sul select coprirebbe il testo e un'immagine esterna non eredita
+   currentColor. E l'unica tinta cucita in una stringa, e sta in --chevron,
+   definita una volta per tema. */
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 40px;
+  background-image: var(--chevron);
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 12px 8px;
+}
+
+/* CASELLE E PALLINI DISEGNATI A MANO. Non si usa accent-color: con un fondo
+   scuro Chrome tinge di cachi i controlli NON spuntati, e su una pagina con
+   undici giochi e sette giorni si vede e sembra sporco. Con appearance:none
+   il problema non esiste. */
+input[type=checkbox],
+input[type=radio] {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  width: 22px;
+  height: 22px;
+  min-height: 0;
+  margin: 0;
+  flex: 0 0 auto;
+  cursor: pointer;
+  background: var(--campo);
+  border: 2px solid var(--bordo-forte);
+  border-radius: 6px;
+}
+input[type=radio] { border-radius: 50%; }
+input[type=checkbox]:hover,
+input[type=radio]:hover { border-color: var(--accento); }
+input[type=checkbox]:checked,
+input[type=radio]:checked { background: var(--accento); border-color: var(--accento); }
+
+/* La spunta NON e una data URI: e un bordo ruotato, quindi segue il token
+   senza che nessuna tinta finisca dentro una stringa. */
+input[type=checkbox]:checked::after {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 2px;
+  width: 6px;
+  height: 11px;
+  border: solid var(--accento-testo);
+  border-width: 0 2.5px 2.5px 0;
+  transform: rotate(40deg);
+}
+input[type=radio]:checked::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  background: var(--accento-testo);
+}
+input[type=checkbox][disabled],
+input[type=radio][disabled] { opacity: .5; cursor: default; }
+
+.campo { margin-bottom: 16px; }
+label { display: block; font: 600 16px/1.3 var(--font-testo); margin-bottom: 6px; }
+
+.campo .aiuto,
+.interruttore .aiuto,
+.casella .aiuto {
+  display: block;
+  font: 400 14px/1.45 var(--font-testo);
+  color: var(--testo-tenue);
+  margin-top: 6px;
+}
+
+/* Il .errore-campo resta FRATELLO del controllo dentro il .campo: non si
+   reimpacchetta, perche pagina-tablet.js risale al parentNode per trovare il
+   controllo e mettergli aria-invalid. */
 .errore-campo {
   color: var(--guasto);
-  font-size: .88rem;
-  font-weight: 600;
-  margin-top: .3rem;
+  font: 700 14px/1.4 var(--font-testo);
+  margin-top: 8px;
 }
 
-fieldset {
-  border: 1px solid var(--bordo);
-  border-radius: var(--raggio-piccolo);
-  padding: .8rem;
-  margin: 0 0 1rem;
-}
-legend { font-weight: 600; padding: 0 .35rem; }
-
-/* Interruttori e caselle: la riga intera e cliccabile, anche col pollice. */
-.interruttore, .casella {
+/* La riga intera e cliccabile, anche col pollice. */
+.interruttore,
+.casella {
   display: flex;
   align-items: flex-start;
-  gap: .6rem;
-  font-weight: 500;
-  margin: 0 0 .6rem;
-  padding: .45rem .5rem;
-  border-radius: var(--raggio-piccolo);
+  gap: 12px;
+  min-height: 48px;
+  padding: 12px;
+  margin: 0 0 8px;
+  border-radius: var(--r-controllo);
   cursor: pointer;
-  min-height: 44px;
+  font-weight: 500;
 }
-.interruttore:hover, .casella:hover { background: var(--carta-alt); }
-.interruttore input, .casella input { width: 22px; height: 22px; margin: .15rem 0 0; flex: 0 0 auto; accent-color: var(--accento); }
-.interruttore .aiuto, .casella .aiuto { display: block; font-weight: 400; color: var(--testo-tenue); font-size: .88rem; }
+.interruttore:hover,
+.casella:hover { background: var(--carta-alt); }
+.interruttore:focus-within,
+.casella:focus-within {
+  background: var(--carta-alt);
+  box-shadow: inset 0 0 0 1px var(--bordo-forte);
+}
 
 .lista-caselle {
   display: grid;
-  gap: .2rem;
+  gap: 4px;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr));
 }
 
-.giorni { display: flex; flex-wrap: wrap; gap: .35rem; }
+/* Due provini affiancati, senza toccare il JavaScript: gli id li genera
+   pagina-tablet.js da SK.TEMI e sono fissi. Sono i gradienti veri dei due
+   temi, quindi il genitore vede cosa sceglie invece di leggere due nomi.
+   Senza :has() resta il pallino, che dice lo stesso. */
+#temi { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+#temi .interruttore {
+  position: relative;
+  padding-top: 60px;
+  border: 1px solid var(--bordo);
+  align-items: flex-start;
+}
+#temi .interruttore::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 44px;
+  border-radius: var(--r-controllo) var(--r-controllo) 0 0;
+}
+#temi label[for="tema-pulito"]::before   { background: linear-gradient(160deg, #F8F0FF, #E4D4FF); }
+#temi label[for="tema-spaziale"]::before { background: linear-gradient(160deg, #070B1E, #1B2555); }
+#temi .interruttore:has(input:checked) {
+  border-color: var(--accento);
+  background: var(--accento-velo);
+}
+
+/* Gli sfondi. La struttura e label > span.provino.<id> + input + testo.
+   Il pallino RESTA visibile: il bordo colorato usa :has(), che su un browser
+   vecchio non funziona, e senza pallino non si capirebbe piu quale sfondo e
+   scelto. */
+.sfondi { display: grid; gap: 8px; grid-template-columns: repeat(2, 1fr); }
+.sfondi label {
+  position: relative;
+  margin: 0;
+  min-height: 44px;
+  padding: 8px;
+  border: 2px solid var(--bordo);
+  border-radius: var(--r-piccolo);
+  cursor: pointer;
+  text-align: center;
+  font: 600 14px/1.3 var(--font-testo);
+}
+.sfondi label:has(input:checked) { border-color: var(--accento); background: var(--accento-velo); }
+.sfondi .provino {
+  display: block;
+  height: 56px;
+  border-radius: var(--r-piccolo);
+  margin-bottom: 6px;
+  border: 1px solid rgba(0, 0, 0, .10);
+}
+.sfondi input { width: 18px; height: 18px; vertical-align: middle; margin: 0 6px 0 0; }
+
+/* I valori veri di Skin.kt, verbatim: non si reinventano. */
+.provino.lilla    { background: linear-gradient(160deg, #F8F0FF, #E4D4FF); }
+.provino.cielo    { background: linear-gradient(160deg, #E6F4FF, #BFDCFF); }
+.provino.prato    { background: linear-gradient(160deg, #EDF9E4, #C4E9C9); }
+.provino.tramonto { background: linear-gradient(160deg, #FFF2E0, #FFD2E0); }
+.provino.notte    { background: linear-gradient(160deg, #070B1E, #1B2555); }
+.provino.nebulosa { background: linear-gradient(160deg, #1B0B33, #2B1559 55%, #071029); }
+.provino.marte    { background: linear-gradient(160deg, #2A1108, #5E2A1C); }
+.provino.orbita   { background: linear-gradient(160deg, #041C2B, #0A2A4A); }
+
+/* I giorni. A 360px: 4*44 + 3*8 = 200px di larghezza minima, dentro i 296px
+   disponibili nella carta. Lun-Gio sulla prima riga, Ven-Dom sulla seconda. */
+.giorni { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 .giorni label {
   margin: 0;
   display: inline-flex;
   align-items: center;
-  gap: .35rem;
-  padding: .4rem .6rem;
+  justify-content: center;
+  gap: 6px;
   min-height: 44px;
+  padding: 0 6px;
   border: 1px solid var(--bordo-forte);
-  border-radius: 999px;
+  border-radius: var(--r-piccolo);
   cursor: pointer;
+  font: 600 14px/1 var(--font-testo);
 }
-.giorni input { accent-color: var(--accento); width: 18px; height: 18px; }
-
-/* Scelta dello sfondo: le tinte vere, cosi si vede cosa si sta scegliendo. */
-.sfondi { display: flex; flex-wrap: wrap; gap: .5rem; }
-.sfondi label {
-  position: relative;
-  margin: 0;
-  width: 5.4rem;
-  border: 2px solid var(--bordo);
-  border-radius: var(--raggio-piccolo);
-  padding: .3rem;
-  cursor: pointer;
-  text-align: center;
-  font-size: .85rem;
-  font-weight: 600;
+.giorni label:has(input:checked) {
+  border-color: var(--accento);
+  background: var(--accento-velo);
+  color: var(--accento);
 }
-.sfondi label:has(input:checked) { border-color: var(--accento); background: var(--accento-chiaro); }
-.sfondi .provino {
-  display: block;
-  height: 2.6rem;
-  border-radius: 6px;
-  margin-bottom: .25rem;
-  border: 1px solid rgba(0, 0, 0, .08);
-}
-/* Il pallino resta visibile: il bordo colorato qui sopra usa :has(), che su
-   un browser vecchio non funziona, e senza pallino non si capirebbe piu
-   quale sfondo e scelto. */
-.sfondi input { width: 18px; height: 18px; accent-color: var(--accento); vertical-align: middle; margin: 0 .25rem 0 0; }
+.giorni input { width: 18px; height: 18px; }
 
-.provino.lilla    { background: linear-gradient(160deg, #f8f0ff, #e4d4ff); }
-.provino.cielo    { background: linear-gradient(160deg, #e6f4ff, #bfdcff); }
-.provino.prato    { background: linear-gradient(160deg, #edf9e4, #c4e9c9); }
-.provino.tramonto { background: linear-gradient(160deg, #fff2e0, #ffd2e0); }
-.provino.notte    { background: linear-gradient(160deg, #070b1e, #1b2555); }
-.provino.nebulosa { background: linear-gradient(160deg, #1b0b33, #2b1559 55%, #071029); }
-.provino.marte    { background: linear-gradient(160deg, #2a1108, #5e2a1c); }
-.provino.orbita   { background: linear-gradient(160deg, #041c2b, #0a2a4a); }
+.segreto { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.segreto input { flex: 1 1 12rem; min-width: 0; }
+#token,
+/* 16px anche qui, per lo stesso motivo del textarea: e un campo in cui si
+   tocca e si copia, e sotto i 16px iOS ingrandisce da solo. */
+.segreto input.mono { font-family: var(--font-mono); font-size: 16px; line-height: 1.45; letter-spacing: .02em; }
 
-/* ------------------------------------------------------------- messaggi */
+/* ===========================================================================
+   10. AVVISI
+   ===========================================================================
+   Il colore sta nel filetto e nel titolo, non nel testo da leggere: il corpo
+   resta --testo in tutti i casi. */
 
 .avviso {
-  border: 1px solid var(--bordo-forte);
-  border-left-width: 5px;
-  border-radius: var(--raggio-piccolo);
-  padding: .8rem .9rem;
-  margin-bottom: 1rem;
+  border: 1px solid var(--bordo);
+  border-left: 4px solid var(--bordo-forte);
+  border-radius: var(--r-controllo);
+  padding: 12px 14px;
+  margin-bottom: 16px;
   background: var(--carta-alt);
 }
-.avviso h3 { margin: 0 0 .25rem; font-size: 1rem; }
-.avviso.ok      { background: var(--ok-sfondo);     border-color: var(--ok); color: var(--testo); }
-.avviso.attesa  { background: var(--attesa-sfondo); border-color: var(--attesa); }
-.avviso.guasto  { background: var(--guasto-sfondo); border-color: var(--guasto); }
-.avviso ul { margin: .35rem 0 0; padding-left: 1.2rem; }
+.avviso h3 { font: 700 15px/1.35 var(--font-testo); margin: 0 0 4px; }
+.avviso ul { margin: 6px 0 0; padding-left: 20px; }
+.avviso.ok     { border-left-color: var(--ok);     background: var(--ok-velo); }
+.avviso.ok h3  { color: var(--ok); }
+.avviso.attesa { border-left-color: var(--attesa); background: var(--attesa-velo); }
+.avviso.attesa h3 { color: var(--attesa); }
+.avviso.guasto { border-left-color: var(--guasto); background: var(--guasto-velo); }
+.avviso.guasto h3 { color: var(--guasto); }
 
-.avviso-grosso { font-size: 1.02rem; }
-.avviso-grosso strong { font-size: 1.08rem; }
-
-.caricamento {
-  color: var(--testo-tenue);
-  padding: 1.5rem 0;
-  text-align: center;
+/* Il cartello role="alert" di cartelloLimiti(). Nessuna animazione, nessun
+   lampeggio, nessun riquadro intorno al <strong>NON</strong>. */
+.avviso-grosso {
+  font-size: 16px;
+  border-left-width: 6px;
 }
+.avviso-grosso h3 { font-size: 16px; }
 
-/* ---------------------------------------------------------------- spie */
+/* Su un tablet malmesso lo stesso cartello compare in cima alla pagina E
+   dentro la scheda: un allarme ripetuto due volte piu forte non e due volte
+   piu chiaro. Quello in cima resta forte, quello dentro la scheda non si
+   alza. La duplicazione esiste nel JS e toglierla vorrebbe dire toccarlo. */
+.tablet .avviso-grosso { font-size: 15px; border-left-width: 4px; }
+.tablet .avviso-grosso h3 { font-size: 15px; }
 
-.spie { display: flex; flex-wrap: wrap; gap: .35rem; margin: .6rem 0 0; padding: 0; list-style: none; }
+/* #messaggio, #riepilogo, #cartello, #qr-errore: contenitori nudi, cosi
+   l'avviso dentro fa tutto il lavoro. */
+#messaggio > .avviso:last-child,
+#riepilogo > .avviso:last-child,
+#qr-errore > .avviso:last-child { margin-bottom: 0; }
 
-.spia {
-  display: inline-flex;
-  align-items: center;
-  gap: .35rem;
-  font-size: .85rem;
-  font-weight: 600;
-  padding: .25rem .55rem;
-  border-radius: 999px;
-  border: 1px solid var(--bordo);
-  background: var(--carta-alt);
-}
-.spia::before {
-  content: "";
-  width: .6rem;
-  height: .6rem;
-  border-radius: 50%;
-  background: var(--testo-tenue);
-  flex: 0 0 auto;
-}
-.spia.accesa  { background: var(--ok-sfondo);     border-color: var(--ok);     color: var(--ok); }
-.spia.accesa::before  { background: var(--ok); }
-.spia.spenta  { background: var(--guasto-sfondo); border-color: var(--guasto); color: var(--guasto); }
-.spia.spenta::before  { background: var(--guasto); }
-.spia.ignota { color: var(--testo-tenue); }
-
-/* --------------------------------------------------------------- tablet */
-
-.tablet {
-  display: flex;
-  flex-direction: column;
-  gap: .4rem;
-  background: var(--carta);
-  border: 1px solid var(--bordo);
-  border-radius: var(--raggio);
-  box-shadow: var(--ombra);
-  padding: 1rem;
-}
-.tablet.allarme { border-color: var(--guasto); border-left: 5px solid var(--guasto); }
-
-.tablet h2 { margin: 0; }
-.tablet h2 a { text-decoration: none; }
-.tablet h2 a:hover { text-decoration: underline; }
-
-.etichetta {
-  display: inline-block;
-  font-size: .8rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .04em;
-  padding: .15rem .5rem;
-  border-radius: 999px;
-  background: var(--carta-alt);
-  color: var(--testo-tenue);
-  border: 1px solid var(--bordo);
-}
-.etichetta.ok     { background: var(--ok-sfondo);     color: var(--ok);     border-color: var(--ok); }
-.etichetta.attesa { background: var(--attesa-sfondo); color: var(--attesa); border-color: var(--attesa); }
-.etichetta.guasto { background: var(--guasto-sfondo); color: var(--guasto); border-color: var(--guasto); }
-
-/* Quando l'etichetta e una frase intera e non una parola, il maiuscolo si
-   legge peggio: questa variante lo toglie. */
-.etichetta.lunga {
-  text-transform: none;
-  letter-spacing: 0;
-  font-size: .88rem;
-  font-weight: 600;
-  white-space: normal;
-}
-
-.dati { margin: .4rem 0 0; display: grid; gap: .15rem .8rem; grid-template-columns: auto 1fr; font-size: .92rem; }
-.dati dt { color: var(--testo-tenue); }
-.dati dd { margin: 0; }
-
-/* -------------------------------------------------------------- storico */
+/* ===========================================================================
+   11. ELENCHI, STORICO, NUMERI
+   ===========================================================================
+   In queste pagine non ci sono <table>: ci sono dl.dati, ul.storico e
+   div.numeri, e si trattano come righe di registro. */
 
 .storico { list-style: none; margin: 0; padding: 0; }
 .storico li {
-  display: flex;
+  display: grid;
+  grid-template-columns: 3.5rem 1fr auto;
   align-items: center;
-  gap: .6rem;
-  flex-wrap: wrap;
-  padding: .6rem .2rem;
-  border-bottom: 1px solid var(--bordo);
+  gap: 4px 12px;
+  min-height: 44px;
+  margin: 0;
+  padding: 10px 2px;
+  border-bottom: 1px solid var(--bordo);   /* niente zebratura: su fondo
+                                              scuro impasta */
 }
 .storico li:last-child { border-bottom: 0; }
-.storico .rev { font-weight: 700; min-width: 3.2rem; }
-.storico .quando { color: var(--testo-tenue); font-size: .9rem; flex: 1 1 9rem; }
-.storico details { flex: 1 1 100%; }
-.storico pre { margin: .4rem 0 0; }
+.storico .rev {
+  font: 700 14px/1.2 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.storico .quando { font: 400 13px/1.4 var(--font-testo); color: var(--testo-tenue); min-width: 0; }
+.storico details { grid-column: 1 / -1; }
+.storico pre { margin-top: 8px; }
+
+summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: var(--accento);
+}
+
+/* A 360px il bottone "Torna a questa" e la data non stanno sulla stessa riga
+   senza strizzarsi: il terzo figlio passa sotto. */
+@media (max-width: 559px) {
+  .storico li { grid-template-columns: 3.5rem 1fr; }
+  .storico li > :nth-child(3) { grid-column: 1 / -1; justify-self: start; }
+}
 
 pre {
   background: var(--carta-alt);
   border: 1px solid var(--bordo);
-  border-radius: var(--raggio-piccolo);
-  padding: .7rem;
+  border-radius: var(--r-piccolo);
+  padding: 12px;
   overflow-x: auto;
-  font-size: .85rem;
+  font: 400 13px/1.5 var(--font-mono);
+  tab-size: 2;
   margin: 0;
 }
 
-/* ------------------------------------------------------------------- QR */
-
-.qr-scatola {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1.2rem;
-  align-items: flex-start;
-}
-
-.qr-cornice {
-  background: #ffffff;
-  padding: 12px;
-  border-radius: var(--raggio-piccolo);
-  border: 1px solid var(--bordo);
-  line-height: 0;
-  /* Il QR resta su bianco anche col tema scuro: un lettore ha bisogno del
-     contrasto giusto nel verso giusto. */
-}
-.qr-cornice svg { width: min(78vw, 20rem); height: auto; display: block; }
-
-.qr-lato { flex: 1 1 16rem; min-width: 0; }
-
-.misura { margin: .5rem 0 0; }
-.misura .barra-misura {
-  height: .55rem;
-  background: var(--carta-alt);
-  border: 1px solid var(--bordo);
-  border-radius: 999px;
-  overflow: hidden;
-}
-.misura .riempimento { height: 100%; width: 0; background: var(--ok); }
-.misura.quasi .riempimento { background: var(--attesa); }
-.misura.troppo .riempimento { background: var(--guasto); }
-
-.segreto { display: flex; gap: .4rem; align-items: center; }
-.segreto input { flex: 1 1 auto; }
-
-/* ------------------------------------------------------- numeri servizio */
-
+/* I numeri di salute.html: da cinque tessere separate a UNA striscia unica.
+   I filetti nascono dal gap, quindi si separano da sole righe e colonne a
+   qualunque numero di colonne.
+   VINCOLO: pagina-salute.js scrive ok/attesa/guasto sul parentNode di #n-*,
+   quindi .valore DEVE restare figlio diretto di .numero. */
 .numeri {
   display: grid;
-  gap: .8rem;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
-}
-.numero {
-  background: var(--carta);
+  gap: 1px;
+  background: var(--bordo);
   border: 1px solid var(--bordo);
-  border-radius: var(--raggio);
-  padding: .9rem;
+  border-radius: var(--r-carta);
+  overflow: hidden;
+  box-shadow: var(--ombra), var(--luce);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+  margin-bottom: 24px;
 }
-.numero .valore { font-size: 1.7rem; font-weight: 700; line-height: 1.1; display: block; }
-.numero .nome { color: var(--testo-tenue); font-size: .9rem; }
+.numero { background: var(--carta); border: 0; border-radius: 0; padding: 14px 16px; }
+.numero .valore {
+  display: block;
+  font: 700 26px/1.1 var(--font-testo);
+  letter-spacing: -.01em;
+  font-variant-numeric: tabular-nums;
+}
+.numero .nome { font: 400 13px/1.4 var(--font-testo); color: var(--testo-tenue); }
 .numero.ok .valore     { color: var(--ok); }
 .numero.attesa .valore { color: var(--attesa); }
 .numero.guasto .valore { color: var(--guasto); }
 
-/* ------------------------------------------------------------- stampa */
+/* Un pallino di stato davanti al valore, che compare solo quando lo stato
+   c'e: cosi non e mai il solo colore a parlare.
+   E in float e non inline-block perche .valore e un blocco: un ::before
+   in linea si prenderebbe una riga per se. */
+.numero.ok::before,
+.numero.attesa::before,
+.numero.guasto::before {
+  content: "";
+  float: left;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  margin: 11px 8px 0 0;
+}
+.numero.ok::before     { background: var(--ok); }
+.numero.attesa::before { background: var(--attesa); }
+.numero.guasto::before { background: var(--guasto); }
+
+/* ===========================================================================
+   12. IL QR
+   ===========================================================================
+   E l'unica cosa della UI che il genitore deve puntare con una fotocamera, e
+   l'unica che va stampata: funzione e aspetto devono dire la stessa cosa. */
+
+.qr-scatola { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; }
+.qr-lato { flex: 1 1 16rem; min-width: 0; }
+
+/* Una piastra bianca, un passepartout notturno da 10px e un filo d'oro da 1px
+   sul bordo del passepartout: l'oro sta sulla notte, come sempre. La piastra
+   resta #FFFFFF nei due temi, perche un lettore ha bisogno del contrasto in
+   quel verso. Il margine di 11px lascia posto al passepartout, che e
+   un'ombra e quindi non occupa spazio da solo. */
+.qr-cornice {
+  background: #FFFFFF;
+  padding: 16px;
+  /* Il passepartout notturno e il filo d'oro sono due box-shadow da 10 e 11
+     pixel: non occupano spazio, quindi va lasciato loro posto a mano. Prima
+     erano 11px di margine SOMMATI a width:min(100%, 22rem): il 100% e gia
+     tutto lo spazio disponibile, quindi il blocco usciva di 22px dalla carta,
+     tutti da una parte. Ora lo spazio si toglie dalla larghezza invece di
+     aggiungerlo fuori, e il blocco resta centrato. */
+  margin: 11px auto 0;
+  border-radius: var(--r-controllo);
+  border: 0;
+  line-height: 0;
+  width: min(100% - 22px, 22rem);
+  box-shadow:
+    0 0 0 10px var(--notte),
+    0 0 0 11px var(--oro),
+    0 14px 36px rgba(4, 6, 18, .35);
+}
+/* Il QR arriva da qr.js con il solo viewBox: la larghezza la da questa
+   regola e l'altezza segue il rapporto. */
+.qr-cornice svg { width: 100%; height: auto; display: block; }
+#qr-dettagli { margin-top: 14px; }
+
+/* La barra si muove solo mentre il genitore digita: non e un'animazione che
+   gira a vuoto. pagina-nuovo.js scrive .style.width via CSSOM, che la CSP non
+   blocca, quindi resta com'e. */
+.misura { margin-top: 12px; }
+.misura .barra-misura {
+  height: 8px;
+  background: var(--carta-alt);
+  border: 1px solid var(--bordo);
+  border-radius: var(--r-pillola);
+  overflow: hidden;
+}
+.misura .riempimento {
+  height: 100%;
+  width: 0;
+  background: var(--ok);
+  transition: width .18s;
+}
+.misura.quasi .riempimento  { background: var(--attesa); }
+.misura.troppo .riempimento { background: var(--guasto); }
+
+/* ===========================================================================
+   13. ICONE (icone.svg)
+   ===========================================================================
+   icone.svg e un foglio di <symbol> da incollare INLINE nella pagina (una
+   volta, in cima al body) e da richiamare con <svg class="icona"><use
+   href="#ico-nome"/></svg>. Non si carica con <use href="icone.svg#...">:
+   i riferimenti esterni in <use> non funzionano in Chrome e Safari, e qui
+   non c'e modo di aggirarlo. Il disegno e a tratto e prende il colore dal
+   testo attorno, quindi un'icona dentro .barra e notturna da sola. */
+
+.icona {
+  width: 1.25em;
+  height: 1.25em;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vertical-align: -.15em;
+}
+.icona.grande { width: 1.75em; height: 1.75em; stroke-width: 1.8; }
+.icona.piena { fill: currentColor; stroke: none; }
+
+/* ===========================================================================
+   14. DA 600px IN SU
+   ===========================================================================
+   Un solo salto, e serve a respirare: non cambia nessun impianto. */
+
+@media (min-width: 600px) {
+  h1 { font-size: 28px; }
+  .carta, fieldset { padding: 20px; }
+  .tablet { padding: 20px; padding-right: 64px; }
+  .tablet ul.spie { margin: 16px -64px 0 -20px; padding: 14px 20px 16px; }
+  .sfondi { grid-template-columns: repeat(4, 1fr); }
+  .giorni { grid-template-columns: repeat(7, 1fr); }
+}
+
+/* ===========================================================================
+   15. STAMPA
+   ===========================================================================
+   Il foglio che conta e quello del QR. */
 
 @media print {
   .barra, .riga-bottoni, .salta, .no-stampa { display: none !important; }
-  body { background: #fff; color: #000; }
-  .carta { box-shadow: none; border-color: #999; break-inside: avoid; }
-  .qr-cornice { border: 0; }
+  /* Senza background-image:none la stampante tira giu tutte le stelle. */
+  html, body {
+    background: #FFFFFF !important;
+    background-image: none !important;
+    color: #000000 !important;
+  }
+  main.stretta {
+    background: #FFFFFF !important;
+    background-image: none !important;
+    border-color: #999;
+    box-shadow: none;
+  }
+  .carta, .tablet, fieldset, .numeri {
+    box-shadow: none;
+    border-color: #999;
+    break-inside: avoid;
+  }
+  /* L'oro su bianco stampa come una macchia grigia: la scheda stampata torna
+     a dipendere dal testo dell'etichetta, che c'e sempre. */
+  .tablet::before, .tablet::after { display: none; }
+  ul.spie {
+    background: #FFFFFF !important;
+    background-image: none !important;
+    color: #000000;
+    border: 0;
+    border-top: 1px solid #000000;
+    margin: 12px 0 0;
+    padding: 12px 0 0;
+  }
+  .tablet ul.spie { margin: 12px 0 0; padding: 12px 0 0; }
+  .spia { color: #000000 !important; }
+  .spia.accesa::before { background-color: #000000; }
+  .spia.spenta::before, .spia.ignota::before { border-color: #000000; }
+  .qr-cornice { box-shadow: none; border: 0; padding: 0; margin: 0; }
+}
+
+/* ===========================================================================
+   16. APPENDICE: SOLO PER galleria.html
+   ===========================================================================
+   Queste tre classi non compaiono in nessuna pagina del prodotto e non sono
+   usate da nessun JavaScript: servono alla pagina di galleria per mostrare i
+   pezzi dei due temi uno accanto all'altro e per scrivere il nome della
+   classe a fianco di ogni esempio. Si possono cancellare senza toccare
+   niente altro. */
+
+.lastra {
+  background-color: var(--sfondo);
+  background-image: var(--cielo-pagina);
+  background-repeat: repeat;
+  color: var(--testo);
+  padding: 16px;
+  border-radius: var(--r-carta);
+  border: 1px solid var(--bordo);
+}
+.nome-classe {
+  display: inline-block;
+  font: 400 12px/1.4 var(--font-mono);
+  color: var(--testo-tenue);
+  background: var(--carta-alt);
+  border: 1px solid var(--bordo);
+  border-radius: var(--r-piccolo);
+  padding: 2px 6px;
+  margin: 0 0 6px;
+  overflow-wrap: anywhere;
+}
+.coppia-temi {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  margin-bottom: 24px;
 }

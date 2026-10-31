@@ -442,9 +442,30 @@ var SK = (function () {
   /* Se il server manda una data senza fuso (il caso tipico di un
      datetime.utcnow().isoformat() in Python) la si legge come UTC: meglio
      cosi che far sembrare "visto due ore fa" un tablet appena arrivato. */
+  /* Il server manda i momenti come SECONDI dal 1970, un numero intero
+     (visto_il, salute_il, creato_il, arruolato_il, ultimo_backup, da). Questa
+     funzione sapeva leggere solo le stringhe ISO, quindi tornava sempre null:
+     ogni tablet risultava "mai visto" e la pagina Servizio li contava tutti
+     come zitti. Un guasto che non fa rumore - nessun errore in console, solo
+     una UI che mente. Si accettano tutti e due i formati: le stringhe perche
+     sono quelle documentate in cima a questo file, i numeri perche sono
+     quelli che arrivano davvero. */
   function data(valore) {
-    if (!valore) return null;
+    if (valore === null || valore === undefined || valore === '') return null;
     if (valore instanceof Date) return valore;
+
+    if (typeof valore === 'number' || /^-?\d+$/.test(String(valore).trim())) {
+      var n = Number(valore);
+      if (!isFinite(n) || n === 0) return null;
+      /* Sotto i cento miliardi sono secondi: in millisecondi quel numero
+         sarebbe il 1973, in secondi il 5138. Nessuno dei due e una data che
+         questo server possa produrre, ma la prima e molto piu probabile come
+         errore di unita, quindi la soglia sta li. */
+      var ms = Math.abs(n) < 1e11 ? n * 1000 : n;
+      var dn = new Date(ms);
+      return isNaN(dn.getTime()) ? null : dn;
+    }
+
     var testo = String(valore);
     if (/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}/.test(testo) && !/[zZ]|[+-]\d{2}:?\d{2}$/.test(testo)) {
       testo = testo.replace(' ', 'T') + 'Z';
@@ -654,9 +675,28 @@ var SK = (function () {
 
   /* ------------------------------------------------------------- interfaccia */
 
+  /* La conseguenza di una spia spenta deve stare SCRITTA, non dentro un
+     title. Un title si vede solo passandoci sopra col mouse, e il caso d'uso
+     dichiarato di questa UI e il genitore col telefono in mano: li non c'e
+     nessun "sopra", quindi la cosa piu importante che la pagina ha da dire
+     non la leggeva nessuno. (E nemmeno con la tastiera: un <li> non prende il
+     fuoco, e gli screen reader il title su un <li> non lo annunciano.)
+
+     Le spie critiche, quelle che fermano i limiti di tempo, non si ripetono
+     qui: sono gia spiegate per esteso nel cartello rosso sopra la scheda
+     (cartelloLimiti). Qui si scrivono le altre, che altrimenti resterebbero
+     un nome rosso senza un perche. */
   function spiaNodo(spia) {
-    var nodo = el('li', { classe: 'spia ' + spia.stato, title: spia.stato === 'spenta' ? spia.spenta : '' }, [spia.nome]);
-    if (spia.stato === 'ignota') nodo.appendChild(el('span', { classe: 'piccolo', testo: ' (mai detto)' }));
+    var spenta = spia.stato === 'spenta';
+    var nodo = el('li', {
+      classe: 'spia ' + spia.stato,
+      title: spenta ? spia.spenta : ''
+    }, [spia.nome]);
+    if (spia.stato === 'ignota') {
+      nodo.appendChild(el('span', { classe: 'piccolo', testo: ' (mai detto)' }));
+    } else if (spenta && !spia.limiti) {
+      nodo.appendChild(el('span', { classe: 'conseguenza piccolo', testo: spia.spenta }));
+    }
     return nodo;
   }
 
