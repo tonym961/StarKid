@@ -111,8 +111,17 @@ object Games {
         category = AppCategory.LEARN,
     )
 
+    val Map = GameDef(
+        id = "citta",
+        label = "Le citta del mondo",
+        emoji = "🌍",
+        blurb = "Gira il mondo e scopri le citta",
+        category = AppCategory.LEARN,
+    )
+
     val All = listOf(
         Car,
+        Map,
         Memory,
         Puzzle,
         Xylophone,

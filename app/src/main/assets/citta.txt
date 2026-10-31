@@ -1,0 +1,127 @@
+Roma|Italia|🇮🇹|41.9|12.5|Europa|il Colosseo
+Città del Vaticano|Città del Vaticano|🇻🇦|41.9|12.45|Europa|la basilica di San Pietro
+Milano|Italia|🇮🇹|45.46|9.19|Europa|il Duomo con le guglie bianche
+Napoli|Italia|🇮🇹|40.85|14.27|Europa|il Vesuvio che si vede dal golfo
+Torino|Italia|🇮🇹|45.07|7.69|Europa|la Mole Antonelliana
+Palermo|Italia|🇮🇹|38.12|13.36|Europa|il teatro Massimo
+Genova|Italia|🇮🇹|44.41|8.95|Europa|l'acquario con i delfini
+Bologna|Italia|🇮🇹|44.49|11.34|Europa|le due torri pendenti
+Firenze|Italia|🇮🇹|43.77|11.26|Europa|la grande cupola del Duomo
+Venezia|Italia|🇮🇹|45.44|12.32|Europa|i canali con le gondole
+Verona|Italia|🇮🇹|45.44|10.99|Europa|l'Arena, un teatro romano ancora usato
+Trieste|Italia|🇮🇹|45.65|13.78|Europa|la grande piazza che finisce nel mare
+Trento|Italia|🇮🇹|46.07|11.12|Europa|il castello del Buonconsiglio fra le montagne
+Aosta|Italia|🇮🇹|45.74|7.32|Europa|l'arco romano sotto le Alpi
+Perugia|Italia|🇮🇹|43.11|12.39|Europa|la fontana Maggiore nella piazza grande
+Assisi|Italia|🇮🇹|43.07|12.62|Europa|la basilica di San Francesco
+Ancona|Italia|🇮🇹|43.62|13.52|Europa|il porto con le navi che vanno in Grecia
+L'Aquila|Italia|🇮🇹|42.35|13.4|Europa|la fontana con 99 cannelle d'acqua
+Campobasso|Italia|🇮🇹|41.56|14.66|Europa|il castello Monforte in cima alla collina
+Bari|Italia|🇮🇹|41.12|16.87|Europa|la basilica di San Nicola, cioè Babbo Natale
+Potenza|Italia|🇮🇹|40.64|15.81|Europa|le scale mobili che portano in centro
+Matera|Italia|🇮🇹|40.67|16.6|Europa|le case scavate nella roccia, i Sassi
+Catanzaro|Italia|🇮🇹|38.91|16.59|Europa|il ponte altissimo sopra la valle
+Catania|Italia|🇮🇹|37.51|15.08|Europa|l'Etna, il vulcano che fuma
+Cagliari|Italia|🇮🇹|39.22|9.12|Europa|lo stagno con i fenicotteri rosa
+Pisa|Italia|🇮🇹|43.72|10.4|Europa|la torre pendente
+Siena|Italia|🇮🇹|43.32|11.33|Europa|la piazza a conchiglia dove corrono i cavalli
+Pompei|Italia|🇮🇹|40.75|14.5|Europa|la città sepolta dal vulcano 2000 anni fa
+Londra|Regno Unito|🇬🇧|51.51|-0.13|Europa|il Big Ben, l'orologio della torre
+Edimburgo|Regno Unito|🇬🇧|55.95|-3.19|Europa|il castello in cima alla roccia
+Dublino|Irlanda|🇮🇪|53.35|-6.26|Europa|le porte colorate delle case e i prati verdi
+Parigi|Francia|🇫🇷|48.86|2.35|Europa|la torre Eiffel
+Nizza|Francia|🇫🇷|43.71|7.26|Europa|la lunga passeggiata sul mare
+Marsiglia|Francia|🇫🇷|43.3|5.37|Europa|il porto vecchio pieno di barche
+Monaco (Principato)|Principato di Monaco|🇲🇨|43.74|7.42|Europa|la corsa di Formula 1 fra le strade della città
+Madrid|Spagna|🇪🇸|40.42|-3.7|Europa|lo stadio del Real Madrid
+Barcellona|Spagna|🇪🇸|41.39|2.17|Europa|la Sagrada Família, la chiesa con le torri a pannocchia
+Siviglia|Spagna|🇪🇸|37.39|-5.98|Europa|la torre Giralda e il ballo del flamenco
+Lisbona|Portogallo|🇵🇹|38.72|-9.14|Europa|il tram giallo che sale per le salite
+Berlino|Germania|🇩🇪|52.52|13.4|Europa|la porta di Brandeburgo
+Monaco di Baviera|Germania|🇩🇪|48.14|11.58|Europa|l'orologio del municipio con le statue che ballano
+Amburgo|Germania|🇩🇪|53.55|9.99|Europa|il porto enorme con le gru e le navi
+Amsterdam|Paesi Bassi|🇳🇱|52.37|4.9|Europa|i canali e le biciclette ovunque
+Bruxelles|Belgio|🇧🇪|50.85|4.36|Europa|l'Atomium, il palazzo fatto di palle d'acciaio
+Vienna|Austria|🇦🇹|48.21|16.37|Europa|la grande ruota panoramica del Prater
+Berna|Svizzera|🇨🇭|46.95|7.45|Europa|il parco degli orsi e la torre dell'orologio
+Ginevra|Svizzera|🇨🇭|46.2|6.14|Europa|il getto d'acqua altissimo nel lago
+Praga|Repubblica Ceca|🇨🇿|50.08|14.44|Europa|il ponte Carlo con le statue
+Cracovia|Polonia|🇵🇱|50.06|19.95|Europa|il castello di Wawel e la leggenda del drago
+Varsavia|Polonia|🇵🇱|52.23|21.01|Europa|la città vecchia ricostruita pezzo per pezzo
+Budapest|Ungheria|🇭🇺|47.5|19.04|Europa|il palazzo del Parlamento sul fiume Danubio
+Bucarest|Romania|🇷🇴|44.43|26.1|Europa|uno dei palazzi più grandi del mondo
+Lubiana|Slovenia|🇸🇮|46.06|14.51|Europa|il ponte con i draghi di pietra
+Dubrovnik|Croazia|🇭🇷|42.65|18.09|Europa|le mura antiche tutte intorno alla città, sul mare
+Atene|Grecia|🇬🇷|37.98|23.73|Europa|il Partenone sulla collina dell'Acropoli
+Istanbul|Turchia|🇹🇷|41.01|28.98|Europa|Santa Sofia e le moschee con i minareti
+Copenaghen|Danimarca|🇩🇰|55.68|12.57|Europa|la statua della Sirenetta sugli scogli
+Stoccolma|Svezia|🇸🇪|59.33|18.07|Europa|il museo con una nave di 400 anni intera
+Oslo|Norvegia|🇳🇴|59.91|10.75|Europa|le navi dei Vichinghi nel museo
+Helsinki|Finlandia|🇫🇮|60.17|24.94|Europa|la chiesa scavata dentro la roccia
+Reykjavík|Islanda|🇮🇸|64.15|-21.94|Europa|i geyser che sparano acqua bollente e le aurore
+Mosca|Russia|🇷🇺|55.76|37.62|Europa|le cupole a cipolla colorate sulla piazza Rossa
+San Pietroburgo|Russia|🇷🇺|59.93|30.36|Europa|il palazzo d'Inverno verde e oro
+Tokyo|Giappone|🇯🇵|35.68|139.69|Asia|l'incrocio di Shibuya, il più affollato del mondo
+Kyoto|Giappone|🇯🇵|35.01|135.77|Asia|il tempio d'oro e le file di porte rosse
+Pechino|Cina|🇨🇳|39.9|116.41|Asia|la Città Proibita, un palazzo con 1000 stanze
+Shanghai|Cina|🇨🇳|31.23|121.47|Asia|i grattacieli illuminati lungo il fiume
+Hong Kong|Hong Kong, Cina|🇭🇰|22.32|114.17|Asia|i grattacieli e il tram che sale la montagna
+Taipei|Taiwan|🇹🇼|25.03|121.57|Asia|il grattacielo Taipei 101, a forma di bambù
+Seul|Corea del Sud|🇰🇷|37.57|126.98|Asia|i palazzi antichi con le guardie in costume
+Nuova Delhi|India|🇮🇳|28.61|77.21|Asia|il Forte Rosso, un castello di pietra rossa
+Agra|India|🇮🇳|27.18|78.01|Asia|il Taj Mahal, il palazzo bianco che si specchia nell'acqua
+Mumbai|India|🇮🇳|19.08|72.88|Asia|il grande arco sul mare, la Porta dell'India
+Kathmandu|Nepal|🇳🇵|27.72|85.32|Asia|la città da cui si parte per l'Everest
+Bangkok|Thailandia|🇹🇭|13.76|100.5|Asia|i templi con i Buddha d'oro e le barche sui canali
+Kuala Lumpur|Malesia|🇲🇾|3.14|101.69|Asia|le torri gemelle Petronas unite da un ponte in alto
+Singapore|Singapore|🇸🇬|1.35|103.82|Asia|la statua del leone-pesce che getta acqua
+Giacarta|Indonesia|🇮🇩|-6.21|106.85|Asia|la grande torre con la fiamma d'oro in cima
+Hanoi|Vietnam|🇻🇳|21.03|105.85|Asia|il lago in centro città con la pagoda
+Manila|Filippine|🇵🇭|14.6|120.98|Asia|la città vecchia circondata dalle mura
+Dubai|Emirati Arabi Uniti|🇦🇪|25.2|55.27|Asia|il grattacielo più alto del mondo in mezzo al deserto
+Gerusalemme|Israele|🇮🇱|31.77|35.21|Asia|le mura antiche e la cupola dorata
+Teheran|Iran|🇮🇷|35.69|51.39|Asia|la torre bianca a forma di Y con le montagne dietro
+Il Cairo|Egitto|🇪🇬|30.04|31.24|Africa|le piramidi e la Sfinge
+Luxor|Egitto|🇪🇬|25.7|32.64|Africa|i templi giganti e le tombe dei faraoni
+Marrakech|Marocco|🇲🇦|31.63|-7.98|Africa|la grande piazza del mercato con i cantastorie
+Casablanca|Marocco|🇲🇦|33.57|-7.59|Africa|la moschea col minareto costruita sul mare
+Tunisi|Tunisia|🇹🇳|36.81|10.18|Africa|le rovine di Cartagine, la città di Annibale
+Dakar|Senegal|🇸🇳|14.69|-17.45|Africa|il punto più a ovest di tutta l'Africa
+Accra|Ghana|🇬🇭|5.6|-0.19|Africa|le spiagge e le barche da pesca colorate
+Lagos|Nigeria|🇳🇬|6.52|3.38|Africa|la città più popolosa dell'Africa, costruita su isole
+Addis Abeba|Etiopia|🇪🇹|9.03|38.74|Africa|il museo con Lucy, lo scheletro umano più antico
+Nairobi|Kenya|🇰🇪|-1.29|36.82|Africa|il parco con leoni e giraffe attaccato alla città
+Dar es Salaam|Tanzania|🇹🇿|-6.79|39.21|Africa|il porto da cui si parte per l'isola di Zanzibar
+Città del Capo|Sudafrica|🇿🇦|-33.92|18.42|Africa|la montagna piatta come un tavolo e i pinguini
+New York|Stati Uniti|🇺🇸|40.71|-74.01|America del Nord|la statua della Libertà
+Washington|Stati Uniti|🇺🇸|38.91|-77.04|America del Nord|la Casa Bianca
+Chicago|Stati Uniti|🇺🇸|41.88|-87.63|America del Nord|i primi grattacieli del mondo, sul lago
+Miami|Stati Uniti|🇺🇸|25.76|-80.19|America del Nord|le spiagge e le casette color pastello
+Orlando|Stati Uniti|🇺🇸|28.54|-81.38|America del Nord|i grandi parchi di divertimento
+Los Angeles|Stati Uniti|🇺🇸|34.05|-118.24|America del Nord|la scritta Hollywood sulla collina
+San Francisco|Stati Uniti|🇺🇸|37.77|-122.42|America del Nord|il ponte rosso Golden Gate
+Toronto|Canada|🇨🇦|43.65|-79.38|America del Nord|la torre CN, altissima e sottile
+Montréal|Canada|🇨🇦|45.5|-73.57|America del Nord|la città del Canada dove si parla francese
+Vancouver|Canada|🇨🇦|49.28|-123.12|America del Nord|il mare e le montagne con la neve nella stessa città
+Città del Messico|Messico|🇲🇽|19.43|-99.13|America del Nord|le piramidi degli Aztechi in mezzo alla città
+Cancún|Messico|🇲🇽|21.16|-86.85|America del Nord|il mare dei Caraibi e le piramidi dei Maya vicine
+L'Avana|Cuba|🇨🇺|23.11|-82.37|America del Nord|le automobili d'epoca colorate per le strade
+Panama|Panama|🇵🇦|8.98|-79.52|America del Nord|il canale dove le navi passano da un oceano all'altro
+Rio de Janeiro|Brasile|🇧🇷|-22.91|-43.17|America del Sud|il Cristo Redentore con le braccia aperte
+San Paolo|Brasile|🇧🇷|-23.55|-46.63|America del Sud|la città più grande di tutto il Sud America
+Brasilia|Brasile|🇧🇷|-15.79|-47.88|America del Sud|una città nuova costruita a forma di aeroplano
+Buenos Aires|Argentina|🇦🇷|-34.6|-58.38|America del Sud|le case coloratissime del quartiere della Boca
+Montevideo|Uruguay|🇺🇾|-34.9|-56.16|America del Sud|una spiaggia lunghissima dentro la città
+Santiago|Cile|🇨🇱|-33.45|-70.67|America del Sud|le Ande innevate che si vedono dalle finestre
+Lima|Perù|🇵🇪|-12.05|-77.04|America del Sud|le scogliere alte sopra l'oceano Pacifico
+Cusco|Perù|🇵🇪|-13.53|-71.97|America del Sud|l'antica capitale degli Inca, vicino a Machu Picchu
+La Paz|Bolivia|🇧🇴|-16.49|-68.12|America del Sud|le funivie che fanno da autobus sopra i tetti
+Quito|Ecuador|🇪🇨|-0.18|-78.47|America del Sud|la città sulla linea dell'equatore, fra i vulcani
+Bogotà|Colombia|🇨🇴|4.71|-74.07|America del Sud|la collina di Monserrate con la funicolare
+Sydney|Australia|🇦🇺|-33.87|151.21|Oceania|il teatro dell'Opera a forma di vele bianche
+Melbourne|Australia|🇦🇺|-37.81|144.96|Oceania|i tram e il grande torneo di tennis
+Canberra|Australia|🇦🇺|-35.28|149.13|Oceania|la capitale costruita apposta, con un lago in mezzo
+Auckland|Nuova Zelanda|🇳🇿|-36.85|174.76|Oceania|una torre altissima e vulcani spenti dentro la città
+Wellington|Nuova Zelanda|🇳🇿|-41.29|174.78|Oceania|la funicolare rossa che sale sulla collina
+Suva|Figi|🇫🇯|-18.14|178.44|Oceania|un'isola tropicale in mezzo all'oceano Pacifico
+Honolulu|Stati Uniti|🇺🇸|21.31|-157.86|Oceania|le spiagge e i vulcani delle isole Hawaii

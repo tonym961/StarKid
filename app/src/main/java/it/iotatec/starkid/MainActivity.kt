@@ -62,6 +62,7 @@ import it.iotatec.starkid.games.CountingGame
 import it.iotatec.starkid.games.DrawGame
 import it.iotatec.starkid.games.GameDef
 import it.iotatec.starkid.games.Games
+import it.iotatec.starkid.games.MapGame
 import it.iotatec.starkid.games.MemoryGame
 import it.iotatec.starkid.games.OddOneGame
 import it.iotatec.starkid.games.PatternGame
@@ -583,6 +584,7 @@ private fun GameRouter(game: GameDef, onBack: () -> Unit) {
         Games.Puzzle.id -> PuzzleGame(onBack)
         Games.Compare.id -> CompareGame(onBack)
         Games.Pattern.id -> PatternGame(onBack)
+        Games.Map.id -> MapGame(onBack)
         // Un id salvato da una versione futura: si torna a casa invece di
         // restare davanti a una schermata vuota.
         else -> LaunchedEffect(game.id) { onBack() }
