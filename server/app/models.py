@@ -184,6 +184,36 @@ class Fascia(Richiesta):
     # regola piu severa di quella che applica il dispositivo.
 
 
+class RegolaApp(Richiesta):
+    """Quanto e quando, per una singola app.
+
+    Il tetto giornaliero dice quanto si sta sul tablet e la fascia generale
+    quando lo si accende; questa fa le stesse due domande per una app sola.
+    Serviva perche "mezz'ora al giorno" e "solo dopo i compiti" sono due
+    regole diverse, e un genitore ne vuole spesso una senza l'altra.
+
+    Si aggiunge alle regole generali, non le scavalca: nessuna fascia di una
+    app apre il tablet fuori dalla sua fascia, e nessun tetto per app
+    restituisce minuti a una giornata finita.
+    """
+
+    pacchetto: str
+    minuti: int = Field(default=0, ge=0, le=LIMITE_MASSIMO)
+    fascia: Fascia | None = None
+
+    @field_validator("pacchetto")
+    @classmethod
+    def _pacchetto(cls, valore: str) -> str:
+        nome = valore.strip()
+        # Lo stesso filtro di app_permesse, per la stessa ragione: un nome di
+        # pacchetto non puo essere un indirizzo, un percorso o un comando.
+        if len(nome) > LUNGHEZZA_PACCHETTO or not PACCHETTO.fullmatch(nome):
+            raise ValueError(
+                "%r non e un nome di pacchetto Android (esempio: com.esempio.gioco)" % valore
+            )
+        return nome
+
+
 class DocumentoConfig(Richiesta):
     """Il documento di configurazione, versione 1.
 
@@ -208,6 +238,7 @@ class DocumentoConfig(Richiesta):
     limite_giornaliero: int = Field(ge=0, le=LIMITE_MASSIMO)
     fascia: Fascia
     app_permesse: list[str]
+    regole_app: list[RegolaApp] = Field(default_factory=list)
     giochi_spenti: list[str]
     suoni: bool
 
@@ -257,6 +288,22 @@ class DocumentoConfig(Richiesta):
                 "orientamento sconosciuto, sono previsti: %s" % ", ".join(ORIENTAMENTI)
             )
         return valore
+
+    @field_validator("regole_app")
+    @classmethod
+    def _regole(cls, valore: list[RegolaApp]) -> list[RegolaApp]:
+        if len(valore) > MASSIMO_APP:
+            raise ValueError("troppe regole, al massimo %d" % MASSIMO_APP)
+        nomi = [regola.pacchetto for regola in valore]
+        if len(set(nomi)) != len(nomi):
+            # Due regole per la stessa app non si fondono: una delle due
+            # vincerebbe in silenzio, e quale dipende dall'ordine.
+            raise ValueError("c'e un'app con due regole")
+        # Non si controlla che l'app sia fra le permesse: una regola per
+        # un'app tolta per qualche giorno resta ferma e torna buona quando
+        # l'app viene rimessa. Intanto non apre niente - l'app e bloccata
+        # comunque perche non e permessa.
+        return sorted(valore, key=lambda regola: regola.pacchetto)
 
     @field_validator("app_permesse")
     @classmethod

@@ -50,6 +50,7 @@ import it.iotatec.starkid.data.AppCategory
 import it.iotatec.starkid.data.AppEntry
 import it.iotatec.starkid.data.BACKGROUND_PHOTO
 import it.iotatec.starkid.data.CHECKED_ON
+import it.iotatec.starkid.data.FasciaApp
 import it.iotatec.starkid.data.HOME_ALL
 import it.iotatec.starkid.data.HOME_CATEGORIES
 import it.iotatec.starkid.data.KidsConfig
@@ -359,9 +360,14 @@ fun AppPickerScreen(
 fun AppLimitsScreen(
     apps: List<AppEntry>,
     limits: Map<String, Int>,
+    windows: Map<String, FasciaApp>,
     onSetLimit: (String, Int) -> Unit,
+    onSetWindow: (String, FasciaApp?) -> Unit,
     onBack: () -> Unit,
 ) {
+    // Come in ScheduleScreen: Calendar mette la domenica a 1, qui la
+    // settimana si mostra all'italiana.
+    val week = listOf(2 to "L", 3 to "M", 4 to "M", 5 to "G", 6 to "V", 7 to "S", 1 to "D")
     Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
@@ -396,6 +402,75 @@ fun AppLimitsScreen(
                             onDecrease = { onSetLimit(app.packageName, minutes - 10) },
                             onIncrease = { onSetLimit(app.packageName, minutes + 10) },
                         )
+
+                        // Quanto e quando sono due domande diverse: "mezz'ora
+                        // al giorno" e "solo dopo i compiti" si vogliono
+                        // spesso una senza l'altra.
+                        Spacer(Modifier.size(6.dp))
+                        val fascia = windows[app.packageName]
+                        SwitchRow(
+                            label = "Solo in certi orari",
+                            checked = fascia != null,
+                            onCheckedChange = { acceso ->
+                                onSetWindow(
+                                    app.packageName,
+                                    // Il valore iniziale e un pomeriggio: e
+                                    // l'ora che un genitore sceglie quasi
+                                    // sempre, e cosi l'interruttore da subito
+                                    // una fascia sensata invece di 00:00-00:00,
+                                    // che vorrebbe dire "sempre" e sembrerebbe
+                                    // rotto.
+                                    if (acceso) FasciaApp(16 * 60, 18 * 60) else null,
+                                )
+                            },
+                        )
+                        if (fascia != null) {
+                            Spacer(Modifier.size(8.dp))
+                            Stepper(
+                                label = "Da",
+                                value = formatTimeOfDay(fascia.inizio),
+                                onDecrease = {
+                                    onSetWindow(app.packageName, fascia.copy(inizio = (fascia.inizio - 15).mod(24 * 60)))
+                                },
+                                onIncrease = {
+                                    onSetWindow(app.packageName, fascia.copy(inizio = (fascia.inizio + 15).mod(24 * 60)))
+                                },
+                            )
+                            Spacer(Modifier.size(8.dp))
+                            Stepper(
+                                label = "A",
+                                value = formatTimeOfDay(fascia.fine),
+                                onDecrease = {
+                                    onSetWindow(app.packageName, fascia.copy(fine = (fascia.fine - 15).mod(24 * 60)))
+                                },
+                                onIncrease = {
+                                    onSetWindow(app.packageName, fascia.copy(fine = (fascia.fine + 15).mod(24 * 60)))
+                                },
+                            )
+                            Spacer(Modifier.size(10.dp))
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                for ((giorno, sigla) in week) {
+                                    DayChip(
+                                        label = sigla,
+                                        selected = giorno in fascia.giorni,
+                                        onClick = {
+                                            val prossimi = fascia.giorni.toMutableSet()
+                                            if (!prossimi.remove(giorno)) prossimi.add(giorno)
+                                            // Zero giorni vorrebbe dire "mai",
+                                            // e non e quello che si chiede
+                                            // togliendo l'ultimo: si spegne
+                                            // la fascia, che e la stessa cosa
+                                            // detta bene.
+                                            onSetWindow(
+                                                app.packageName,
+                                                if (prossimi.isEmpty()) null
+                                                else fascia.copy(giorni = prossimi),
+                                            )
+                                        },
+                                    )
+                                }
+                            }
+                        }
                     }
                     HorizontalDivider()
                 }

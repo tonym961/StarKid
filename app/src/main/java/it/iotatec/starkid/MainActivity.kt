@@ -566,7 +566,9 @@ class MainActivity : ComponentActivity() {
             Screen.APP_LIMITS -> AppLimitsScreen(
                 apps = allowedApps,
                 limits = config.perAppLimits,
+                windows = config.perAppWindows,
                 onSetLimit = { packageName, minutes -> prefs.setAppLimit(packageName, minutes) },
+                onSetWindow = { packageName, fascia -> prefs.setAppWindow(packageName, fascia) },
                 onBack = { screen = Screen.PARENT },
             )
 

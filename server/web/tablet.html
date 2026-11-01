@@ -305,6 +305,23 @@
       </div>
     </fieldset>
 
+    <fieldset class="carta">
+      <legend>Regole per app</legend>
+      <h2><svg class="icona" aria-hidden="true"><use href="#ico-orologio"/></svg> Quanto, e quando</h2>
+      <p class="piccolo tenue">Quanto sopra vale per tutto il tablet; qui si
+      stringe una app per volta. Si aggiunge, non scavalca: fuori dalla fascia
+      generale o finito il tempo della giornata non si apre niente lo stesso.</p>
+
+      <!-- Il JS ricostruisce questo elenco ogni volta che cambia la casella
+           delle app permesse: una riga per app, nell'ordine in cui sono
+           scritte sopra. -->
+      <div id="regole-app" aria-describedby="aiuto-regole errore-regole_app"></div>
+      <span class="aiuto" id="aiuto-regole">Un'app senza niente di spuntato qui
+      segue solo le regole generali. Le regole restano anche se l'app viene
+      tolta dall'elenco di sopra, e tornano buone se la rimetti.</span>
+      <div class="errore-campo nascosto" id="errore-regole_app"></div>
+    </fieldset>
+
     <!-- Carta e riga insieme, come prima: in app.css .riga-bottoni viene
          dopo .carta e vince su display, quindi questa resta una carta che
          dispone i bottoni in fila.

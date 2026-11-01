@@ -57,6 +57,7 @@ class LockActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         reason.value = reasonFrom(intent)
+        motivoInCorso = reason.value
     }
 
     @Composable
@@ -66,6 +67,16 @@ class LockActivity : ComponentActivity() {
         val current by reason
 
         BackHandler(enabled = true) { goHome() }
+
+        // Il motivo e caduto mentre il blocco era davanti: si toglie da solo.
+        // Lo decide il servizio, che e l'unico a sapere se la regola vale
+        // ancora, e lo dice mandando qui un intent con motivo NONE.
+        //
+        // Solo da LOCKED: se il genitore sta digitando il PIN non gli si
+        // strappa via la schermata da sotto le dita.
+        LaunchedEffect(current, stage) {
+            if (current == BlockReason.NONE && stage == Stage.LOCKED) goHome()
+        }
 
         when (stage) {
             Stage.LOCKED -> LockScreen(
@@ -122,5 +133,41 @@ class LockActivity : ComponentActivity() {
 
     companion object {
         const val EXTRA_REASON = "reason"
+
+        /**
+         * Il motivo che il blocco sta gia mostrando, o null se il blocco non
+         * e davanti.
+         *
+         * PERCHE ESISTE. Il servizio controlla ogni quattro secondi e, finche
+         * la ragione del blocco resta vera, chiamava startActivity ogni volta:
+         * quindici riavvii al minuto, per sempre. Sul tablet vero si vedeva -
+         * logcat pieno di START di LockActivity e nient'altro, al punto che il
+         * buffer si svuotava in un minuto e le diagnosi di qualunque altra
+         * cosa sparivano. Un tablet chiuso dal genitore puo restare cosi per
+         * ore.
+         *
+         * Volatile e non un StateFlow perche lo scrive il thread principale e
+         * lo legge il servizio: serve solo che la lettura veda l'ultima
+         * scrittura.
+         */
+        @Volatile
+        var motivoInCorso: BlockReason? = null
+            private set
+
+        /** Il blocco e gia davanti con questo motivo: non serve rilanciarlo. */
+        fun giaMostrato(reason: BlockReason): Boolean = motivoInCorso == reason
+    }
+
+    override fun onResume() {
+        super.onResume()
+        motivoInCorso = reason.value
+    }
+
+    override fun onPause() {
+        super.onPause()
+        // Appena il blocco non e piu davanti il servizio deve poterlo
+        // richiamare: se il bambino torna nell'app vietata, il blocco
+        // ricompare al giro dopo.
+        motivoInCorso = null
     }
 }

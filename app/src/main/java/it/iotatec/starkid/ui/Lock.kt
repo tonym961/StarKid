@@ -133,6 +133,7 @@ private fun emojiFor(reason: BlockReason): String = when (reason) {
     BlockReason.DAILY_LIMIT -> "⏰"
     BlockReason.APP_LIMIT -> "⏳"
     BlockReason.APP_NOT_ALLOWED -> "🚫"
+    BlockReason.APP_OUTSIDE_WINDOW -> "🕒"
     BlockReason.LOCKED_BY_PARENT -> "🔒"
     BlockReason.NONE -> "👋"
 }
@@ -142,6 +143,7 @@ private fun titleFor(reason: BlockReason): String = when (reason) {
     BlockReason.DAILY_LIMIT -> "Tempo finito!"
     BlockReason.APP_LIMIT -> "Basta con questa app"
     BlockReason.APP_NOT_ALLOWED -> "Questa app non si puo aprire"
+    BlockReason.APP_OUTSIDE_WINDOW -> "Non e l'ora di questa app"
     BlockReason.LOCKED_BY_PARENT -> "Il tablet e chiuso"
     BlockReason.NONE -> "Tutto a posto"
 }
@@ -153,6 +155,10 @@ private fun messageFor(reason: BlockReason, childName: String): String {
         BlockReason.DAILY_LIMIT -> "per oggi il tempo e finito. Si riprende domani!"
         BlockReason.APP_LIMIT -> "questa app ha finito i suoi minuti. Puoi usarne un'altra."
         BlockReason.APP_NOT_ALLOWED -> "questa app non e tra quelle scelte per te."
+        // Si dice subito che le altre si aprono: se no suona come il tablet
+        // chiuso, e il bambino lo posa invece di fare altro.
+        BlockReason.APP_OUTSIDE_WINDOW ->
+            "questa app si apre solo in certi orari. Le altre puoi usarle."
         // Niente "riprova piu tardi": non si riapre col tempo, si riapre
         // quando lo riapre il genitore, e dirlo chiaro evita che il
         // bambino resti li ad aspettare.

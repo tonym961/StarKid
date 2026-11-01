@@ -136,6 +136,13 @@ class GuardService : Service() {
             showLock(global)
             return
         }
+        // Nessun blocco generale, ma il blocco potrebbe essere ancora davanti
+        // per un motivo appena caduto: il genitore ha riaperto il tablet dalla
+        // web UI, e arrivata l'ora di accendersi, un bonus ha rimesso minuti.
+        // Senza questa riga il bambino restava davanti a "Il tablet e chiuso"
+        // finche non premeva indietro - e il blocco e fatto apposta perche non
+        // gli venga in mente di premere niente.
+        nascondiBloccoGenerale()
 
         val foreground = usage.foregroundPackage(POLL_MILLIS * 4) ?: return
         if (foreground == packageName) return
@@ -144,11 +151,34 @@ class GuardService : Service() {
         if (foreground !in InstalledApps.launchablePackages(this)) return
 
         val appUsed = ((usageMillis[foreground] ?: 0L) / 60_000L).toInt()
-        val verdict = Guard.checkApp(config, foreground, appUsed)
+        val verdict = Guard.checkApp(config, foreground, appUsed, now.get(Calendar.DAY_OF_WEEK), minuteOfDay)
         if (verdict != BlockReason.NONE) showLock(verdict)
     }
 
+    /**
+     * Chiude il blocco se e davanti per un motivo che vale per tutto il
+     * tablet e che adesso non vale piu.
+     *
+     * I motivi legati alla singola app non si toccano: quando il blocco e
+     * davanti, l'app vietata non e piu in primo piano - il blocco lo e - e
+     * toglierlo riporterebbe il bambino dentro l'app, per farcelo ribloccare
+     * quattro secondi dopo. Da li si esce con indietro, che porta a casa.
+     */
+    private fun nascondiBloccoGenerale() {
+        val motivo = LockActivity.motivoInCorso ?: return
+        if (motivo !in MOTIVI_GENERALI) return
+        val intent = Intent(this, LockActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            putExtra(LockActivity.EXTRA_REASON, BlockReason.NONE.name)
+        }
+        runCatching { startActivity(intent) }
+    }
+
     private fun showLock(reason: BlockReason) {
+        // Il blocco e gia davanti con questo motivo: rilanciarlo non cambia
+        // niente sullo schermo e costa un avvio di Activity ogni quattro
+        // secondi, per tutto il tempo che dura il blocco.
+        if (LockActivity.giaMostrato(reason)) return
         val intent = Intent(this, LockActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
             putExtra(LockActivity.EXTRA_REASON, reason.name)
@@ -195,6 +225,16 @@ class GuardService : Service() {
         private const val CHANNEL_ID = "guard"
         private const val NOTIFICATION_ID = 42
         private const val POLL_MILLIS = 4_000L
+
+        /**
+         * I motivi che non dipendono da quale app c'era davanti, e che
+         * possono cadere da soli mentre il blocco e ancora sullo schermo.
+         */
+        private val MOTIVI_GENERALI = setOf(
+            BlockReason.LOCKED_BY_PARENT,
+            BlockReason.OUTSIDE_SCHEDULE,
+            BlockReason.DAILY_LIMIT,
+        )
 
         fun start(context: Context) {
             val intent = Intent(context.applicationContext, GuardService::class.java)

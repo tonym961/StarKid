@@ -7,6 +7,7 @@ import android.provider.Settings
 import android.util.Log
 import it.iotatec.starkid.admin.Kiosk
 import it.iotatec.starkid.data.BACKGROUND_PHOTO
+import it.iotatec.starkid.data.FasciaApp
 import it.iotatec.starkid.data.Prefs
 import it.iotatec.starkid.service.GuardService
 import it.iotatec.starkid.usage.UsageReader
@@ -184,7 +185,7 @@ object Sync {
     }
 
     /** Quanti campi del documento questo tablet sa applicare. */
-    private const val CAMPI_APPLICABILI = 12
+    private const val CAMPI_APPLICABILI = 13
 
     /**
      * Applica il documento e torna i campi che NON e riuscito ad applicare,
@@ -236,6 +237,33 @@ object Sync {
             if (installate.size != chieste.size) {
                 rifiutati += "app_permesse" to "app_non_installata"
             }
+        }
+        // Le regole per singola app arrivano tutte insieme: quello che non e
+        // nell'elenco non c'e piu, come per app_permesse. Applicarne una
+        // meta - i minuti nuovi con la fascia vecchia - sarebbe peggio che
+        // non applicarne nessuna.
+        d.optJSONArray("regole_app")?.let { r ->
+            val minuti = mutableMapOf<String, Int>()
+            val fasce = mutableMapOf<String, FasciaApp>()
+            for (i in 0 until r.length()) {
+                val regola = r.optJSONObject(i) ?: continue
+                val pacchetto = regola.optString("pacchetto")
+                if (pacchetto.isBlank()) continue
+                regola.optInt("minuti", 0).let { if (it > 0) minuti[pacchetto] = it }
+                val f = regola.optJSONObject("fascia")
+                if (f != null && f.optBoolean("attiva", false)) {
+                    val giorni = f.optJSONArray("giorni")
+                        ?.let { g -> (0 until g.length()).map { g.optInt(it) }.toSet() }
+                        ?.filter { it in 1..7 }
+                        ?.toSet()
+                        .orEmpty()
+                    if (giorni.isNotEmpty()) {
+                        fasce[pacchetto] = FasciaApp(f.optInt("inizio"), f.optInt("fine"), giorni)
+                    }
+                }
+            }
+            prefs.setAppLimits(minuti)
+            prefs.setAppWindows(fasce)
         }
         d.optJSONArray("giochi_spenti")?.let { g ->
             prefs.setDisabledGames((0 until g.length()).map { g.optString(it) }.toSet())

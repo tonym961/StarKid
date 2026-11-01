@@ -186,10 +186,11 @@ var SK = (function () {
   /* Schema CHIUSO: queste e solo queste chiavi vanno nel documento. */
   var CHIAVI_CONFIG = [
     'revisione', 'tema', 'sfondo', 'schermata', 'orientamento',
-    'kiosk', 'kiosk_recenti', 'limite_giornaliero', 'fascia',
-    'app_permesse', 'giochi_spenti', 'suoni'
+    'kiosk', 'kiosk_recenti', 'bloccato', 'limite_giornaliero', 'fascia',
+    'app_permesse', 'regole_app', 'giochi_spenti', 'suoni'
   ];
   var CHIAVI_FASCIA = ['attiva', 'inizio', 'fine', 'giorni'];
+  var CHIAVI_REGOLA = ['pacchetto', 'minuti', 'fascia'];
 
   var PAGINE_AMMESSE = ['index.html', 'tablets.html', 'tablet.html', 'nuovo.html', 'salute.html'];
 
@@ -548,6 +549,7 @@ var SK = (function () {
     if (!ORIENTAMENTI.some(function (o) { return o.id === cfg.orientamento; })) no('orientamento', 'scegli orizzontale, verticale o automatico');
     if (typeof cfg.kiosk !== 'boolean') no('kiosk', 'deve essere acceso o spento');
     if (typeof cfg.kiosk_recenti !== 'boolean') no('kiosk_recenti', 'deve essere acceso o spento');
+    if (typeof cfg.bloccato !== 'boolean') no('bloccato', 'deve essere acceso o spento');
     if (typeof cfg.suoni !== 'boolean') no('suoni', 'deve essere acceso o spento');
 
     var limite = cfg.limite_giornaliero;
@@ -586,6 +588,53 @@ var SK = (function () {
       if (cfg.app_permesse.length > 200) no('app_permesse', 'troppe app: al massimo 200');
     }
 
+    if (!Array.isArray(cfg.regole_app)) {
+      no('regole_app', 'elenco non valido');
+    } else {
+      if (cfg.regole_app.length > 200) no('regole_app', 'troppe regole: al massimo 200');
+      var visti = [];
+      cfg.regole_app.forEach(function (regola) {
+        if (!regola || typeof regola !== 'object' || Array.isArray(regola)) {
+          no('regole_app', 'regola non valida');
+          return;
+        }
+        Object.keys(regola).forEach(function (chiave) {
+          if (CHIAVI_REGOLA.indexOf(chiave) < 0) no('regole_app', 'campo non previsto dentro una regola: ' + chiave);
+        });
+        if (!/^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z0-9_]+)+$/.test(String(regola.pacchetto))) {
+          no('regole_app', '"' + regola.pacchetto + '" non e un nome di pacchetto Android');
+          return;
+        }
+        if (visti.indexOf(regola.pacchetto) >= 0) {
+          no('regole_app', regola.pacchetto + ' ha due regole: tienine una sola');
+        }
+        visti.push(regola.pacchetto);
+        if (regola.minuti !== undefined &&
+            (!Number.isInteger(regola.minuti) || regola.minuti < 0 || regola.minuti > 1440)) {
+          no('regole_app', regola.pacchetto + ': i minuti vanno da 0 a 1440');
+        }
+        if (regola.fascia === undefined || regola.fascia === null) return;
+        var f = regola.fascia;
+        if (typeof f !== 'object' || Array.isArray(f)) {
+          no('regole_app', regola.pacchetto + ': fascia non valida');
+          return;
+        }
+        Object.keys(f).forEach(function (chiave) {
+          if (CHIAVI_FASCIA.indexOf(chiave) < 0) no('regole_app', regola.pacchetto + ': campo non previsto dentro la fascia');
+        });
+        if (!Number.isInteger(f.inizio) || f.inizio < 0 || f.inizio > 1439) no('regole_app', regola.pacchetto + ': orario di inizio non valido');
+        if (!Number.isInteger(f.fine) || f.fine < 0 || f.fine > 1439) no('regole_app', regola.pacchetto + ': orario di fine non valido');
+        // A differenza della fascia generale, qui scavalcare la mezzanotte e
+        // ammesso: il tablet lo sa fare, e per una app sola - un video prima
+        // di dormire - e una richiesta normale.
+        if (!Array.isArray(f.giorni) || f.giorni.length === 0) {
+          no('regole_app', regola.pacchetto + ': scegli almeno un giorno, oppure togli la fascia');
+        } else if (!f.giorni.every(function (g) { return Number.isInteger(g) && g >= 1 && g <= 7; })) {
+          no('regole_app', regola.pacchetto + ': giorni non validi');
+        }
+      });
+    }
+
     if (!Array.isArray(cfg.giochi_spenti)) {
       no('giochi_spenti', 'elenco non valido');
     } else {
@@ -611,6 +660,26 @@ var SK = (function () {
           fine: f.fine,
           giorni: Array.isArray(f.giorni) ? f.giorni.slice().sort(function (a, b) { return a - b; }) : []
         };
+        return;
+      }
+      if (chiave === 'regole_app') {
+        // Ogni regola passa dalla stessa setacciatura del documento: una
+        // chiave di troppo qui dentro fa rifiutare tutto il documento, e
+        // sarebbe difficile da capire guardando il modulo.
+        pulito.regole_app = (Array.isArray(cfg.regole_app) ? cfg.regole_app : []).map(function (regola) {
+          var voce = { pacchetto: regola.pacchetto, minuti: regola.minuti || 0 };
+          if (regola.fascia) {
+            voce.fascia = {
+              attiva: true,
+              inizio: regola.fascia.inizio,
+              fine: regola.fascia.fine,
+              giorni: Array.isArray(regola.fascia.giorni)
+                ? regola.fascia.giorni.slice().sort(function (a, b) { return a - b; })
+                : []
+            };
+          }
+          return voce;
+        });
         return;
       }
       if (cfg[chiave] !== undefined) pulito[chiave] = cfg[chiave];

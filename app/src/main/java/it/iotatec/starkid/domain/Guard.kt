@@ -11,6 +11,13 @@ enum class BlockReason {
     APP_NOT_ALLOWED,
 
     /**
+     * L'app e fra quelle permesse e i suoi minuti non sono finiti, ma non e
+     * la sua ora. Separato da [OUTSIDE_SCHEDULE] perche al bambino va detta
+     * la cosa giusta: li e chiuso il tablet, qui le altre app si aprono.
+     */
+    APP_OUTSIDE_WINDOW,
+
+    /**
      * Il genitore ha chiuso il tablet dalla web UI. Non si esaurisce col
      * tempo come DAILY_LIMIT e non finisce da solo come OUTSIDE_SCHEDULE:
      * resta finche il genitore non lo toglie da dove lo ha messo.
@@ -61,8 +68,20 @@ object Guard {
         config: KidsConfig,
         packageName: String,
         usedMinutesForApp: Int,
+        dayOfWeek: Int,
+        minuteOfDay: Int,
     ): BlockReason {
         if (packageName !in config.allowedPackages) return BlockReason.APP_NOT_ALLOWED
+        // L'ora prima dei minuti: se non e la sua ora, quanti minuti siano
+        // avanzati non interessa, e dirgli "hai finito il tempo" quando il
+        // tempo c'e sarebbe una bugia.
+        val fascia = config.perAppWindows[packageName]
+        if (fascia != null) {
+            if (dayOfWeek !in fascia.giorni) return BlockReason.APP_OUTSIDE_WINDOW
+            if (!inWindow(minuteOfDay, fascia.inizio, fascia.fine)) {
+                return BlockReason.APP_OUTSIDE_WINDOW
+            }
+        }
         val limit = config.perAppLimits[packageName] ?: 0
         if (limit > 0 && usedMinutesForApp >= limit) return BlockReason.APP_LIMIT
         return BlockReason.NONE

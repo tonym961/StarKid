@@ -314,6 +314,32 @@ private fun Modulo(stato: Stato, idTablet: String, originale: JSONObject) {
             }
         }
 
+        // ---- regole per app ----------------------------------------------
+        // In sola lettura di proposito. Un editor di fasce fatto di
+        // interruttori piccoli, su un telefono, e il modo migliore per
+        // chiudere per sbaglio un'app a un bambino: le regole si scrivono
+        // dalla web UI, con lo schermo grande, e da qui si controlla che
+        // siano quelle giuste. Il documento le riporta indietro intatte
+        // perche la bozza e una copia di tutto, non solo dei campi noti.
+        item {
+            val regole = bozza.optJSONArray("regole_app")
+            if (regole != null && regole.length() > 0) {
+                Carta {
+                    Titoletto("Regole per app")
+                    for (i in 0 until regole.length()) {
+                        val regola = regole.optJSONObject(i) ?: continue
+                        Riga(regola.optString("pacchetto"), descriviRegola(regola))
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        "Si cambiano dalla pagina web del tablet.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Tinte.TestoTenue,
+                    )
+                }
+            }
+        }
+
         // ---- salva -------------------------------------------------------
         item {
             Column {
@@ -546,6 +572,23 @@ private fun AppPermesse(attuali: List<String>, onCambia: (List<String>) -> Unit)
 
 internal fun oraMinuti(minuti: Int): String =
     "%02d:%02d".format(minuti / 60, minuti % 60)
+
+/** Una regola in una riga sola, nelle parole che userebbe un genitore. */
+internal fun descriviRegola(regola: JSONObject): String {
+    val pezzi = mutableListOf<String>()
+    val minuti = regola.optInt("minuti", 0)
+    if (minuti > 0) pezzi += "$minuti min al giorno"
+    val fascia = regola.optJSONObject("fascia")
+    if (fascia != null && fascia.optBoolean("attiva")) {
+        val quando = "${oraMinuti(fascia.optInt("inizio"))}-${oraMinuti(fascia.optInt("fine"))}"
+        val giorni = fascia.optJSONArray("giorni")
+        val quanti = giorni?.length() ?: 0
+        // Sette giorni su sette non si dice: e il caso normale, e scriverlo
+        // ogni volta allungherebbe tutte le righe per niente.
+        pezzi += if (quanti in 1..6) "$quando, $quanti giorni" else quando
+    }
+    return if (pezzi.isEmpty()) "nessuna regola" else pezzi.joinToString(" · ")
+}
 
 internal fun JSONArray?.aListaDiTesti(): List<String> =
     if (this == null) emptyList() else (0 until length()).map { optString(it) }

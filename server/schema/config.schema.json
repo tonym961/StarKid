@@ -16,6 +16,7 @@
     "limite_giornaliero",
     "fascia",
     "app_permesse",
+    "regole_app",
     "giochi_spenti",
     "suoni"
   ],
@@ -120,6 +121,62 @@
         "minLength": 3,
         "maxLength": 128,
         "pattern": "^[a-zA-Z][a-zA-Z0-9_]*(\\.[a-zA-Z0-9_]+)+$"
+      },
+      "default": []
+    },
+    "regole_app": {
+      "description": "Quanto e quando, app per app. Si aggiunge a quello che vale per tutto il tablet, non lo scavalca: fuori dalla fascia generale o finito il tetto giornaliero non si apre niente, qualunque cosa dica una regola. Un'app senza regola segue solo le regole generali. Una regola per un'app che non e in app_permesse resta ferma senza fare danni, e torna buona se l'app viene rimessa: toglierla per qualche giorno non deve far perdere il lavoro fatto.",
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["pacchetto"],
+        "properties": {
+          "pacchetto": {
+            "description": "Nome di pacchetto Android, come in app_permesse.",
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 128,
+            "pattern": "^[a-zA-Z][a-zA-Z0-9_]*(\\.[a-zA-Z0-9_]+)+$"
+          },
+          "minuti": {
+            "description": "Tetto giornaliero per questa sola app, in minuti. 0 = nessun tetto suo, resta solo quello complessivo.",
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1440,
+            "default": 0
+          },
+          "fascia": {
+            "description": "Ore in cui questa app si puo aprire. Assente, o con attiva a false, vuol dire in qualunque momento la giornata sia aperta.",
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["attiva", "inizio", "fine", "giorni"],
+            "properties": {
+              "attiva": { "type": "boolean" },
+              "inizio": {
+                "description": "Minuti dalla mezzanotte, 0..1439.",
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 1439
+              },
+              "fine": {
+                "description": "Minuti dalla mezzanotte, 0..1439. Fine minore di inizio scavalca la mezzanotte, come la fascia generale.",
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 1439
+              },
+              "giorni": {
+                "description": "Giorni, nella numerazione di java.util.Calendar.DAY_OF_WEEK: 1 = domenica.",
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 7,
+                "uniqueItems": true,
+                "items": { "type": "integer", "minimum": 1, "maximum": 7 }
+              }
+            }
+          }
+        }
       },
       "default": []
     },

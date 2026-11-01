@@ -11,6 +11,25 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 
+/**
+ * Quando una singola app si puo aprire. Minuti dalla mezzanotte come tutto il
+ * resto, giorni come java.util.Calendar.DAY_OF_WEEK (domenica = 1).
+ *
+ * Esiste separata da [KidsConfig.perAppLimits] perche risponde a un'altra
+ * domanda: quello dice *quanto*, questa dice *quando*. Un genitore vuole
+ * spesso l'una senza l'altra - mezz'ora di giochi in qualunque momento, oppure
+ * il video solo dopo i compiti e per quanto vuole.
+ *
+ * [inizio] uguale a [fine] vuol dire tutto il giorno, e [fine] prima di
+ * [inizio] e una fascia che scavalca la mezzanotte: le stesse regole della
+ * fascia generale, perche le applica la stessa funzione.
+ */
+data class FasciaApp(
+    val inizio: Int,
+    val fine: Int,
+    val giorni: Set<Int> = setOf(1, 2, 3, 4, 5, 6, 7),
+)
+
 /** Tutta la configurazione del launcher, immutabile. */
 data class KidsConfig(
     val pinSet: Boolean = false,
@@ -20,6 +39,12 @@ data class KidsConfig(
     val dailyLimitMinutes: Int = 0,
     /** Tetto per singola app in minuti; chiave assente o 0 = senza limite. */
     val perAppLimits: Map<String, Int> = emptyMap(),
+    /**
+     * Fascia oraria per singola app; chiave assente = l'app segue solo la
+     * fascia generale. E un secondo cancello, non un'eccezione: fuori dalla
+     * fascia generale non si apre niente comunque.
+     */
+    val perAppWindows: Map<String, FasciaApp> = emptyMap(),
     val scheduleEnabled: Boolean = false,
     val startMinuteOfDay: Int = 8 * 60,
     val endMinuteOfDay: Int = 20 * 60,
@@ -118,6 +143,7 @@ class Prefs private constructor(context: Context) {
         allowedPackages = sp.getStringSet(KEY_ALLOWED, emptySet())?.toSet() ?: emptySet(),
         dailyLimitMinutes = sp.getInt(KEY_DAILY_LIMIT, 0),
         perAppLimits = decodeLimits(sp.getString(KEY_APP_LIMITS, "") ?: ""),
+        perAppWindows = decodeFasce(sp.getString(KEY_APP_WINDOWS, "") ?: ""),
         scheduleEnabled = sp.getBoolean(KEY_SCHEDULE_ON, false),
         startMinuteOfDay = sp.getInt(KEY_START, 8 * 60),
         endMinuteOfDay = sp.getInt(KEY_END, 20 * 60),
@@ -174,6 +200,22 @@ class Prefs private constructor(context: Context) {
         if (minutes <= 0) next.remove(packageName) else next[packageName] = minutes
         edit { putString(KEY_APP_LIMITS, encodeLimits(next)) }
     }
+
+    /** [fascia] a null toglie la fascia e lascia l'app libera nella giornata. */
+    fun setAppWindow(packageName: String, fascia: FasciaApp?) {
+        val next = current.perAppWindows.toMutableMap()
+        if (fascia == null || fascia.giorni.isEmpty()) next.remove(packageName)
+        else next[packageName] = fascia
+        edit { putString(KEY_APP_WINDOWS, encodeFasce(next)) }
+    }
+
+    /** Sostituisce in blocco: la usa la sincronizzazione col server. */
+    fun setAppWindows(fasce: Map<String, FasciaApp>) =
+        edit { putString(KEY_APP_WINDOWS, encodeFasce(fasce)) }
+
+    /** Sostituisce in blocco: la usa la sincronizzazione col server. */
+    fun setAppLimits(limiti: Map<String, Int>) =
+        edit { putString(KEY_APP_LIMITS, encodeLimits(limiti.filterValues { it > 0 })) }
 
     fun setScheduleEnabled(enabled: Boolean) = edit { putBoolean(KEY_SCHEDULE_ON, enabled) }
 
@@ -353,6 +395,7 @@ class Prefs private constructor(context: Context) {
         private const val KEY_ALLOWED = "allowed"
         private const val KEY_DAILY_LIMIT = "daily_limit"
         private const val KEY_APP_LIMITS = "app_limits"
+        private const val KEY_APP_WINDOWS = "app_windows"
         private const val KEY_SCHEDULE_ON = "schedule_on"
         private const val KEY_START = "window_start"
         private const val KEY_END = "window_end"
@@ -396,6 +439,37 @@ class Prefs private constructor(context: Context) {
 
         private fun encodeLimits(map: Map<String, Int>): String =
             map.entries.joinToString("|") { "${it.key}=${it.value}" }
+
+        // Le fasce stanno in una sola stringa, come i limiti: una riga per
+        // app, "pacchetto=inizio-fine-giorni", e i giorni sono le cifre 1..7
+        // attaccate. Un pacchetto non contiene ne | ne = ne -, quindi niente
+        // da proteggere. Esempio: com.esempio.video=960-1140-23456
+        private fun encodeFasce(map: Map<String, FasciaApp>): String =
+            map.entries.joinToString("|") { (pacchetto, fascia) ->
+                val giorni = fascia.giorni.sorted().joinToString("")
+                "$pacchetto=${fascia.inizio}-${fascia.fine}-$giorni"
+            }
+
+        private fun decodeFasce(raw: String): Map<String, FasciaApp> =
+            raw.split('|')
+                .filter { it.isNotBlank() }
+                .mapNotNull { voce ->
+                    val pezzi = voce.split('=')
+                    if (pezzi.size != 2) return@mapNotNull null
+                    val valori = pezzi[1].split('-')
+                    if (valori.size != 3) return@mapNotNull null
+                    val inizio = valori[0].toIntOrNull() ?: return@mapNotNull null
+                    val fine = valori[1].toIntOrNull() ?: return@mapNotNull null
+                    val giorni = valori[2]
+                        .mapNotNull { cifra -> cifra.digitToIntOrNull() }
+                        .filter { it in 1..7 }
+                        .toSet()
+                    // Una fascia senza giorni non bloccherebbe mai e non
+                    // permetterebbe mai: si butta, come se non ci fosse.
+                    if (giorni.isEmpty()) return@mapNotNull null
+                    pezzi[0] to FasciaApp(inizio.mod(24 * 60), fine.mod(24 * 60), giorni)
+                }
+                .toMap()
 
         private fun encodeText(map: Map<String, String>): String =
             map.entries.joinToString("|") { "${it.key}=${it.value}" }

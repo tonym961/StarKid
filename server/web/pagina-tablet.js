@@ -122,6 +122,154 @@
     });
   }
 
+  /* ------------------------------------------------------ regole per app */
+
+  /* Le regole scritte finora, per pacchetto. Vive fuori dal DOM perche
+     l'elenco si ridisegna a ogni modifica della casella delle app, e quello
+     che il genitore ha gia impostato non deve sparire mentre scrive il nome
+     di un'altra app. Tiene anche le regole di app non piu nell'elenco: il
+     server le conserva, e rimettendo l'app si ritrova il lavoro fatto. */
+  var regole = {};
+
+  function regolaVuota() {
+    return { minuti: 0, fascia: null };
+  }
+
+  function fasciaIniziale() {
+    /* Il pomeriggio: e l'ora che si sceglie quasi sempre, e dare 00:00-00:00
+       vorrebbe dire "sempre" - l'interruttore sembrerebbe non funzionare. */
+    return { attiva: true, inizio: 16 * 60, fine: 18 * 60, giorni: [1, 2, 3, 4, 5, 6, 7] };
+  }
+
+  function appScritte() {
+    return SK.$('#app').value.split('\n').map(function (riga) {
+      return riga.trim();
+    }).filter(function (riga) { return riga.length > 0; });
+  }
+
+  function disegnaRegole() {
+    var contenitore = SK.svuota(SK.$('#regole-app'));
+    var elenco = appScritte();
+    if (elenco.length === 0) {
+      contenitore.appendChild(SK.el('p', {
+        classe: 'piccolo tenue',
+        testo: 'Nessuna app nell’elenco qui sopra: non c’e niente da stringere.'
+      }));
+      return;
+    }
+    elenco.forEach(function (pacchetto) {
+      contenitore.appendChild(rigaRegola(pacchetto));
+    });
+  }
+
+  function rigaRegola(pacchetto) {
+    var regola = regole[pacchetto] || regolaVuota();
+    regole[pacchetto] = regola;
+
+    var minuti = SK.el('input', {
+      type: 'number', min: '0', max: '1440', step: '5',
+      value: String(regola.minuti || 0)
+    });
+    minuti.addEventListener('input', function () {
+      var valore = Number(minuti.value);
+      regola.minuti = isNaN(valore) ? 0 : valore;
+      sporco = true;
+    });
+
+    var orari = SK.el('div', { classe: regola.fascia ? '' : 'nascosto' });
+
+    var interruttore = SK.el('input', { type: 'checkbox' });
+    interruttore.checked = !!regola.fascia;
+    interruttore.addEventListener('change', function () {
+      regola.fascia = interruttore.checked ? fasciaIniziale() : null;
+      orari.classList.toggle('nascosto', !interruttore.checked);
+      if (regola.fascia) riempiOrari(orari, regola);
+      sporco = true;
+    });
+
+    if (regola.fascia) riempiOrari(orari, regola);
+
+    return SK.el('div', { classe: 'carta-interna' }, [
+      SK.el('p', { classe: 'pacchetto', testo: pacchetto }),
+      SK.el('div', { classe: 'campo' }, [
+        SK.el('label', {}, ['Minuti al giorno per questa app', minuti]),
+        SK.el('span', { classe: 'aiuto', testo: '0 vuol dire nessun tetto suo: resta solo quello complessivo.' })
+      ]),
+      SK.el('label', { classe: 'interruttore' }, [
+        interruttore,
+        SK.el('span', {}, ['Solo in certi orari'])
+      ]),
+      orari
+    ]);
+  }
+
+  function riempiOrari(contenitore, regola) {
+    SK.svuota(contenitore);
+    var fascia = regola.fascia;
+
+    var dalle = SK.el('input', { type: 'time', step: '300', value: SK.minutiInOra(fascia.inizio) });
+    dalle.addEventListener('input', function () {
+      fascia.inizio = SK.oraInMinuti(dalle.value);
+      sporco = true;
+    });
+    var alle = SK.el('input', { type: 'time', step: '300', value: SK.minutiInOra(fascia.fine) });
+    alle.addEventListener('input', function () {
+      fascia.fine = SK.oraInMinuti(alle.value);
+      sporco = true;
+    });
+
+    var giorni = SK.el('div', { classe: 'giorni' });
+    SK.GIORNI.forEach(function (giorno) {
+      var casella = SK.el('input', { type: 'checkbox', value: String(giorno.n) });
+      casella.checked = fascia.giorni.indexOf(giorno.n) >= 0;
+      casella.addEventListener('change', function () {
+        var dentro = fascia.giorni.indexOf(giorno.n);
+        if (casella.checked && dentro < 0) fascia.giorni.push(giorno.n);
+        if (!casella.checked && dentro >= 0) fascia.giorni.splice(dentro, 1);
+        fascia.giorni.sort(function (a, b) { return a - b; });
+        sporco = true;
+      });
+      giorni.appendChild(SK.el('label', { title: giorno.nome }, [casella, giorno.breve]));
+    });
+
+    contenitore.appendChild(SK.el('div', { classe: 'due-colonne' }, [
+      SK.el('div', { classe: 'campo' }, [SK.el('label', {}, ['Dalle', dalle])]),
+      SK.el('div', { classe: 'campo' }, [SK.el('label', {}, ['Alle', alle])])
+    ]));
+    contenitore.appendChild(SK.el('div', { classe: 'campo' }, [
+      SK.el('label', {}, ['Giorni']),
+      giorni,
+      SK.el('span', {
+        classe: 'aiuto',
+        testo: 'Alle prima di dalle vuol dire che la fascia scavalca la mezzanotte.'
+      })
+    ]));
+  }
+
+  function raccogliRegole() {
+    /* Si mandano solo le regole che dicono qualcosa. Una riga con zero
+       minuti e nessuna fascia e come non averla, e riempire il documento di
+       righe vuote renderebbe lo storico illeggibile. */
+    var fuori = [];
+    Object.keys(regole).forEach(function (pacchetto) {
+      var regola = regole[pacchetto];
+      var minuti = regola.minuti || 0;
+      if (minuti <= 0 && !regola.fascia) return;
+      var voce = { pacchetto: pacchetto, minuti: minuti };
+      if (regola.fascia) {
+        voce.fascia = {
+          attiva: true,
+          inizio: regola.fascia.inizio,
+          fine: regola.fascia.fine,
+          giorni: regola.fascia.giorni.slice()
+        };
+      }
+      fuori.push(voce);
+    });
+    fuori.sort(function (a, b) { return a.pacchetto < b.pacchetto ? -1 : 1; });
+    return fuori;
+  }
+
   /* --------------------------------------------- dal documento al modulo */
 
   function applica(cfg) {
@@ -159,6 +307,19 @@
     });
 
     SK.$('#app').value = (Array.isArray(cfg.app_permesse) ? cfg.app_permesse : []).join('\n');
+
+    regole = {};
+    (Array.isArray(cfg.regole_app) ? cfg.regole_app : []).forEach(function (voce) {
+      if (!voce || !voce.pacchetto) return;
+      var fascia = voce.fascia && voce.fascia.attiva ? {
+        attiva: true,
+        inizio: voce.fascia.inizio,
+        fine: voce.fascia.fine,
+        giorni: Array.isArray(voce.fascia.giorni) ? voce.fascia.giorni.slice() : [1, 2, 3, 4, 5, 6, 7]
+      } : null;
+      regole[voce.pacchetto] = { minuti: voce.minuti || 0, fascia: fascia };
+    });
+    disegnaRegole();
 
     segnaErrori([]);
     sporco = false;
@@ -208,6 +369,7 @@
         giorni: giorni
       },
       app_permesse: app,
+      regole_app: raccogliRegole(),
       giochi_spenti: spenti,
       suoni: SK.$('#suoni').checked
     };
@@ -426,6 +588,11 @@
     SK.$('#modulo').addEventListener('change', function () { sporco = true; });
     SK.$('#limite').addEventListener('input', aggiornaAiutoLimite);
     SK.$('#fascia-attiva').addEventListener('change', aggiornaFascia);
+    /* L'elenco delle regole segue quello delle app: si ridisegna appena si
+       smette di scrivere, non a ogni tasto, o una riga a meta farebbe
+       comparire e sparire righe mentre si digita. */
+    SK.$('#app').addEventListener('change', disegnaRegole);
+    SK.$('#app').addEventListener('blur', disegnaRegole);
     SK.$('#scarica').addEventListener('click', scarica);
     SK.$('#annulla').addEventListener('click', function () {
       if (!base) return;
