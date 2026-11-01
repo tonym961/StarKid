@@ -281,8 +281,13 @@ def cookie_sicuro() -> bool:
     return os.environ.get("STARKID_COOKIE_SECURE", "1") not in ("0", "no", "false")
 
 
-def crea_sessione() -> tuple[str, str]:
-    """Nuova sessione. Restituisce (token da mettere nel cookie, token CSRF)."""
+def crea_sessione(id_utente: int) -> tuple[str, str]:
+    """Nuova sessione per un utente. Restituisce (token del cookie, token CSRF).
+
+    L'id dell'utente non e un dettaglio in piu: fino alla versione 1 la
+    tabella sessione non lo aveva, e il cookie diceva "qualcuno e entrato",
+    non "chi". Senza questa colonna non si puo autorizzare niente.
+    """
     token = nuovo_token()
     csrf = nuovo_token()
     ora = db.adesso()
@@ -291,9 +296,9 @@ def crea_sessione() -> tuple[str, str]:
         # che senza cron deve farsi da sola.
         conn.execute("DELETE FROM sessione WHERE scade_il < ?", (ora,))
         conn.execute(
-            "INSERT INTO sessione (hash_token, csrf, creato_il, visto_il, scade_il) "
-            "VALUES (?, ?, ?, ?, ?)",
-            (hash_token(token), csrf, ora, ora, ora + DURATA_INATTIVITA),
+            "INSERT INTO sessione (hash_token, id_utente, csrf, creato_il, visto_il, scade_il) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (hash_token(token), id_utente, csrf, ora, ora, ora + DURATA_INATTIVITA),
         )
     return token, csrf
 
@@ -303,11 +308,24 @@ def elimina_sessione(token: str) -> None:
 
 
 def sessione_da_token(token: str) -> sqlite3.Row | None:
+    """La sessione PIU chi e, in una lettura sola.
+
+    La JOIN non e un'ottimizzazione: senza, ogni rotta che deve decidere
+    qualcosa farebbe una seconda query, e prima o poi una se la dimentica.
+    Qui dentro arrivano gia "ruolo" e "attivo", e un account disattivato non
+    passa nemmeno se gli fosse rimasta una sessione aperta.
+    """
     ora = db.adesso()
     riga = db.leggi_uno(
-        "SELECT * FROM sessione WHERE hash_token = ?", (hash_token(token),)
+        "SELECT s.*, u.utente AS nome_utente, u.ruolo, u.attivo, u.id_padre "
+        "FROM sessione s JOIN utente u ON u.id = s.id_utente "
+        "WHERE s.hash_token = ?",
+        (hash_token(token),),
     )
     if riga is None:
+        return None
+    if not int(riga["attivo"]):
+        db.esegui("DELETE FROM sessione WHERE id_utente = ?", (riga["id_utente"],))
         return None
     if riga["scade_il"] <= ora or riga["creato_il"] + DURATA_MASSIMA <= ora:
         db.esegui("DELETE FROM sessione WHERE hash_token = ?", (riga["hash_token"],))
@@ -395,72 +413,206 @@ def sessione_scrivibile(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="token CSRF mancante o sbagliato"
         )
+    # Un osservatore ha una sessione valida e sa pure il suo token CSRF: e il
+    # ruolo, non la serratura, a fermarlo. Sta qui e non in ogni rotta perche
+    # "sessione_scrivibile" e gia il nome di tutte e sole le scritture: una
+    # rotta nuova che scrive la usa per forza, e si trova il controllo
+    # addosso senza doverselo ricordare.
+    if str(sessione["ruolo"]) == "osservatore":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="il tuo accesso e in sola lettura",
+        )
+    return sessione
+
+
+def sessione_admin(sessione: sqlite3.Row = Depends(sessione_scrivibile)) -> sqlite3.Row:
+    """Dipendenza delle rotte che amministrano gli utenti.
+
+    403 e non 404: nascondere l'esistenza della pagina a chi e gia dentro non
+    aggiunge niente, e un 404 su una rotta che esiste e il modo di far
+    perdere un pomeriggio a chi la sta provando.
+    """
+    if str(sessione["ruolo"]) != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="serve un account amministratore",
+        )
     return sessione
 
 
 # ---------------------------------------------------------------------------
-# Account: uno solo
+# Chi vede quale tablet
 # ---------------------------------------------------------------------------
 
 
-def utente_unico() -> sqlite3.Row | None:
-    return db.leggi_uno("SELECT * FROM utente WHERE id = 1")
+def puo_vedere(sessione: sqlite3.Row, id_tablet: str) -> bool:
+    """L'admin vede tutto; gli altri solo i tablet che gli sono stati dati."""
+    if str(sessione["ruolo"]) == "admin":
+        return True
+    riga = db.leggi_uno(
+        "SELECT 1 FROM accesso_tablet WHERE id_utente = ? AND id_tablet = ?",
+        (sessione["id_utente"], id_tablet),
+    )
+    return riga is not None
 
 
-def crea_utente(nome: str, password: str) -> None:
-    """Crea l'unico account. Da riga di comando, mai da HTTP.
+def tablet_visibili(sessione: sqlite3.Row) -> list[sqlite3.Row]:
+    if str(sessione["ruolo"]) == "admin":
+        return db.leggi_tutti("SELECT * FROM tablet ORDER BY creato_il")
+    return db.leggi_tutti(
+        "SELECT t.* FROM tablet t "
+        "JOIN accesso_tablet a ON a.id_tablet = t.id "
+        "WHERE a.id_utente = ? ORDER BY t.creato_il",
+        (sessione["id_utente"],),
+    )
 
-    Non esiste nessun endpoint che faccia questo: niente iscrizione pubblica
-    era una decisione, e il modo di rispettarla e non scrivere la rotta.
+
+def esigi_accesso(sessione: sqlite3.Row, id_tablet: str) -> None:
+    """404 e non 403, qui: a chi non ha quel tablet non si dice che esiste.
+
+    E la differenza col controllo sui ruoli qui sopra. Li si parla di
+    permessi di chi e dentro casa; qui si parla dei tablet di un'altra
+    famiglia, e perfino sapere quanti sono e un'informazione che non gli
+    spetta. La risposta e identica a quella di un identificativo inventato.
+    """
+    if not puo_vedere(sessione, id_tablet):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="tablet non trovato"
+        )
+
+
+# ---------------------------------------------------------------------------
+# Account: piu di uno, con ruoli
+#
+# Fino alla versione 1 dello schema l'account era uno solo, e l'unicita era un
+# CHECK (id = 1) nel database. Adesso sono tre ruoli:
+#
+#   admin        tutto, utenti compresi
+#   genitore     i tablet che gli sono stati dati, e puo fare sottoutenti
+#                sui propri
+#   osservatore  guarda e basta
+#
+# QUELLO CHE NON E CAMBIATO, ed e il punto: non esiste iscrizione dal web.
+# Un account lo crea chi e GIA dentro ed e admin, oppure si crea da riga di
+# comando. Da fuori, senza credenziali, non c'e nessuna strada per aggiungere
+# un account - che era la proprieta vera dietro "niente iscrizione", e la
+# pagina di accesso continua a poterla promettere.
+# ---------------------------------------------------------------------------
+
+RUOLI: tuple[str, ...] = ("admin", "genitore", "osservatore")
+
+
+def utente_per_id(id_utente: int) -> sqlite3.Row | None:
+    return db.leggi_uno("SELECT * FROM utente WHERE id = ?", (id_utente,))
+
+
+def utente_per_nome(nome: str) -> sqlite3.Row | None:
+    # COLLATE NOCASE sta sulla colonna: "Antonino" e "antonino" sono la stessa
+    # persona, e due account che si distinguono per una maiuscola sarebbero un
+    # inganno, non una funzione.
+    return db.leggi_uno("SELECT * FROM utente WHERE utente = ?", (nome.strip(),))
+
+
+def quanti_admin_attivi() -> int:
+    riga = db.leggi_uno(
+        "SELECT COUNT(*) AS quanti FROM utente WHERE ruolo = 'admin' AND attivo = 1"
+    )
+    return int(riga["quanti"]) if riga is not None else 0
+
+
+def elenco_utenti() -> list[sqlite3.Row]:
+    return db.leggi_tutti("SELECT * FROM utente ORDER BY id")
+
+
+def crea_utente(
+    nome: str,
+    password: str,
+    ruolo: str = "admin",
+    id_padre: int | None = None,
+    creato_da: int | None = None,
+) -> int:
+    """Crea un account e torna il suo id.
+
+    Il valore iniziale del ruolo e "admin" apposta: il primo account di un
+    server nuovo lo fa la riga di comando, e dev'essere quello che poi puo
+    fare gli altri. Chi crea dalla web UI passa sempre il ruolo per esteso.
     """
     nome = nome.strip()
     if not nome:
         raise ValueError("il nome utente non puo essere vuoto")
+    if ruolo not in RUOLI:
+        raise ValueError("ruolo sconosciuto: usa uno fra %s" % ", ".join(RUOLI))
     if len(password) < LUNGHEZZA_MINIMA_PASSWORD:
         raise ValueError("la password deve essere lunga almeno %d caratteri" % LUNGHEZZA_MINIMA_PASSWORD)
     ora = db.adesso()
     try:
-        db.esegui(
-            "INSERT INTO utente (id, utente, password, creato_il, aggiornato_il) "
-            "VALUES (1, ?, ?, ?, ?)",
-            (nome, cifra_password(password), ora, ora),
+        cur = db.esegui(
+            "INSERT INTO utente "
+            "(utente, password, creato_il, aggiornato_il, ruolo, id_padre, attivo, creato_da) "
+            "VALUES (?, ?, ?, ?, ?, ?, 1, ?)",
+            (nome, cifra_password(password), ora, ora, ruolo, id_padre, creato_da),
         )
     except sqlite3.IntegrityError as errore:
-        raise ValueError(
-            "l'account esiste gia: questo server ne tiene uno solo, usa cambia-password"
-        ) from errore
+        # Con un account solo questo errore voleva dire "esiste gia l'account".
+        # Adesso vuol dire "quel nome e gia preso", che e un'altra frase e
+        # un'altra cosa da fare.
+        raise ValueError("quel nome utente e gia preso") from errore
+    return int(cur.lastrowid)
 
 
-def cambia_password(password: str) -> None:
+def cambia_password(id_utente: int, password: str) -> None:
     if len(password) < LUNGHEZZA_MINIMA_PASSWORD:
         raise ValueError("la password deve essere lunga almeno %d caratteri" % LUNGHEZZA_MINIMA_PASSWORD)
-    if utente_unico() is None:
-        raise ValueError("non c'e nessun account da cambiare")
+    if utente_per_id(id_utente) is None:
+        raise ValueError("non c'e nessun account con questo identificativo")
     with db.scrittura() as conn:
         conn.execute(
-            "UPDATE utente SET password = ?, aggiornato_il = ? WHERE id = 1",
-            (cifra_password(password), db.adesso()),
+            "UPDATE utente SET password = ?, aggiornato_il = ? WHERE id = ?",
+            (cifra_password(password), db.adesso(), id_utente),
         )
-        # Cambiare password chiude tutte le sessioni aperte: e il senso di
-        # cambiarla.
-        conn.execute("DELETE FROM sessione")
+        # Chiude le sessioni di CHI cambia la password, non di tutti: prima
+        # qui c'era un DELETE FROM sessione senza WHERE, che con un account
+        # solo era giusto e con due e un genitore che butta fuori l'altro.
+        conn.execute("DELETE FROM sessione WHERE id_utente = ?", (id_utente,))
 
 
-def accedi(nome: str, password: str) -> bool:
-    """Vero se le credenziali sono giuste.
+def disattiva(id_utente: int, attivo: bool) -> None:
+    """Spegne o riaccende un account, chiudendo le sue sessioni.
+
+    Disattivare e non cancellare: le revisioni restano firmate da qualcuno
+    che si puo ancora nominare, e un account spento si puo riaccendere.
+    """
+    with db.scrittura() as conn:
+        conn.execute(
+            "UPDATE utente SET attivo = ?, aggiornato_il = ? WHERE id = ?",
+            (1 if attivo else 0, db.adesso(), id_utente),
+        )
+        if not attivo:
+            conn.execute("DELETE FROM sessione WHERE id_utente = ?", (id_utente,))
+
+
+def accedi(nome: str, password: str) -> sqlite3.Row | None:
+    """La riga dell'utente se le credenziali sono giuste, altrimenti None.
 
     Un nome che non esiste costa lo stesso tempo di una password sbagliata, e
-    chi chiama risponde la stessa frase nei due casi.
+    chi chiama risponde la stessa frase nei due casi: brucia_tempo() nel ramo
+    "non trovato" e quello che lo rende vero, e va tenuto. Senza, il
+    cronometro direbbe se quel nome esiste, e con piu account questo diventa
+    un elenco di chi c'e.
     """
-    utente = utente_unico()
-    # compare_digest su byte e non su str: un nome con un accento farebbe
-    # TypeError sulla versione con le stringhe.
-    if utente is None or not hmac.compare_digest(
-        str(utente["utente"]).encode("utf-8"), nome.encode("utf-8")
-    ):
+    utente = utente_per_nome(nome)
+    if utente is None:
         brucia_tempo()
-        return False
-    return verifica_password(password, str(utente["password"]))
+        return None
+    if not verifica_password(password, str(utente["password"])):
+        return None
+    # Un account disattivato costa lo stesso tempo di uno sbagliato: arrivare
+    # fin qui e poi rispondere "sei disattivato" direbbe a chi prova che la
+    # password era giusta.
+    if not int(utente["attivo"]):
+        return None
+    return utente
 
 
 # ---------------------------------------------------------------------------

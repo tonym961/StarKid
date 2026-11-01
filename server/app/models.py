@@ -447,3 +447,76 @@ class RichiestaNuovoTablet(Richiesta):
 
 class RichiestaRipristino(Richiesta):
     revisione: int = Field(ge=1)
+
+
+# ---------------------------------------------------------------------------
+# Utenti e ruoli
+# ---------------------------------------------------------------------------
+
+RUOLI: tuple[str, ...] = ("admin", "genitore", "osservatore")
+
+
+class RichiestaNuovoUtente(Richiesta):
+    """Un account creato da un amministratore che e gia dentro.
+
+    Non e iscrizione: non esiste nessuna rotta che si possa chiamare senza
+    credenziali per aggiungere un account. La proprieta che la pagina di
+    accesso promette - "da fuori nessuno puo farsi un account" - resta vera
+    alla lettera.
+    """
+
+    utente: str = Field(min_length=1, max_length=64)
+    # Lo stesso minimo che pretende auth.crea_utente: qui si rifiuta prima,
+    # con il nome del campo sbagliato, invece di farlo scoppiare dentro.
+    password: str = Field(min_length=12, max_length=1024)
+    ruolo: Literal["admin", "genitore", "osservatore"] = "genitore"
+    # Il sottoutente: di chi e figlio. Lo controlla la rotta, perche la
+    # regola ("solo i tuoi, e solo sui tuoi tablet") dipende da chi chiede.
+    id_padre: int | None = Field(default=None, ge=1)
+
+    @field_validator("utente")
+    @classmethod
+    def _utente(cls, valore: str) -> str:
+        nome = _senza_controlli(valore.strip(), "utente")
+        if not nome:
+            raise ValueError("il nome utente non puo essere vuoto")
+        if "/" in nome or "\\" in nome or " " in nome:
+            raise ValueError("il nome utente non puo contenere spazi ne barre")
+        return nome
+
+
+class RichiestaModificaUtente(Richiesta):
+    """Cosa si puo cambiare di un account da HTTP: il ruolo e se e acceso.
+
+    Il nome no, di proposito: un nome che cambia sotto i piedi rende
+    illeggibili i log e il registro delle revisioni. Si disattiva e se ne fa
+    un altro.
+    """
+
+    ruolo: Literal["admin", "genitore", "osservatore"] | None = None
+    attivo: bool | None = None
+
+
+class RichiestaPassword(Richiesta):
+    password: str = Field(min_length=12, max_length=1024)
+
+
+class RichiestaConcessioni(Richiesta):
+    """Quali tablet vede un utente. L'elenco arriva intero, non a pezzi.
+
+    Come per la configurazione: niente aggiunte e rimozioni separate, perche
+    due richieste che si incrociano lascerebbero permessi che nessuno ha
+    chiesto. Si manda l'elenco che deve valere.
+    """
+
+    tablet: list[str] = Field(default_factory=list, max_length=200)
+
+    @field_validator("tablet")
+    @classmethod
+    def _tablet(cls, valore: list[str]) -> list[str]:
+        for id_tablet in valore:
+            if not re.fullmatch(r"[0-9a-f]{16}", id_tablet):
+                raise ValueError("identificativo di tablet non valido: %r" % id_tablet)
+        if len(set(valore)) != len(valore):
+            raise ValueError("c'e un tablet ripetuto")
+        return valore

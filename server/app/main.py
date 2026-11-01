@@ -38,8 +38,12 @@ from .models import (
     DocumentoConfig,
     RichiestaAck,
     RichiestaArruolamento,
+    RichiestaConcessioni,
     RichiestaLogin,
+    RichiestaModificaUtente,
     RichiestaNuovoTablet,
+    RichiestaNuovoUtente,
+    RichiestaPassword,
     RichiestaRipristino,
     RichiestaSalute,
 )
@@ -106,10 +110,18 @@ async def ciclo_di_vita(app: FastAPI) -> AsyncIterator[None]:
             "di sfondare MemoryMax. Controlla la versione di anyio."
         )
     db.inizializza()
-    if auth.utente_unico() is None:
+    if not auth.elenco_utenti():
         registro.warning(
             "nessun account: crealo con "
             "'python -m app.cli crea-utente <nome>' prima di usare la web UI"
+        )
+    elif auth.quanti_admin_attivi() == 0:
+        # Succede solo se qualcuno ha pasticciato nel database a mano: dalla
+        # web UI lultimo admin non si puo togliere. Va detto forte, perche da
+        # li nessuno puo piu amministrare niente senza passare da SSH.
+        registro.error(
+            "non c'e nessun amministratore attivo: la gestione degli utenti e "
+            "irraggiungibile. Rimedio: python -m app.cli ruolo <nome> admin"
         )
     try:
         yield
@@ -464,34 +476,62 @@ def salute_dispositivo(
 
 @app.post("/api/v1/auth/login")
 def login(dati: RichiestaLogin, request: Request, response: Response) -> dict[str, Any]:
-    """Accesso del genitore. Un solo account, nome utente e non email.
+    """Accesso. Nome utente e non email, e nessuna iscrizione da qui.
 
-    Il messaggio di errore e lo stesso per un nome che non esiste e per una
-    password sbagliata, e i due casi costano lo stesso tempo: un messaggio
-    diverso o una risposta piu veloce direbbero a chi prova se sta almeno
-    indovinando il nome.
+    Il messaggio di errore e lo stesso per un nome che non esiste, per una
+    password sbagliata e per un account disattivato, e i tre casi costano lo
+    stesso tempo: un messaggio diverso o una risposta piu veloce direbbero a
+    chi prova se sta almeno indovinando il nome - e con piu account questo
+    diventa un elenco di chi c'e in casa.
     """
-    # Si contano due chiavi, ma l'attesa si applica **solo** a quella
-    # dell'indirizzo. C'e un account solo: contando anche la chiave del nome
-    # utente, chi lo indovina manda otto password sbagliate e poi una ogni
-    # quarto d'ora, e il genitore non entra piu da nessun indirizzo - col
-    # rimedio che sta via SSH. La chiave del nome resta perche serve a vedere
-    # nei log che qualcuno lo sta provando, e nginx piu fail2ban coprono il
-    # resto.
+    # L'attesa si applica solo alla chiave dell'indirizzo, anche adesso che
+    # gli account sono piu di uno, e il motivo e lo stesso di prima
+    # ROVESCIATO: con un account solo, far rallentare per nome voleva dire
+    # chiudere fuori l'unico genitore da ogni indirizzo; con piu account vuol
+    # dire che chi conosce un nome puo chiudere fuori QUELLA persona a
+    # comando, da un indirizzo qualunque, e diventa un modo di togliere di
+    # mezzo un genitore. Chi insiste lo fermano nginx (limit_req, 10 al
+    # minuto sul login) e fail2ban. La chiave del nome resta registrata
+    # perche serve a vedere nei log chi si sta provando.
     chiave_ip = "ip:" + auth.indirizzo(request)
     chiavi = [chiave_ip, "utente:" + dati.utente.lower()]
     auth.vieta_se_in_attesa([chiave_ip])
-    if not auth.accedi(dati.utente, dati.password):
+    utente = auth.accedi(dati.utente, dati.password)
+    if utente is None:
         auth.registra_fallimento(chiavi)
         registro.warning("accesso rifiutato da %s", auth.indirizzo(request))
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="credenziali non valide"
         )
     auth.azzera_tentativi(chiavi)
-    token, csrf = auth.crea_sessione()
+    token, csrf = auth.crea_sessione(int(utente["id"]))
     auth.imposta_cookie(response, token)
     auth.imposta_cookie_csrf(response, csrf)
-    return {"csrf": csrf, "utente": dati.utente}
+    # Il nome torna dal DATABASE e non da quello che ha scritto chi entra:
+    # prima era l'eco della richiesta, e con il confronto senza maiuscole
+    # mostrerebbe "ANTONINO" a chi ha scritto cosi.
+    return {
+        "csrf": csrf,
+        "utente": utente["utente"],
+        "ruolo": utente["ruolo"],
+    }
+
+
+@app.get("/api/v1/auth/io")
+def chi_sono(sessione: sqlite3.Row = Depends(auth.sessione_attiva)) -> dict[str, Any]:
+    """Chi sono e cosa posso fare.
+
+    Mancava, e si vedeva solo adesso: il nome e il ruolo arrivavano soltanto
+    nella risposta del login, quindi dopo un ricaricamento di pagina la web UI
+    non sapeva piu chi fosse l'utente ne cosa nascondere. Con un account solo
+    non importava a nessuno.
+    """
+    return {
+        "utente": sessione["nome_utente"],
+        "ruolo": sessione["ruolo"],
+        "puo_amministrare": str(sessione["ruolo"]) == "admin",
+        "sola_lettura": str(sessione["ruolo"]) == "osservatore",
+    }
 
 
 @app.post("/api/v1/auth/logout")
@@ -513,9 +553,20 @@ def logout(
 # ---------------------------------------------------------------------------
 
 
-def _tablet(id_tablet: str) -> sqlite3.Row:
+def _tablet(id_tablet: str, sessione: sqlite3.Row) -> sqlite3.Row:
+    """Il tablet, se chi chiede puo vederlo.
+
+    Il controllo sta QUI e non nelle rotte: cinque delle sei rotte web di un
+    singolo tablet passano da questa funzione, ed e lunico punto in cui si
+    puo dimenticare una volta sola invece di cinque. La sesta e lelenco, che
+    filtra per conto suo.
+
+    Un tablet che non ti spetta risponde 404 come uno che non esiste: a chi
+    non ha quel tablet non si dice nemmeno che esiste, perche sarebbe il
+    tablet di unaltra famiglia.
+    """
     riga = db.leggi_uno("SELECT * FROM tablet WHERE id = ?", (id_tablet,))
-    if riga is None:
+    if riga is None or not auth.puo_vedere(sessione, id_tablet):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="questo tablet non esiste"
         )
@@ -581,7 +632,14 @@ def _riassunto(tablet: sqlite3.Row) -> dict[str, Any]:
 
 @app.get("/api/v1/tablets")
 def elenco_tablet(sessione: sqlite3.Row = Depends(auth.sessione_attiva)) -> dict[str, Any]:
-    righe = db.leggi_tutti("SELECT * FROM tablet ORDER BY creato_il")
+    """Solo i tablet di chi chiede.
+
+    E l'unica rotta di un tablet che non passa da _tablet(): il filtro e
+    nella query, non dopo. Filtrare dopo averli letti tutti funziona lo
+    stesso, ma il giorno in cui qualcuno aggiunge un conteggio o una
+    paginazione si porta dietro anche quelli degli altri.
+    """
+    righe = auth.tablet_visibili(sessione)
     # La chiave si chiama "tablets" come la rotta: la web UI legge questa.
     return {"tablets": [_riassunto(r) for r in righe]}
 
@@ -604,8 +662,16 @@ def crea_tablet(
     with db.scrittura() as conn:
         conn.execute(
             "INSERT INTO tablet (id, nome, creato_il, hash_arruolamento, "
-            "arruolamento_scade, revisione) VALUES (?, ?, ?, ?, ?, 1)",
-            (id_tablet, dati.nome, ora, auth.hash_token(token), scade),
+            "arruolamento_scade, revisione, id_utente) VALUES (?, ?, ?, ?, ?, 1, ?)",
+            (id_tablet, dati.nome, ora, auth.hash_token(token), scade, sessione["id_utente"]),
+        )
+        # La concessione a chi l'ha creato, nella stessa transazione: senza,
+        # un genitore creerebbe un tablet e si troverebbe un 404 sulla
+        # schermata subito dopo, perche il filtro dell'elenco guarda qui.
+        conn.execute(
+            "INSERT OR IGNORE INTO accesso_tablet (id_utente, id_tablet, creato_il) "
+            "VALUES (?, ?, ?)",
+            (sessione["id_utente"], id_tablet, ora),
         )
         documento = config_doc.salva_prima_revisione(conn, id_tablet)
     registro.info("tablet %s creato", id_tablet)
@@ -625,7 +691,7 @@ def leggi_config(
     id_tablet: str = Path(pattern=ID_TABLET),
     sessione: sqlite3.Row = Depends(auth.sessione_attiva),
 ) -> dict[str, Any]:
-    _tablet(id_tablet)
+    _tablet(id_tablet, sessione)
     return config_doc.leggi(id_tablet)
 
 
@@ -641,7 +707,7 @@ def scrivi_config(
     peggiore che possa arrivare sul tablet di un bambino. Chi scrive manda
     tutto il documento, e con la revisione da cui era partito.
     """
-    tablet = _tablet(id_tablet)
+    tablet = _tablet(id_tablet, sessione)
     prima = config_doc.leggi(id_tablet)
     nuovo = config_doc.scrivi(id_tablet, documento)
     if config_doc.kiosk_e_una_richiesta(bool(prima["kiosk"]), bool(nuovo["kiosk"])):
@@ -662,7 +728,7 @@ def storico_config(
     id_tablet: str = Path(pattern=ID_TABLET),
     sessione: sqlite3.Row = Depends(auth.sessione_attiva),
 ) -> dict[str, Any]:
-    _tablet(id_tablet)
+    _tablet(id_tablet, sessione)
     return {
         "massimo": config_doc.MASSIMO_STORICO,
         "revisioni": config_doc.storico(id_tablet),
@@ -676,7 +742,7 @@ def ripristina_config(
     sessione: sqlite3.Row = Depends(auth.sessione_scrivibile),
 ) -> dict[str, Any]:
     """Torna a una revisione dello storico scrivendone una nuova."""
-    _tablet(id_tablet)
+    _tablet(id_tablet, sessione)
     nuovo = config_doc.ripristina(id_tablet, dati.revisione)
     registro.info(
         "tablet %s: ripristinata la %s come %s", id_tablet, dati.revisione, nuovo["revisione"]
@@ -696,7 +762,229 @@ def elimina_tablet(
     si spegne niente a distanza, e la direzione della configurazione resta una
     sola.
     """
-    _tablet(id_tablet)
+    _tablet(id_tablet, sessione)
     db.esegui("DELETE FROM tablet WHERE id = ?", (id_tablet,))
     registro.info("tablet %s eliminato", id_tablet)
     return {"esito": "eliminato", "id": id_tablet}
+
+
+# ---------------------------------------------------------------------------
+# Utenti e ruoli
+#
+# Tutte queste rotte vogliono un amministratore (auth.sessione_admin, che a
+# sua volta passa da sessione_scrivibile e quindi pretende anche il token
+# CSRF).
+#
+# DUE REGOLE CHE NON SI POSSONO SCAVALCARE, ed e il motivo per cui stanno qui
+# e non nella web UI:
+#
+#   1. Non ci si disattiva ne ci si cancella da soli. Un amministratore che si
+#      toglie il ruolo con un clic sbagliato e un pomeriggio perso, e il
+#      rimedio sta via SSH.
+#   2. L'ultimo amministratore attivo resta. Senza, un server puo finire in
+#      uno stato in cui nessuno puo piu gestire niente dalla web UI, e di
+#      nuovo si esce solo da SSH (python -m app.cli ruolo <nome> admin).
+#
+# Una web UI che nasconde i bottoni e una cortesia; questi due controlli sono
+# la serratura.
+# ---------------------------------------------------------------------------
+
+
+def _utente_o_404(id_utente: int) -> sqlite3.Row:
+    riga = auth.utente_per_id(id_utente)
+    if riga is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="questo account non esiste"
+        )
+    return riga
+
+
+def _non_te_stesso(sessione: sqlite3.Row, id_utente: int, cosa: str) -> None:
+    if int(sessione["id_utente"]) == int(id_utente):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="non puoi %s il tuo stesso account: chiedilo a un altro amministratore"
+            % cosa,
+        )
+
+
+def _resta_un_admin(id_utente: int, cosa: str) -> None:
+    """Vieta la mossa se lascerebbe il server senza amministratori attivi."""
+    riga = auth.utente_per_id(id_utente)
+    if riga is None or str(riga["ruolo"]) != "admin" or not int(riga["attivo"]):
+        return
+    if auth.quanti_admin_attivi() <= 1:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="e l'ultimo amministratore attivo: %s renderebbe impossibile "
+            "gestire gli utenti da qui" % cosa,
+        )
+
+
+def _voce_utente(riga: sqlite3.Row) -> dict[str, Any]:
+    quanti = db.leggi_uno(
+        "SELECT COUNT(*) AS quanti FROM accesso_tablet WHERE id_utente = ?",
+        (riga["id"],),
+    )
+    # Mai la password, nemmeno come hash: un elenco di hash e un elenco di
+    # cose da provare con comodo.
+    return {
+        "id": riga["id"],
+        "utente": riga["utente"],
+        "ruolo": riga["ruolo"],
+        "attivo": bool(riga["attivo"]),
+        "id_padre": riga["id_padre"],
+        "creato_il": riga["creato_il"],
+        "aggiornato_il": riga["aggiornato_il"],
+        "quanti_tablet": int(quanti["quanti"]) if quanti else 0,
+    }
+
+
+@app.get("/api/v1/utenti")
+def elenco_degli_utenti(
+    sessione: sqlite3.Row = Depends(auth.sessione_admin),
+) -> dict[str, Any]:
+    return {"utenti": [_voce_utente(r) for r in auth.elenco_utenti()]}
+
+
+@app.post("/api/v1/utenti", status_code=status.HTTP_201_CREATED)
+def nuovo_utente(
+    dati: RichiestaNuovoUtente, sessione: sqlite3.Row = Depends(auth.sessione_admin)
+) -> dict[str, Any]:
+    if dati.id_padre is not None:
+        _utente_o_404(dati.id_padre)
+    try:
+        id_nuovo = auth.crea_utente(
+            dati.utente,
+            dati.password,
+            ruolo=dati.ruolo,
+            id_padre=dati.id_padre,
+            creato_da=int(sessione["id_utente"]),
+        )
+    except ValueError as errore:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail=str(errore)
+        ) from errore
+    registro.info("utente %s creato da %s", dati.utente, sessione["nome_utente"])
+    return _voce_utente(_utente_o_404(id_nuovo))
+
+
+@app.patch("/api/v1/utenti/{id_utente}")
+def modifica_utente(
+    dati: RichiestaModificaUtente,
+    id_utente: int = Path(ge=1),
+    sessione: sqlite3.Row = Depends(auth.sessione_admin),
+) -> dict[str, Any]:
+    _utente_o_404(id_utente)
+    if dati.ruolo is not None and dati.ruolo != "admin":
+        _non_te_stesso(sessione, id_utente, "togliere il ruolo al")
+        _resta_un_admin(id_utente, "cambiargli ruolo")
+    if dati.attivo is False:
+        _non_te_stesso(sessione, id_utente, "disattivare")
+        _resta_un_admin(id_utente, "disattivarlo")
+    if dati.ruolo is not None:
+        db.esegui(
+            "UPDATE utente SET ruolo = ?, aggiornato_il = ? WHERE id = ?",
+            (dati.ruolo, db.adesso(), id_utente),
+        )
+    if dati.attivo is not None:
+        auth.disattiva(id_utente, dati.attivo)
+    registro.info("utente %s modificato da %s", id_utente, sessione["nome_utente"])
+    return _voce_utente(_utente_o_404(id_utente))
+
+
+@app.put("/api/v1/utenti/{id_utente}/password")
+def password_utente(
+    dati: RichiestaPassword,
+    id_utente: int = Path(ge=1),
+    sessione: sqlite3.Row = Depends(auth.sessione_admin),
+) -> dict[str, Any]:
+    """Un amministratore rimette la password a chi l'ha persa.
+
+    Non si chiede la vecchia: chi arriva qui e gia dentro come admin, e se
+    l'avesse non servirebbe questa rotta. Si chiudono le sessioni di quel
+    solo utente, non quelle di tutti.
+    """
+    _utente_o_404(id_utente)
+    try:
+        auth.cambia_password(id_utente, dati.password)
+    except ValueError as errore:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(errore)
+        ) from errore
+    registro.info("password di %s cambiata da %s", id_utente, sessione["nome_utente"])
+    return {"esito": "cambiata", "id": id_utente}
+
+
+@app.delete("/api/v1/utenti/{id_utente}")
+def elimina_utente(
+    id_utente: int = Path(ge=1),
+    sessione: sqlite3.Row = Depends(auth.sessione_admin),
+) -> dict[str, Any]:
+    """Cancella un account, i suoi sottoutenti e i suoi permessi.
+
+    NON cancella i tablet: l'ON DELETE CASCADE di accesso_tablet porta via il
+    permesso, non la riga del tablet. Un genitore che se ne va non deve far
+    sparire il tablet di casa, e soprattutto non deve far morire un token di
+    dispositivo, che si rifa solo portando un codice nuovo fin sul tablet.
+    """
+    _utente_o_404(id_utente)
+    _non_te_stesso(sessione, id_utente, "cancellare")
+    _resta_un_admin(id_utente, "cancellarlo")
+    db.esegui("DELETE FROM utente WHERE id = ?", (id_utente,))
+    registro.info("utente %s eliminato da %s", id_utente, sessione["nome_utente"])
+    return {"esito": "eliminato", "id": id_utente}
+
+
+@app.get("/api/v1/utenti/{id_utente}/tablet")
+def concessioni_utente(
+    id_utente: int = Path(ge=1),
+    sessione: sqlite3.Row = Depends(auth.sessione_admin),
+) -> dict[str, Any]:
+    _utente_o_404(id_utente)
+    righe = db.leggi_tutti(
+        "SELECT id_tablet FROM accesso_tablet WHERE id_utente = ?", (id_utente,)
+    )
+    return {"tablet": [r["id_tablet"] for r in righe]}
+
+
+@app.put("/api/v1/utenti/{id_utente}/tablet")
+def imposta_concessioni(
+    dati: RichiestaConcessioni,
+    id_utente: int = Path(ge=1),
+    sessione: sqlite3.Row = Depends(auth.sessione_admin),
+) -> dict[str, Any]:
+    """Quali tablet vede questo utente. L'elenco arriva intero, non a pezzi.
+
+    Come per la configurazione: niente aggiunte e rimozioni separate, perche
+    due richieste che si incrociano lascerebbero permessi che nessuno ha
+    chiesto.
+
+    Un amministratore non ha bisogno di concessioni, le vede tutte comunque.
+    Si lascia scrivere lo stesso, perche il giorno in cui gli si toglie il
+    ruolo le concessioni che aveva diventano quelle che gli restano.
+    """
+    _utente_o_404(id_utente)
+    ora = db.adesso()
+    with db.scrittura() as conn:
+        esistenti = {r["id"] for r in conn.execute("SELECT id FROM tablet").fetchall()}
+        mancanti = [t for t in dati.tablet if t not in esistenti]
+        if mancanti:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="questi tablet non esistono: %s" % ", ".join(mancanti),
+            )
+        conn.execute("DELETE FROM accesso_tablet WHERE id_utente = ?", (id_utente,))
+        for id_tablet in dati.tablet:
+            conn.execute(
+                "INSERT INTO accesso_tablet (id_utente, id_tablet, creato_il) "
+                "VALUES (?, ?, ?)",
+                (id_utente, id_tablet, ora),
+            )
+    registro.info(
+        "concessioni di %s: %d tablet, decise da %s",
+        id_utente,
+        len(dati.tablet),
+        sessione["nome_utente"],
+    )
+    return {"esito": "aggiornate", "id": id_utente, "tablet": dati.tablet}

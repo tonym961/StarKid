@@ -43,7 +43,7 @@ def cliente(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[TestCli
 @pytest.fixture
 def account(cliente: TestClient) -> TestClient:
     """Database con l'unico account creato, come lo crea la CLI via SSH."""
-    auth.crea_utente(UTENTE, PAROLA)
+    auth.crea_utente(UTENTE, PAROLA, ruolo="admin")
     return cliente
 
 

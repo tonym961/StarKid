@@ -238,6 +238,132 @@ MIGRAZIONI: list[tuple[int, tuple[str, ...]]] = [
             """,
         ),
     ),
+    (
+        2,
+        (
+            # ---------------------------------------------------------------
+            # Da un account solo a piu utenti, con ruoli e sottoutenti.
+            #
+            # L'ORDINE QUI SOTTO NON E CASUALE. Tutti i passi girano dentro un
+            # solo BEGIN IMMEDIATE (vedi migra()), con PRAGMA foreign_keys
+            # acceso e non spegnibile: dentro una transazione quel PRAGMA non
+            # fa niente. Da cui tre regole che valgono per sempre:
+            #
+            #  1. "utente" e "sessione" si possono RICOSTRUIRE, perche nessuna
+            #     tabella le riferisce. L'unica REFERENCES di tutto lo schema
+            #     e revisione.id_tablet -> tablet(id).
+            #  2. Su "tablet" si fa SOLO ADD COLUMN. Un DROP TABLE tablet
+            #     scatena l'ON DELETE CASCADE di revisione e porta via tutto
+            #     lo storico di configurazione, in silenzio; e un
+            #     ALTER TABLE tablet RENAME, con le chiavi accese, riscrive la
+            #     clausola REFERENCES di revisione. Tutti e due gli ordini
+            #     sono rotti.
+            #  3. "utente" si ricostruisce PRIMA che "sessione" la riferisca,
+            #     se no il DROP della vecchia e bloccato.
+            # ---------------------------------------------------------------
+
+            # Le sessioni aperte vanno via per prime. Una sessione senza
+            # proprietario non si puo autorizzare, e inventare a chi
+            # appartiene sarebbe peggio: si cancellano, e ogni genitore
+            # rientra una volta. Prima della ricostruzione, cosi la tabella
+            # nuova nasce vuota e id_utente puo essere NOT NULL.
+            "DELETE FROM sessione",
+
+            # --- utente: via il CHECK (id = 1), dentro ruolo e parentela ----
+            """
+            CREATE TABLE utente_nuova (
+                id            INTEGER PRIMARY KEY AUTOINCREMENT,
+                utente        TEXT    NOT NULL UNIQUE COLLATE NOCASE,
+                password      TEXT    NOT NULL,
+                creato_il     INTEGER NOT NULL,
+                aggiornato_il INTEGER NOT NULL,
+                -- admin: tutto, utenti compresi. genitore: i tablet che gli
+                -- sono stati dati, e puo fare sottoutenti sui propri.
+                -- osservatore: guarda e basta.
+                ruolo         TEXT    NOT NULL DEFAULT 'genitore'
+                              CHECK (ruolo IN ('admin', 'genitore', 'osservatore')),
+                -- Il sottoutente: di chi e figlio. Cancellando il padre
+                -- spariscono anche i suoi, che e quello che ci si aspetta.
+                id_padre      INTEGER REFERENCES utente_nuova (id) ON DELETE CASCADE,
+                -- Disattivare invece di cancellare: le revisioni restano
+                -- firmate da qualcuno che si puo ancora nominare.
+                attivo        INTEGER NOT NULL DEFAULT 1 CHECK (attivo IN (0, 1)),
+                creato_da     INTEGER REFERENCES utente_nuova (id) ON DELETE SET NULL,
+                CHECK (id_padre IS NULL OR id_padre <> id)
+            )
+            """,
+            # COLLATE NOCASE sul nome: "Antonino" e "antonino" sono la stessa
+            # persona, e due account che si distinguono per una maiuscola sono
+            # un inganno, non una funzione.
+            """
+            INSERT INTO utente_nuova
+                (id, utente, password, creato_il, aggiornato_il, ruolo, id_padre, attivo, creato_da)
+            SELECT id, utente, password, creato_il, aggiornato_il, 'admin', NULL, 1, NULL
+            FROM utente
+            """,
+            "DROP TABLE utente",
+            "ALTER TABLE utente_nuova RENAME TO utente",
+
+            # --- sessione: adesso sa di chi e -------------------------------
+            """
+            CREATE TABLE sessione_nuova (
+                hash_token TEXT    PRIMARY KEY,
+                id_utente  INTEGER NOT NULL REFERENCES utente (id) ON DELETE CASCADE,
+                csrf       TEXT    NOT NULL,
+                creato_il  INTEGER NOT NULL,
+                visto_il   INTEGER NOT NULL,
+                scade_il   INTEGER NOT NULL
+            )
+            """,
+            "DROP TABLE sessione",
+            "ALTER TABLE sessione_nuova RENAME TO sessione",
+            # Serve a chiudere tutte le sessioni di un utente in un colpo:
+            # e il gesto che si fa quando si cambia una password o si
+            # disattiva qualcuno, ed e quello che deve essere veloce.
+            "CREATE INDEX idx_sessione_utente ON sessione (id_utente)",
+
+            # --- tablet: solo ADD COLUMN, vedi la regola 2 ------------------
+            # Nullable per forza: ALTER TABLE ADD COLUMN con REFERENCES non
+            # ammette un default diverso da NULL. Il riempimento e il passo
+            # dopo, nella stessa transazione.
+            "ALTER TABLE tablet ADD COLUMN id_utente INTEGER REFERENCES utente (id)",
+
+            # --- chi vede cosa ---------------------------------------------
+            # Una tabella di concessioni e non una colonna sola su tablet:
+            # "i genitori vedono certi tablet" e molti-a-molti, due genitori
+            # guardano lo stesso tablet di casa, e un sottoutente ne vede un
+            # sottoinsieme. ON DELETE CASCADE su tutte e due i lati: tolto
+            # l'utente sparisce il permesso, non il tablet.
+            """
+            CREATE TABLE accesso_tablet (
+                id_utente INTEGER NOT NULL REFERENCES utente (id) ON DELETE CASCADE,
+                id_tablet TEXT    NOT NULL REFERENCES tablet (id) ON DELETE CASCADE,
+                creato_il INTEGER NOT NULL,
+                PRIMARY KEY (id_utente, id_tablet)
+            )
+            """,
+            "CREATE INDEX idx_accesso_tablet ON accesso_tablet (id_tablet)",
+
+            # --- chi ha scritto una revisione ------------------------------
+            # NULL per quelle di prima: non si inventa un autore. E una
+            # colonna, NON un valore nuovo di "origine": quel vocabolario si
+            # legge da schema/config.schema.json ed e chiuso per progetto.
+            "ALTER TABLE revisione ADD COLUMN id_utente INTEGER REFERENCES utente (id)",
+
+            # --- riempimento, nella stessa transazione ----------------------
+            # Senza questi due, dopo la migrazione l'admin non vedrebbe piu
+            # nessun tablet: esisterebbero senza che nessuno abbia il permesso.
+            """
+            UPDATE tablet SET id_utente = (SELECT MIN(id) FROM utente)
+            WHERE id_utente IS NULL AND EXISTS (SELECT 1 FROM utente)
+            """,
+            """
+            INSERT OR IGNORE INTO accesso_tablet (id_utente, id_tablet, creato_il)
+            SELECT (SELECT MIN(id) FROM utente), id, creato_il FROM tablet
+            WHERE EXISTS (SELECT 1 FROM utente)
+            """,
+        ),
+    ),
 ]
 
 

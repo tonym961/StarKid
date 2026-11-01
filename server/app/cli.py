@@ -42,32 +42,78 @@ def _password_dalla_mano(conferma: bool = True) -> str:
 def crea_utente(argomenti: argparse.Namespace) -> int:
     db.inizializza()
     try:
-        auth.crea_utente(argomenti.nome, _password_dalla_mano())
+        auth.crea_utente(argomenti.nome, _password_dalla_mano(), ruolo=argomenti.ruolo)
     except ValueError as errore:
         print("no: %s" % errore, file=sys.stderr)
         return 1
-    print("account %r creato" % argomenti.nome)
+    print("account %r creato, ruolo %s" % (argomenti.nome, argomenti.ruolo))
     return 0
 
 
 def cambia_password(argomenti: argparse.Namespace) -> int:
     db.inizializza()
+    utente = auth.utente_per_nome(argomenti.nome)
+    if utente is None:
+        print("no: non ce nessun account %r" % argomenti.nome, file=sys.stderr)
+        return 1
     try:
-        auth.cambia_password(_password_dalla_mano())
+        auth.cambia_password(int(utente["id"]), _password_dalla_mano())
     except ValueError as errore:
         print("no: %s" % errore, file=sys.stderr)
         return 1
-    print("password cambiata, le sessioni aperte sono state chiuse")
+    print("password di %r cambiata, le sue sessioni sono state chiuse" % argomenti.nome)
+    return 0
+
+
+def ruolo(argomenti: argparse.Namespace) -> int:
+    """La scorta: rimettere un admin quando dalla web UI non si puo piu.
+
+    Serve nel caso in cui lultimo amministratore sia stato disattivato o
+    cancellato pasticciando nel database: da li la gestione degli utenti e
+    irraggiungibile, e lunica strada e questa, da dentro la macchina.
+    """
+    db.inizializza()
+    utente = auth.utente_per_nome(argomenti.nome)
+    if utente is None:
+        print("no: non ce nessun account %r" % argomenti.nome, file=sys.stderr)
+        return 1
+    if argomenti.ruolo not in auth.RUOLI:
+        print("no: ruolo sconosciuto, usa uno fra %s" % ", ".join(auth.RUOLI), file=sys.stderr)
+        return 1
+    db.esegui(
+        "UPDATE utente SET ruolo = ?, attivo = 1, aggiornato_il = ? WHERE id = ?",
+        (argomenti.ruolo, db.adesso(), utente["id"]),
+    )
+    print("%r adesso e %s, e attivo" % (argomenti.nome, argomenti.ruolo))
     return 0
 
 
 def stato(argomenti: argparse.Namespace) -> int:
     """Quello che /healthz non dice, detto a chi e entrato nella macchina."""
     db.inizializza()
-    utente = auth.utente_unico()
+    utenti = auth.elenco_utenti()
     print("database:        %s" % db.percorso())
     print("schema:          versione %d" % db.versione())
-    print("account:         %s" % (utente["utente"] if utente else "nessuno, va creato"))
+    if not utenti:
+        print("account:         nessuno, va creato")
+    else:
+        print("account:         %d" % len(utenti))
+        for u in utenti:
+            padre = ""
+            if u["id_padre"] is not None:
+                padre = " (sottoutente di %s)" % auth.utente_per_id(int(u["id_padre"]))["utente"]
+            print(
+                "  %-3s %-20s %-12s %s%s"
+                % (
+                    u["id"],
+                    u["utente"],
+                    u["ruolo"],
+                    "attivo" if u["attivo"] else "DISATTIVATO",
+                    padre,
+                )
+            )
+        if auth.quanti_admin_attivi() == 0:
+            print("  ATTENZIONE: nessun amministratore attivo, la web UI non puo gestire utenti")
     print("hash password:   %s" % ("scrypt" if auth.SCRYPT else "pbkdf2_sha256"))
     righe = db.leggi_tutti("SELECT id, nome, revisione, hash_dispositivo FROM tablet ORDER BY creato_il")
     print("tablet:          %d" % len(righe))
@@ -146,12 +192,29 @@ def principale(argv: list[str] | None = None) -> int:
     )
     comandi = analizzatore.add_subparsers(dest="comando", required=True)
 
-    uno = comandi.add_parser("crea-utente", help="crea l'unico account (una volta sola)")
+    uno = comandi.add_parser("crea-utente", help="crea un account")
     uno.add_argument("nome", help="nome utente, non email")
+    uno.add_argument(
+        "--ruolo",
+        default="admin",
+        choices=auth.RUOLI,
+        help="admin fa tutto e gestisce gli altri; genitore vede i tablet che gli dai; "
+             "osservatore guarda e basta. Il primo account di un server nuovo e admin.",
+    )
     uno.set_defaults(funzione=crea_utente)
 
-    due = comandi.add_parser("cambia-password", help="cambia la password e chiude le sessioni")
+    due = comandi.add_parser(
+        "cambia-password", help="cambia la password di un account e chiude le sue sessioni"
+    )
+    due.add_argument("nome", help="di chi")
     due.set_defaults(funzione=cambia_password)
+
+    sei = comandi.add_parser(
+        "ruolo", help="cambia il ruolo di un account e lo riattiva (scorta da SSH)"
+    )
+    sei.add_argument("nome")
+    sei.add_argument("ruolo", choices=auth.RUOLI)
+    sei.set_defaults(funzione=ruolo)
 
     tre = comandi.add_parser("stato", help="cosa c'e nel database")
     tre.set_defaults(funzione=stato)
