@@ -235,6 +235,32 @@
       </label>
     </fieldset>
 
+    <!-- Il blocco a distanza sta in un riquadro suo e non dentro "Kiosk",
+         perche sono due cose diverse: il kiosk dice DOVE il bambino puo
+         stare, questo dice che adesso non puo stare da nessuna parte. -->
+    <fieldset class="carta">
+      <legend>Blocco</legend>
+      <h2><svg class="icona" aria-hidden="true"><use href="#ico-avviso"/></svg> Chiudi il tablet adesso</h2>
+      <p class="piccolo tenue">Il tablet si ferma su una schermata che dice
+      che lo hanno chiuso i genitori. Non e un limite di tempo e non scade da
+      solo: si riapre solo da qui.</p>
+
+      <div class="avviso" id="nota-bloccato">
+        <h3>Non e immediato, ed e giusto cosi</h3>
+        <p>Il tablet chiama il server, il server non chiama il tablet: non c'e
+        nessuna porta aperta verso casa tua. Il blocco arriva alla prossima
+        chiamata, entro <strong>cinque minuti</strong>. Se il tablet e spento o
+        senza rete, arriva quando torna.</p>
+      </div>
+
+      <label class="interruttore" for="bloccato">
+        <input type="checkbox" id="bloccato">
+        <span>Tablet bloccato
+          <span class="aiuto">Il PIN sul tablet non lo apre: altrimenti non sarebbe un blocco a distanza.</span>
+        </span>
+      </label>
+    </fieldset>
+
     <fieldset class="carta">
       <legend>Giochi</legend>
       <h2 id="etichetta-giochi"><svg class="icona" aria-hidden="true"><use href="#ico-stella"/></svg> I giochi di StarKid</h2>

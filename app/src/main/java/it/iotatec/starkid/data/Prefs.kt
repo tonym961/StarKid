@@ -61,7 +61,25 @@ data class KidsConfig(
      * comportamento di fabbrica.
      */
     val serverUrl: String = "",
+    /**
+     * Prima dell'arruolamento e il token del QR, che vale una volta sola;
+     * dopo e il token di questo dispositivo, che vale finche il genitore non
+     * lo revoca. Sono due cose diverse con lo stesso posto, e [enrolled] dice
+     * quale delle due c'e dentro.
+     */
     val serverToken: String = "",
+    val enrolled: Boolean = false,
+    /** Quando e andata a buon fine l'ultima sincronizzazione, 0 = mai. */
+    val lastSync: Long = 0L,
+    /** L ultima revisione confermata al server: serve a non riconfermarla. */
+    val syncedRevision: Int = 0,
+    /**
+     * Il genitore ha chiuso il tablet da remoto. Non e il kiosk e non e un
+     * limite di tempo: e "adesso basta", e si toglie solo da dove e stato
+     * messo. Il PIN sul tablet NON lo apre, se no non sarebbe un blocco a
+     * distanza: sarebbe un suggerimento.
+     */
+    val lockedByParent: Boolean = false,
     /** [ORIENT_LANDSCAPE], [ORIENT_PORTRAIT] o [ORIENT_AUTO]. */
     val orientation: String = ORIENT_LANDSCAPE,
     /** Col kiosk acceso, lascia o no il tasto delle app recenti. */
@@ -113,6 +131,10 @@ class Prefs private constructor(context: Context) {
         homeLayout = sp.getString(KEY_HOME_LAYOUT, HOME_CATEGORIES) ?: HOME_CATEGORIES,
         serverUrl = sp.getString(KEY_SERVER_URL, "") ?: "",
         serverToken = sp.getString(KEY_SERVER_TOKEN, "") ?: "",
+        enrolled = sp.getBoolean(KEY_ENROLLED, false),
+        lastSync = sp.getLong(KEY_LAST_SYNC, 0L),
+        syncedRevision = sp.getInt(KEY_SYNCED_REV, 0),
+        lockedByParent = sp.getBoolean(KEY_LOCKED, false),
         orientation = sp.getString(KEY_ORIENTATION, ORIENT_LANDSCAPE) ?: ORIENT_LANDSCAPE,
         kioskRecents = sp.getBoolean(KEY_KIOSK_RECENTS, false),
     )
@@ -195,7 +217,44 @@ class Prefs private constructor(context: Context) {
     fun setServer(url: String, token: String) = edit {
         putString(KEY_SERVER_URL, url.trim())
         putString(KEY_SERVER_TOKEN, token.trim())
+        // Un token nuovo e sempre un token di arruolamento, mai di
+        // dispositivo: e il server a trasformarlo, e lo segna setArruolato().
+        putBoolean(KEY_ENROLLED, false)
     }
+
+    // --- sincronizzazione col server --------------------------------------
+
+    /** Arruolamento riuscito: da qui in poi il token e quello del dispositivo. */
+    fun setArruolato(tokenDispositivo: String) = edit {
+        putString(KEY_SERVER_TOKEN, tokenDispositivo.trim())
+        putBoolean(KEY_ENROLLED, true)
+    }
+
+    /**
+     * Il server non ci riconosce piu: il token va buttato, non ritentato.
+     * Succede se il genitore ha cancellato il tablet o ha chiesto un nuovo
+     * arruolamento. Il tablet continua a funzionare, da solo, come prima di
+     * essere arruolato.
+     */
+    fun dimenticaArruolamento() = edit {
+        putString(KEY_SERVER_TOKEN, "")
+        putBoolean(KEY_ENROLLED, false)
+        putInt(KEY_SYNCED_REV, 0)
+    }
+
+    fun segnaSincronizzato(revisione: Int) = edit {
+        putLong(KEY_LAST_SYNC, System.currentTimeMillis())
+        putInt(KEY_SYNCED_REV, revisione)
+    }
+
+    fun setBloccatoDalGenitore(bloccato: Boolean) = edit { putBoolean(KEY_LOCKED, bloccato) }
+
+    fun setActiveDays(giorni: Set<Int>) = edit {
+        val validi = giorni.filter { it in 1..7 }.toSet().ifEmpty { setOf(1, 2, 3, 4, 5, 6, 7) }
+        putStringSet(KEY_DAYS, validi.map { it.toString() }.toSet())
+    }
+
+    fun setDisabledGames(giochi: Set<String>) = edit { putStringSet(KEY_GAMES_OFF, giochi) }
 
     fun toggleGame(gameId: String) {
         val next = current.disabledGames.toMutableSet()
@@ -297,6 +356,10 @@ class Prefs private constructor(context: Context) {
         private const val KEY_HOME_LAYOUT = "home_layout"
         private const val KEY_SERVER_URL = "server_url"
         private const val KEY_SERVER_TOKEN = "server_token"
+        private const val KEY_ENROLLED = "server_enrolled"
+        private const val KEY_LAST_SYNC = "server_last_sync"
+        private const val KEY_SYNCED_REV = "server_synced_revision"
+        private const val KEY_LOCKED = "locked_by_parent"
         private const val KEY_ORIENTATION = "orientation"
         private const val KEY_KIOSK_RECENTS = "kiosk_recents"
 

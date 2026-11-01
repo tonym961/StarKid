@@ -413,8 +413,13 @@ systemd. Non ha senso cercare `crontab -e`.
 Non c'e iscrizione dal web: l'unico account si crea da qui.
 
 ```sh
-sudo -u starkid /opt/starkid/venv/bin/python -m app.cli crea-utente <nomeutente>
+sudo -u starkid env -C /opt/starkid /opt/starkid/venv/bin/python -m app.cli crea-utente <nomeutente>
 ```
+
+`env -C /opt/starkid` non e un vezzo: `python -m app.cli` cerca il pacchetto
+`app` nella cartella da cui lo lanci, e lanciandolo da casa tua risponde
+`No module named app`. Il servizio non se ne accorge perche systemd gli mette
+gia `WorkingDirectory=/opt/starkid`.
 
 E un **nome utente**, non un'email. La password si scrive quando la chiede:
 **non va passata come argomento**, finirebbe nella cronologia della shell e,
@@ -429,8 +434,11 @@ sudo tail -5 /var/log/starkid/access.log
 
 #### Gli altri comandi di `app.cli`
 
-Si lanciano tutti allo stesso modo (`sudo -u starkid
-/opt/starkid/venv/bin/python -m app.cli <comando>`):
+Si lanciano tutti allo stesso modo:
+
+```sh
+sudo -u starkid env -C /opt/starkid /opt/starkid/venv/bin/python -m app.cli <comando>
+```
 
 | Comando | Cosa fa |
 | --- | --- |

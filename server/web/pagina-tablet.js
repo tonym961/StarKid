@@ -150,6 +150,7 @@
 
     SK.$('#kiosk').checked = !!cfg.kiosk;
     SK.$('#kiosk_recenti').checked = !!cfg.kiosk_recenti;
+    SK.$('#bloccato').checked = !!cfg.bloccato;
     SK.$('#suoni').checked = cfg.suoni !== false;
 
     var spenti = Array.isArray(cfg.giochi_spenti) ? cfg.giochi_spenti : [];
@@ -195,6 +196,7 @@
       orientamento: SK.$('#orientamento').value,
       kiosk: SK.$('#kiosk').checked,
       kiosk_recenti: SK.$('#kiosk_recenti').checked,
+      bloccato: SK.$('#bloccato').checked,
       /* Si passa il numero com'e, anche se e NaN o con la virgola: ci pensa
          validaConfig a dirlo con parole umane invece di correggerlo di
          nascosto. */

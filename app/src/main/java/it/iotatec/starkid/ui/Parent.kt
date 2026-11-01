@@ -87,6 +87,7 @@ class ParentActions(
     val openLook: () -> Unit,
     val openGames: () -> Unit,
     val openRecommended: () -> Unit,
+    val openServer: () -> Unit,
     val openSystemSettings: () -> Unit,
     val changePin: () -> Unit,
     val pauseGuard: () -> Unit,
@@ -163,6 +164,22 @@ fun ParentHome(
                 Spacer(Modifier.size(10.dp))
                 OutlinedButton(onClick = actions.openRecommended) {
                     Text("App consigliate da installare")
+                }
+            }
+
+            SectionCard("Server di gestione") {
+                Text(
+                    text = if (config.enrolled) {
+                        "Collegato a " + config.serverUrl + ". Da collegato, le regole le " +
+                            "decide il server."
+                    } else {
+                        "Non collegato: tutto quello che c'e qui lo decidi da questo tablet."
+                    },
+                    style = MaterialTheme.typography.bodyLarge,
+                )
+                Spacer(Modifier.size(12.dp))
+                Button(onClick = actions.openServer) {
+                    Text(if (config.enrolled) "Vedi il collegamento" else "Collega al server")
                 }
             }
 

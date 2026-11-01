@@ -375,6 +375,80 @@ cat > "$DRW/ic_launcher_monochrome.xml" <<EOF
 EOF
 
 # ---------------------------------------------------------------------------
+# 5a. L icona della app del genitore
+# ---------------------------------------------------------------------------
+# Stessa stella, stesso cielo, SENZA VOLTO. Non e un risparmio: e la
+# differenza fra le due app, e si deve vedere nella schermata delle app senza
+# leggere il nome sotto. Quella col sorriso e del bambino, quella liscia e di
+# chi comanda. Lo sfondo e il monochrome sono gli stessi file, copiati qui
+# dallo stesso giro di generazione.
+GEN_DRW="$RADICE/genitore/src/main/res/drawable"
+if [ -d "$(dirname "$GEN_DRW")" ]; then
+  mkdir -p "$GEN_DRW"
+  cat > "$GEN_DRW/ic_launcher_foreground.xml" <<EOF
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generato da design/genera.sh: non si modifica a mano.
+     La stella del marchio senza volto: e la app del genitore. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group android:translateX="54" android:translateY="54"
+           android:scaleX="$AND_SCALA" android:scaleY="$AND_SCALA">
+        <path android:pathData="$STELLA">
+            <aapt:attr name="android:fillColor">
+                <gradient android:type="linear"
+                    android:startX="$GRAD_X1" android:startY="$GRAD_Y1"
+                    android:endX="$GRAD_X2" android:endY="$GRAD_Y2">
+                    <item android:offset="0" android:color="$ORO_CHIARO"/>
+                    <item android:offset="0.55" android:color="$ORO"/>
+                    <item android:offset="1" android:color="$ORO_SCURO"/>
+                </gradient>
+            </aapt:attr>
+        </path>
+    </group>
+</vector>
+EOF
+  cp "$DRW/ic_launcher_background.xml" "$GEN_DRW/ic_launcher_background.xml"
+  cp "$DRW/ic_launcher_monochrome.xml" "$GEN_DRW/ic_launcher_monochrome.xml"
+
+  # La stessa stella anche dentro la app, come stringa: Compose sa leggere un
+  # path SVG con PathParser, quindi non serve ridisegnarla in Kotlin e non
+  # puo venire diversa. E lo stesso identico path dei file XML qui sopra.
+  GEN_UI="$RADICE/genitore/src/main/java/it/iotatec/starkid/genitore/ui"
+  mkdir -p "$GEN_UI"
+  cat > "$GEN_UI/Stella.kt" <<EOF
+package it.iotatec.starkid.genitore.ui
+
+// Generato da design/genera.sh: non si modifica a mano.
+//
+// Il path della stella del marchio, lo stesso carattere per carattere di
+// server/web/*.svg e dei vector drawable. Compose lo legge con PathParser,
+// cosi la stella dentro la app non puo diventare un disegno diverso da
+// quella della favicon.
+//
+// Lo spazio e quello del generatore: ingombro centrato sullo zero, largo
+// $LATO e alto 164.610.
+object Marchio {
+    const val PERCORSO_STELLA: String =
+        "$STELLA"
+
+    /** Mezzo lato del riquadro quadrato che contiene la stella. */
+    const val MEZZO: Float = ${MEZZO}f
+
+    /** Lato del riquadro quadrato. */
+    const val LATO: Float = ${LATO}f
+
+    val ORO_CHIARO = 0xFF${ORO_CHIARO#\#}
+    val ORO = 0xFF${ORO#\#}
+    val ORO_SCURO = 0xFF${ORO_SCURO#\#}
+}
+EOF
+fi
+
+# ---------------------------------------------------------------------------
 # 5b. Gli stessi due strati in SVG, per guardarli senza compilare la APK
 # ---------------------------------------------------------------------------
 # Non sono una copia a mano: escono dalle stesse variabili dei due file

@@ -9,6 +9,13 @@ enum class BlockReason {
     DAILY_LIMIT,
     APP_LIMIT,
     APP_NOT_ALLOWED,
+
+    /**
+     * Il genitore ha chiuso il tablet dalla web UI. Non si esaurisce col
+     * tempo come DAILY_LIMIT e non finisce da solo come OUTSIDE_SCHEDULE:
+     * resta finche il genitore non lo toglie da dove lo ha messo.
+     */
+    LOCKED_BY_PARENT,
 }
 
 /**
@@ -33,6 +40,9 @@ object Guard {
         usedMinutesToday: Int,
         today: String,
     ): BlockReason {
+        // Prima di tutto il resto: un blocco messo dal genitore non lo
+        // scavalca nessuna fascia oraria e nessun bonus.
+        if (config.lockedByParent) return BlockReason.LOCKED_BY_PARENT
         if (config.scheduleEnabled) {
             if (dayOfWeek !in config.activeDays) return BlockReason.OUTSIDE_SCHEDULE
             if (!inWindow(minuteOfDay, config.startMinuteOfDay, config.endMinuteOfDay)) {

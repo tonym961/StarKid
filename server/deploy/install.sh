@@ -641,7 +641,7 @@ else
     cat <<FINE
    L'account si crea solo da qui, non c'e iscrizione dal web:
 
-   sudo -u $UTENTE $VENV/bin/python -m app.cli crea-utente <nomeutente>
+   sudo -u $UTENTE env -C $APP_DIR $VENV/bin/python -m app.cli crea-utente <nomeutente>
 
    La password si scrive quando la chiede: non passarla come argomento,
    finirebbe nella cronologia della shell e nella lista dei processi.

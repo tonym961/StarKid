@@ -15,6 +15,7 @@ import it.iotatec.starkid.data.InstalledApps
 import it.iotatec.starkid.data.Prefs
 import it.iotatec.starkid.domain.BlockReason
 import it.iotatec.starkid.domain.Guard
+import it.iotatec.starkid.sync.Sync
 import it.iotatec.starkid.usage.UsageReader
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -40,12 +41,14 @@ class GuardService : Service() {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var watcher: Job? = null
+    private var sincronizzatore: Job? = null
 
     private lateinit var prefs: Prefs
     private lateinit var usage: UsageReader
 
     override fun onCreate() {
         super.onCreate()
+        inMarcia = true
         prefs = Prefs.get(this)
         usage = UsageReader(this)
         createChannel()
@@ -61,10 +64,24 @@ class GuardService : Service() {
                 }
             }
         }
+        // La sincronizzazione col server ha un giro suo, lento e su
+        // Dispatchers.IO: non deve mai far aspettare il controllo delle app,
+        // che gira ogni quattro secondi. Sync.esegui() ha la sua pausa
+        // interna, quindi risvegliarla ogni minuto non vuol dire chiamare il
+        // server ogni minuto.
+        if (sincronizzatore?.isActive != true) {
+            sincronizzatore = scope.launch(Dispatchers.IO) {
+                while (isActive) {
+                    runCatching { Sync.esegui(applicationContext) }
+                    delay(60_000L)
+                }
+            }
+        }
         return START_STICKY
     }
 
     override fun onDestroy() {
+        inMarcia = false
         scope.cancel()
         super.onDestroy()
     }
@@ -140,6 +157,16 @@ class GuardService : Service() {
     }
 
     companion object {
+        /**
+         * Il servizio e vivo. Serve alla spia "servizio attivo" che il tablet
+         * manda al server: un flag messo e tolto da onCreate e onDestroy dice
+         * la verita, mentre chiedere ad ActivityManager chi sta girando, da
+         * Android 8, risponde solo delle proprie e in modo impreciso.
+         */
+        @Volatile
+        var inMarcia: Boolean = false
+            private set
+
         private const val CHANNEL_ID = "guard"
         private const val NOTIFICATION_ID = 42
         private const val POLL_MILLIS = 4_000L

@@ -12,6 +12,7 @@
     "orientamento",
     "kiosk",
     "kiosk_recenti",
+    "bloccato",
     "limite_giornaliero",
     "fascia",
     "app_permesse",
@@ -64,6 +65,11 @@
     },
     "kiosk_recenti": {
       "description": "Se lasciare raggiungibili le app recenti dentro il kiosk.",
+      "type": "boolean",
+      "default": false
+    },
+    "bloccato": {
+      "description": "Il genitore ha chiuso il tablet da remoto. Non e il kiosk, che dice DOVE si puo stare, e non e un limite di tempo, che si esaurisce da solo: e 'adesso basta', e si toglie solo da dove e stato messo. Il PIN sul tablet NON lo apre, altrimenti un blocco a distanza che si annulla dal tablet non sarebbe un blocco ma un suggerimento. Il tablet lo applica quando riceve il documento, quindi il ritardo e quello della prossima sincronizzazione e non zero: la web UI lo deve dire, invece di far credere che sia immediato.",
       "type": "boolean",
       "default": false
     },

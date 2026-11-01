@@ -91,6 +91,8 @@ import it.iotatec.starkid.ui.SetupStatus
 import it.iotatec.starkid.ui.Skin
 import it.iotatec.starkid.ui.Skins
 import it.iotatec.starkid.ui.applySkinChrome
+import it.iotatec.starkid.sync.Sync
+import it.iotatec.starkid.ui.ServerScreen
 import it.iotatec.starkid.usage.UsageReader
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -114,6 +116,7 @@ private enum class Screen {
     LOOK,
     GAMES,
     RECOMMENDED,
+    SERVER,
 }
 
 /** Il launcher: schermata del bambino, blocco e area genitori. */
@@ -289,7 +292,7 @@ class MainActivity : ComponentActivity() {
                 Screen.HOME -> Screen.HOME
                 Screen.APPS, Screen.CATEGORIES, Screen.APP_LIMITS,
                 Screen.SCHEDULE, Screen.KIOSK, Screen.LOOK, Screen.GAMES,
-                Screen.RECOMMENDED,
+                Screen.RECOMMENDED, Screen.SERVER,
                 -> Screen.PARENT
                 else -> Screen.HOME
             }
@@ -414,6 +417,40 @@ class MainActivity : ComponentActivity() {
                 onBack = { screen = Screen.PARENT },
             )
 
+            Screen.SERVER -> {
+                // Lo stato della schermata vive qui e non dentro ServerScreen:
+                // un giro di rete non deve morire perche la composizione si
+                // e rifatta mentre era in corso.
+                var esitoServer by remember { mutableStateOf<String?>(null) }
+                var occupatoServer by remember { mutableStateOf(false) }
+                val ambito = rememberCoroutineScope()
+                fun lavora(blocco: suspend () -> String) {
+                    occupatoServer = true
+                    esitoServer = null
+                    ambito.launch {
+                        val detto = withContext(Dispatchers.IO) { blocco() }
+                        esitoServer = detto
+                        occupatoServer = false
+                    }
+                }
+                ServerScreen(
+                    config = config,
+                    occupato = occupatoServer,
+                    esito = esitoServer,
+                    onCollega = { indirizzo, codice ->
+                        lavora { raccontaEsito(Sync.collega(this, indirizzo, codice)) }
+                    },
+                    onScollega = {
+                        Sync.scollega(this)
+                        esitoServer = "Scollegato. Il tablet tiene la configurazione che ha."
+                    },
+                    onSincronizzaAdesso = {
+                        lavora { raccontaEsito(Sync.esegui(this, forzata = true)) }
+                    },
+                    onBack = { screen = Screen.PARENT },
+                )
+            }
+
             Screen.GAMES -> GamesScreen(
                 disabled = config.disabledGames,
                 soundOn = config.soundOn,
@@ -487,6 +524,7 @@ class MainActivity : ComponentActivity() {
         openLook = { onNavigate(Screen.LOOK) },
         openGames = { onNavigate(Screen.GAMES) },
         openRecommended = { onNavigate(Screen.RECOMMENDED) },
+        openServer = { onNavigate(Screen.SERVER) },
         openSystemSettings = { openSettings(Intent(Settings.ACTION_SETTINGS)) },
         changePin = { onNavigate(Screen.CHANGE_PIN) },
         pauseGuard = { prefs.pauseGuard(10) },
@@ -620,4 +658,22 @@ private fun WelcomeScreen(onStart: () -> Unit) {
             ) { Text("Imposta il PIN") }
         }
     }
+}
+
+/**
+ * L'esito della sincronizzazione detto al genitore, in italiano e senza
+ * numeri di protocollo. Sta qui e non dentro Sync perche Sync non deve
+ * sapere che esiste una schermata.
+ */
+private fun raccontaEsito(esito: Sync.Esito): String = when (esito) {
+    is Sync.Esito.Fatto -> if (esito.rifiutati == 0) {
+        "Fatto. Revisione ${esito.revisione} applicata tutta."
+    } else {
+        "Revisione ${esito.revisione} applicata, ma ${esito.rifiutati} " +
+            (if (esito.rifiutati == 1) "cosa non si e potuta" else "cose non si sono potute") +
+            " applicare: sul server si vede quali e perche."
+    }
+    is Sync.Esito.Fallita -> "Non ha funzionato: ${esito.perche}"
+    Sync.Esito.Sganciato -> "Il server non riconosce piu questo tablet: e stato scollegato."
+    Sync.Esito.NonConfigurato -> "Non c'e nessun server configurato."
 }

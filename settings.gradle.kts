@@ -15,3 +15,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "StarKid"
 include(":app")
+include(":genitore")

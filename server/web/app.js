@@ -133,6 +133,7 @@ var SK = (function () {
     app_non_installata: 'Una delle app dell’elenco non e installata sul tablet.',
     valore_non_applicabile: 'Il valore e valido, ma su questo tablet non ha effetto.',
     errore_di_sistema: 'Il tablet ha avuto un errore di sistema applicandolo.',
+    serve_conferma_pin: 'Il kiosk va confermato col PIN sul tablet: finche nessuno lo conferma resta spento.',
     sconosciuto: 'Il tablet non ha detto perche.'
   };
 

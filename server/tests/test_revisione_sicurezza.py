@@ -446,3 +446,26 @@ def test_il_nome_del_prodotto_non_e_piu_testo() -> None:
     assert 'src="stella.svg"' in accesso and 'src="parola.svg"' in accesso
     # Il nome resta nella pagina per chi legge con la voce.
     assert ">StarKid</span>" in accesso, "il nome non c'e piu nemmeno per i lettori di schermo"
+
+
+def test_il_comando_per_creare_account_dice_da_dove_lanciarlo() -> None:
+    """`python -m app.cli` cerca il pacchetto nella cartella da cui lo lanci.
+
+    Il README e install.sh dicevano `sudo -u starkid /opt/starkid/venv/bin/python
+    -m app.cli crea-utente`, senza cartella: lanciato dalla home risponde
+    `No module named app`, ed e successo davvero alla prima persona che ha
+    provato a creare il proprio account. Il servizio non se ne accorgeva
+    perche systemd gli mette gia WorkingDirectory=/opt/starkid.
+    """
+    readme = (SERVER / "README.md").read_text(encoding="utf-8")
+    install = (DEPLOY / "install.sh").read_text(encoding="utf-8")
+    for dove, testo in (("README.md", readme), ("install.sh", install)):
+        for riga in testo.splitlines():
+            # Solo le righe che qualcuno copierebbe e incollerebbe: quelle
+            # che invocano l interprete per davvero. La prosa che NOMINA il
+            # comando per spiegarlo non va toccata.
+            if "-m app.cli" not in riga or "bin/python" not in riga:
+                continue
+            assert "env -C" in riga or "cd " in riga, (
+                f"{dove}: `{riga.strip()}` non dice da quale cartella lanciarlo"
+            )

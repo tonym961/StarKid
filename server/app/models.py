@@ -200,6 +200,11 @@ class DocumentoConfig(Richiesta):
     orientamento: str
     kiosk: bool
     kiosk_recenti: bool
+    # Il blocco a distanza. E l'unico campo asimmetrico al contrario del
+    # kiosk: true lo applica il tablet subito, senza chiedere niente a
+    # nessuno, mentre il kiosk acceso va confermato col PIN sul tablet.
+    # Qui non c'e niente da confermare: e il genitore che chiude.
+    bloccato: bool
     limite_giornaliero: int = Field(ge=0, le=LIMITE_MASSIMO)
     fascia: Fascia
     app_permesse: list[str]

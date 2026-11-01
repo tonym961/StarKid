@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Tema di sistema minimo: i colori veri li mette Compose in ui/Tema.kt.
+         Qui serve solo che la finestra parta gia scura, se no all'avvio
+         lampeggia un rettangolo bianco prima della prima composizione. -->
+    <style name="Theme.StarKidGenitori" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/notte</item>
+        <item name="android:statusBarColor">@color/notte</item>
+        <item name="android:navigationBarColor">@color/notte</item>
+    </style>
+</resources>
