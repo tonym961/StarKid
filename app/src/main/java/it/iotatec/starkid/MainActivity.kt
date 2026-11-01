@@ -46,6 +46,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import it.iotatec.starkid.admin.Kiosk
 import it.iotatec.starkid.data.AppEntry
+import it.iotatec.starkid.data.AreaGenitori
 import it.iotatec.starkid.data.BACKGROUND_PHOTO
 import it.iotatec.starkid.data.BackgroundStore
 import it.iotatec.starkid.data.InstalledApps
@@ -102,6 +103,14 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Calendar
+
+/**
+ * Quanto dura la manutenzione: il genitore esce verso le impostazioni, fa
+ * quello che deve e torna. Si chiude da sola allo scadere, e si chiude
+ * prima appena il genitore torna alla schermata del bambino - quello e il
+ * gesto che dice "ho finito", e vale piu di qualunque scadenza.
+ */
+private const val MINUTI_MANUTENZIONE = 10
 
 private enum class Screen {
     HOME,
@@ -171,8 +180,49 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        AreaGenitori.primoPiano(true)
         // L'avvio del servizio dal primo piano e quello che Android non rifiuta.
         GuardService.start(this)
+        // Durante la manutenzione NON si rientra nel kiosk. Senza questa
+        // condizione il genitore usciva verso le impostazioni, tornava un
+        // attimo su StarKid e si ritrovava di nuovo chiuso dentro il lock
+        // task - che e poi il motivo per cui dalle impostazioni non si
+        // riusciva ad arrivare alle opzioni sviluppatore: a restringerle
+        // non era StarKid, era Android.
+        if (prefs.current.kioskEnabled && !inManutenzione()) Kiosk.enter(this)
+    }
+
+    override fun onPause() {
+        AreaGenitori.primoPiano(false)
+        super.onPause()
+    }
+
+    /**
+     * Il genitore ha preso il tablet in mano per sistemare qualcosa.
+     *
+     * Vive in Prefs (guardPausedUntil) e non in memoria perche deve
+     * sopravvivere al passaggio a un'altra app: il momento in cui serve e
+     * esattamente quello in cui StarKid non e piu davanti.
+     */
+    private fun inManutenzione(): Boolean =
+        System.currentTimeMillis() < prefs.current.guardPausedUntil
+
+    /**
+     * Apre la porta per [MINUTI_MANUTENZIONE] minuti: ferma il sorvegliante
+     * ed esce dal lock task, cosi le impostazioni di sistema si aprono e
+     * dentro ci si puo muovere davvero.
+     *
+     * Si chiude da sola allo scadere, e si chiude PRIMA se il genitore torna
+     * alla schermata del bambino: quello e il gesto che dice "ho finito".
+     */
+    private fun apriManutenzione() {
+        prefs.pauseGuard(MINUTI_MANUTENZIONE)
+        Kiosk.exit(this)
+    }
+
+    private fun chiudiManutenzione() {
+        if (!inManutenzione()) return
+        prefs.resumeGuard()
         if (prefs.current.kioskEnabled) Kiosk.enter(this)
     }
 
@@ -252,18 +302,50 @@ class MainActivity : ComponentActivity() {
         // Le politiche del kiosk si riapplicano anche quando si cambia
         // schermata: le impostazioni di sistema si aprono solo mentre il
         // genitore e nella sua area, e la porta si richiude appena esce.
-        LaunchedEffect(config.allowedPackages, config.kioskEnabled, screen) {
+        // Dove siamo: nell'area genitori o davanti al bambino. Serve a tre
+        // cose diverse, e per questo si calcola una volta sola qui invece di
+        // tre volte piu in basso.
+        val inParentArea = screen != Screen.HOME &&
+            screen != Screen.GAME &&
+            screen != Screen.PIN_GATE &&
+            screen != Screen.PIN_SETUP
+
+        LaunchedEffect(config.allowedPackages, config.kioskEnabled, inParentArea) {
             if (config.kioskEnabled) {
-                val inParentArea = screen != Screen.HOME &&
-                    screen != Screen.GAME &&
-                    screen != Screen.PIN_GATE &&
-                    screen != Screen.PIN_SETUP
                 Kiosk.applyPolicies(
                     context = this@MainActivity,
                     allowedPackages = config.allowedPackages,
                     allowSettings = inParentArea,
                     allowRecents = config.kioskRecents,
                 )
+            }
+        }
+
+        // 1. Il sorvegliante deve sapere che qui c'e il genitore, se no
+        //    fuori orario la schermata di blocco ricompare SOPRA l'area
+        //    genitori ogni quattro secondi - cioe proprio mentre si prova a
+        //    cambiare l'orario.
+        // 2. Tornare dal bambino chiude la manutenzione: e il gesto che dice
+        //    "ho finito", e vale piu di qualunque scadenza. Cosi la finestra
+        //    dura quanto serve e non dieci minuti per forza.
+        LaunchedEffect(inParentArea) {
+            AreaGenitori.schermataGenitore(inParentArea)
+            if (!inParentArea) {
+                chiudiManutenzione()
+                return@LaunchedEffect
+            }
+            // DENTRO L'AREA GENITORI NON TI BLOCCA NIENTE, e non c'e un
+            // bottone da premere prima. Il PIN e il cancello: oltre quello
+            // comanda il genitore, e StarKid si toglie di mezzo - controllo
+            // fermo e kiosk aperto - finche non torna dal bambino.
+            //
+            // Si ri-arma ogni due minuti perche la manutenzione ha una
+            // scadenza: serve a coprire il caso "sono uscito verso le
+            // impostazioni e non torno piu", ma non deve scadere sotto i
+            // piedi di chi e ancora qui a lavorare.
+            while (true) {
+                apriManutenzione()
+                delay(2 * 60_000L)
             }
         }
 
@@ -547,18 +629,28 @@ class MainActivity : ComponentActivity() {
         openGames = { onNavigate(Screen.GAMES) },
         openRecommended = { onNavigate(Screen.RECOMMENDED) },
         openServer = { onNavigate(Screen.SERVER) },
-        openSystemSettings = { openSettings(Intent(Settings.ACTION_SETTINGS)) },
+        // La manutenzione si apre PRIMA di lanciare qualunque cosa porti
+        // fuori da StarKid. Senza, il sorvegliante vede l'altra app in primo
+        // piano e la chiude con "Questa app non si puo aprire" - che e la
+        // schermata di blocco di StarKid, non un errore di Android - e col
+        // kiosk acceso ci si resta chiusi dentro comunque.
+        openSystemSettings = {
+            apriManutenzione()
+            openSettings(Intent(Settings.ACTION_SETTINGS))
+        },
         changePin = { onNavigate(Screen.CHANGE_PIN) },
-        pauseGuard = { prefs.pauseGuard(10) },
         openHomeSettings = {
+            apriManutenzione()
             openSettings(Intent(Settings.ACTION_HOME_SETTINGS))
             onRefreshStatus()
         },
         openUsageSettings = {
+            apriManutenzione()
             openSettings(UsageReader.settingsIntent())
             onRefreshStatus()
         },
         openOverlaySettings = {
+            apriManutenzione()
             openSettings(UsageReader.overlaySettingsIntent(this))
             onRefreshStatus()
         },
@@ -590,6 +682,9 @@ class MainActivity : ComponentActivity() {
      * launcher del bambino.
      */
     private fun openStore(packageName: String) {
+        // Il negozio e un'altra app: senza manutenzione il sorvegliante lo
+        // chiude mentre il genitore sta installando quello che ha scelto.
+        apriManutenzione()
         val store = Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$packageName"))
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         if (runCatching { startActivity(store); true }.getOrDefault(false)) return

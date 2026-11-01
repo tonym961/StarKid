@@ -90,7 +90,6 @@ class ParentActions(
     val openServer: () -> Unit,
     val openSystemSettings: () -> Unit,
     val changePin: () -> Unit,
-    val pauseGuard: () -> Unit,
     val openHomeSettings: () -> Unit,
     val openUsageSettings: () -> Unit,
     val openOverlaySettings: () -> Unit,
@@ -229,25 +228,38 @@ fun ParentHome(
                     Text("Cambia PIN")
                 }
                 Spacer(Modifier.size(10.dp))
-                OutlinedButton(onClick = actions.pauseGuard, modifier = Modifier.fillMaxWidth()) {
-                    Text("Sospendi il controllo per 10 minuti")
-                }
-                Spacer(Modifier.size(10.dp))
                 OutlinedButton(
                     onClick = actions.openSystemSettings,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text("Impostazioni di sistema")
                 }
+                Spacer(Modifier.size(12.dp))
+
+                // Non c'e piu nessun bottone "sospendi il controllo", e non
+                // serve: da qui dentro non ti blocca niente, sempre. Prima
+                // quel bottone c'era, non cambiava niente sullo schermo e
+                // bisognava premerlo per poter aprire le impostazioni -
+                // cioe: un interruttore che non diceva in che posizione
+                // stava, per un problema che non doveva esistere.
                 Text(
-                    text = "Col kiosk acceso le impostazioni si aprono solo da qui, e solo " +
-                        "mentre sei in quest'area: appena torni dal bambino, la porta si " +
-                        "richiude.",
+                    text = "Qui dentro comandi tu. Il PIN e il cancello: oltre quello il " +
+                        "controllo e fermo, e niente ti chiude in faccia quello che apri.",
+                    style = MaterialTheme.typography.bodyLarge,
+                )
+                Spacer(Modifier.size(6.dp))
+                Text(
+                    text = "Aprendo le impostazioni di Android la porta resta aperta ancora " +
+                        "dieci minuti dopo che esci da qui, e col kiosk acceso StarKid si " +
+                        "toglie di mezzo per davvero - se no Android stesso non ti lascia " +
+                        "arrivare alle opzioni sviluppatore.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                Spacer(Modifier.size(6.dp))
                 Text(
-                    text = "Utile per fare manutenzione sul tablet senza che il blocco si rimetta in mezzo.",
+                    text = "Si richiude quando torni alla schermata del bambino: e quello il " +
+                        "gesto che dice \"ho finito\".",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

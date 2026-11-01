@@ -13,6 +13,7 @@ import android.os.IBinder
 import it.iotatec.starkid.LockActivity
 import it.iotatec.starkid.MainActivity
 import it.iotatec.starkid.R
+import it.iotatec.starkid.data.AreaGenitori
 import it.iotatec.starkid.data.InstalledApps
 import it.iotatec.starkid.data.Prefs
 import it.iotatec.starkid.data.Risvegli
@@ -108,6 +109,12 @@ class GuardService : Service() {
 
     private fun tick() {
         val config = prefs.current
+        // Il genitore e davanti, dentro la sua area: niente blocchi. Senza
+        // questa riga, fuori orario la schermata di blocco ricompariva SOPRA
+        // l'area genitori ogni quattro secondi, e non si riusciva a cambiare
+        // l'orario che la stava facendo comparire.
+        if (AreaGenitori.dentro) return
+        // Manutenzione: il genitore e uscito apposta verso un'altra app.
         if (System.currentTimeMillis() < config.guardPausedUntil) return
         if (!config.pinSet) return
         if (!usage.hasPermission()) return

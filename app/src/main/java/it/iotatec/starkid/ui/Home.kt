@@ -679,7 +679,10 @@ private fun TilePages(
         val rows = (gridHeight / cellWidth).toInt().coerceIn(1, 4)
         val perPage = columns * rows
         val pages = ((tiles.size + perPage - 1) / perPage).coerceAtLeast(1)
-        val iconSize = ((gridHeight / rows) * 0.40f).coerceIn(40.dp, 112.dp)
+        // 0,34 e non 0,40, e il minimo scende a 32: su una cella bassa
+        // l icona si prendeva lo spazio del titolo e del numero, e la Card
+        // ritagliava il resto.
+        val iconSize = ((gridHeight / rows) * 0.34f).coerceIn(32.dp, 112.dp)
 
         val state = rememberPagerState(pageCount = { pages })
         val scope = rememberCoroutineScope()
@@ -825,27 +828,66 @@ private fun Tile(
         colors = CardDefaults.cardColors(containerColor = background),
         elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
     ) {
-        Column(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp, vertical = 12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-        ) {
-            icon()
-            Spacer(Modifier.size(10.dp))
-            Text(
-                text = label,
-                style = MaterialTheme.typography.titleMedium,
-                color = textColor,
-                textAlign = TextAlign.Center,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-            if (subtitle != null) {
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = textColor.copy(alpha = 0.75f),
-                )
+        // Su una cella bassa il contenuto non ci stava e la Card lo
+        // RITAGLIAVA: su un tablet da 400dp di altezza si vedeva "Giochi"
+        // tagliato a meta e il numero sotto spariva del tutto. Una tessera
+        // che non dice quante app ha dentro non serve a niente.
+        //
+        // Non si rimpicciolisce tutto sempre: sopra i 150dp la tessera resta
+        // quella generosa di prima, che su un tablet vero e la cosa giusta.
+        BoxWithConstraints(Modifier.fillMaxSize()) {
+            // Tre misure, non due. Su una cella da 89dp - e tanta e quella di
+            // un tablet da 400dp di altezza con due righe di tessere - il
+            // numero NON ci sta sotto il nome: ci stava a meta, e la Card
+            // tagliava il resto. Allora gli si mette accanto, che e la stessa
+            // informazione su una riga sola.
+            val bassissima = maxHeight < 110.dp
+            val stretta = maxHeight < 150.dp
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 8.dp, vertical = if (stretta) 6.dp else 12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                icon()
+                Spacer(Modifier.size(if (stretta) 4.dp else 10.dp))
+                if (bassissima && subtitle != null) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.titleSmall,
+                            color = textColor,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false),
+                        )
+                        Spacer(Modifier.size(6.dp))
+                        Text(
+                            text = subtitle,
+                            style = MaterialTheme.typography.titleSmall,
+                            color = textColor.copy(alpha = 0.75f),
+                        )
+                    }
+                } else {
+                    Text(
+                        text = label,
+                        style = if (stretta) MaterialTheme.typography.titleSmall
+                        else MaterialTheme.typography.titleMedium,
+                        color = textColor,
+                        textAlign = TextAlign.Center,
+                        maxLines = if (stretta) 1 else 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    if (subtitle != null) {
+                        Text(
+                            text = subtitle,
+                            style = if (stretta) MaterialTheme.typography.titleMedium
+                            else MaterialTheme.typography.headlineMedium,
+                            color = textColor.copy(alpha = 0.75f),
+                        )
+                    }
+                }
             }
         }
     }
