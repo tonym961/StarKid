@@ -105,7 +105,7 @@ fun ServerScreen(
                     )
                     Spacer(Modifier.size(8.dp))
                     Text(
-                        text = "Il tablet chiama il server ogni cinque minuti. Il server non " +
+                        text = "Il tablet chiama il server ogni minuto. Il server non " +
                             "chiama il tablet: non c'e nessuna porta aperta verso qui, e per " +
                             "questo una modifica fatta da lontano arriva al giro dopo e non " +
                             "subito.",

@@ -4,6 +4,7 @@ import android.app.admin.DevicePolicyManager
 import android.content.Context
 import android.content.Intent
 import android.os.PersistableBundle
+import it.iotatec.starkid.data.Pin
 import it.iotatec.starkid.data.Prefs
 
 /**
@@ -31,6 +32,21 @@ object Provisioning {
     const val KEY_DAILY_LIMIT = "limite_giornaliero"
 
     /**
+     * Il PIN dell'area genitori, in chiaro.
+     *
+     * In chiaro qui si puo, ed e l'unico posto: il QR si genera nel browser e
+     * va dallo schermo alla fotocamera del tablet, come la password del
+     * Wi-Fi, che sta nello stesso sacchetto per la stessa ragione. Dal server
+     * invece il PIN non passa mai: li viaggia l'impronta, vedi
+     * [it.iotatec.starkid.data.Pin].
+     *
+     * Serve perche il primo PIN, senza questo, si batte a mano sul tablet
+     * appena finito il provisioning - e un tablet preparato per un bambino
+     * dovrebbe essere pronto, non chiedere subito una configurazione.
+     */
+    const val KEY_PIN = "pin"
+
+    /**
      * Applica quello che e arrivato col QR. Chiamata una volta sola, alla
      * fine del provisioning.
      */
@@ -42,6 +58,10 @@ object Provisioning {
             prefs.setServer(server, extras.getString(KEY_TOKEN).orEmpty())
         }
         extras.getString(KEY_CHILD)?.takeIf { it.isNotBlank() }?.let { prefs.setChildName(it) }
+        // Un PIN storto si lascia cadere invece di impostarlo: meglio un
+        // tablet che chiede il PIN alla prima apertura dell'area genitori che
+        // uno con dentro un PIN che chi ha fatto il QR non conosce.
+        extras.getString(KEY_PIN)?.trim()?.takeIf { Pin.pinValido(it) }?.let { prefs.setPin(it) }
         extras.getString(KEY_SKIN)?.takeIf { it.isNotBlank() }?.let { skin ->
             prefs.setSkin(skin, defaultBackgroundFor(skin))
         }

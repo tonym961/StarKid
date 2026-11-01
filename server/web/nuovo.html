@@ -138,10 +138,10 @@
       <div class="avviso attesa avviso-grosso no-stampa">
         <h3><svg class="icona" aria-hidden="true"><use href="#ico-avviso"/></svg> Questo QR e un segreto</h3>
         <p>Dentro ci sono il codice di arruolamento, il nome del bambino e - se
-        la scrivi - la password del Wi-Fi. <strong>Non e passato dal
-        server</strong>: il disegno lo fa questa pagina, nel tuo browser. Per
-        questo non va mandato in chat e non va fotografato per tenerlo:
-        stampalo, usalo, buttalo.</p>
+        le scrivi - la password del Wi-Fi e il PIN dell'area genitori.
+        <strong>Non e passato dal server</strong>: il disegno lo fa questa
+        pagina, nel tuo browser. Per questo non va mandato in chat e non va
+        fotografato per tenerlo: stampalo, usalo, buttalo.</p>
       </div>
 
       <div class="qr-scatola">
@@ -223,6 +223,18 @@
             <label for="limite-iniziale">Limite giornaliero (minuti)</label>
             <input type="number" id="limite-iniziale" min="0" max="1440" step="5" value="60" inputmode="numeric">
           </div>
+        </div>
+
+        <div class="campo">
+          <label for="pin-iniziale">PIN dell'area genitori</label>
+          <input type="text" id="pin-iniziale" inputmode="numeric" maxlength="8"
+                 placeholder="da 4 a 8 cifre" aria-describedby="aiuto-pin-iniziale">
+          <span class="aiuto" id="aiuto-pin-iniziale">Va nel QR in chiaro, come
+          la password del Wi-Fi, e per lo stesso motivo: il QR passa da questo
+          schermo alla fotocamera del tablet e non tocca il server. Cosi il
+          tablet e gia pronto e nessuno deve inventarsi un PIN al primo avvio.
+          Lasciandolo vuoto, lo chiede il tablet la prima volta che si apre
+          l'area genitori.</span>
         </div>
 
         <label class="interruttore" for="kiosk-iniziale">

@@ -5,8 +5,6 @@ import android.content.SharedPreferences
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import java.security.MessageDigest
-import java.security.SecureRandom
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -30,9 +28,28 @@ data class FasciaApp(
     val giorni: Set<Int> = setOf(1, 2, 3, 4, 5, 6, 7),
 )
 
+/** Com'e andata l'installazione di un PIN arrivato dalla gestione. */
+enum class EsitoPin {
+    /** Il PIN e cambiato: da adesso l'area genitori si apre con quello. */
+    APPLICATO,
+
+    /** E lo stesso che era gia arrivato da li: non si tocca niente. */
+    GIA_APPLICATO,
+
+    /** Sale, giri o impronta non hanno la forma giusta: si rifiuta. */
+    NON_VALIDO,
+}
+
 /** Tutta la configurazione del launcher, immutabile. */
 data class KidsConfig(
     val pinSet: Boolean = false,
+    /**
+     * Il PIN che apre l'area genitori adesso e arrivato dalla gestione a
+     * distanza. Diventa falso appena qualcuno lo cambia stando davanti al
+     * tablet, e serve a dirlo a chi guarda: un PIN che cambia da solo, senza
+     * spiegazione, e un tablet che sembra rotto.
+     */
+    val pinDalServer: Boolean = false,
     val childName: String = "",
     val allowedPackages: Set<String> = emptySet(),
     /** Tetto complessivo in minuti; 0 = senza limite. */
@@ -109,6 +126,17 @@ data class KidsConfig(
      */
     val rifiutatoDal: Long = 0L,
     /**
+     * L'ultima volta che il server ha risposto 401. Non e [rifiutatoDal], che
+     * e la prima: servono due date perche una dice da quanto va avanti - ed e
+     * quella che si mostra - e l'altra quando riprovare.
+     */
+    val ultimoRifiuto: Long = 0L,
+    /**
+     * Cosa diceva l'ultima conferma mandata al server. Si tiene per non
+     * rimandarla identica ogni minuto: vedi Sync.firmaAck.
+     */
+    val firmaAck: String = "",
+    /**
      * Il genitore ha chiuso il tablet da remoto. Non e il kiosk e non e un
      * limite di tempo: e "adesso basta", e si toglie solo da dove e stato
      * messo. Il PIN sul tablet NON lo apre, se no non sarebbe un blocco a
@@ -139,6 +167,8 @@ class Prefs private constructor(context: Context) {
 
     private fun read() = KidsConfig(
         pinSet = sp.getString(KEY_PIN_HASH, null) != null,
+        pinDalServer = sp.getString(KEY_PIN_HASH, null) != null &&
+            sp.getString(KEY_PIN_HASH, null) == sp.getString(KEY_PIN_DAL_SERVER, null),
         childName = sp.getString(KEY_CHILD_NAME, "") ?: "",
         allowedPackages = sp.getStringSet(KEY_ALLOWED, emptySet())?.toSet() ?: emptySet(),
         dailyLimitMinutes = sp.getInt(KEY_DAILY_LIMIT, 0),
@@ -172,6 +202,8 @@ class Prefs private constructor(context: Context) {
         syncedRevision = sp.getInt(KEY_SYNCED_REV, 0),
         lockedByParent = sp.getBoolean(KEY_LOCKED, false),
         rifiutatoDal = sp.getLong(KEY_RIFIUTATO, 0L),
+        ultimoRifiuto = sp.getLong(KEY_RIFIUTO_ULTIMO, 0L),
+        firmaAck = sp.getString(KEY_ACK_FIRMA, "") ?: "",
         orientation = sp.getString(KEY_ORIENTATION, ORIENT_LANDSCAPE) ?: ORIENT_LANDSCAPE,
         kioskRecents = sp.getBoolean(KEY_KIOSK_RECENTS, false),
     )
@@ -294,6 +326,10 @@ class Prefs private constructor(context: Context) {
         putBoolean(KEY_ENROLLED, false)
         putInt(KEY_SYNCED_REV, 0)
         putLong(KEY_RIFIUTATO, 0L)
+        putLong(KEY_RIFIUTO_ULTIMO, 0L)
+        // La firma della conferma vale per un server solo: col prossimo
+        // arruolamento la prima conferma deve partire comunque.
+        putString(KEY_ACK_FIRMA, "")
     }
 
     fun segnaSincronizzato(revisione: Int) = edit {
@@ -302,9 +338,16 @@ class Prefs private constructor(context: Context) {
         // Un giro andato a buon fine cancella il rifiuto: se era passeggero,
         // non deve restare scritto da nessuna parte.
         putLong(KEY_RIFIUTATO, 0L)
+        putLong(KEY_RIFIUTO_ULTIMO, 0L)
     }
 
-    fun segnaRifiutato(quando: Long) = edit { putLong(KEY_RIFIUTATO, quando) }
+    /** La prima data non si sovrascrive: dice da quanto va avanti. */
+    fun segnaRifiutato(quando: Long) = edit {
+        if (sp.getLong(KEY_RIFIUTATO, 0L) == 0L) putLong(KEY_RIFIUTATO, quando)
+        putLong(KEY_RIFIUTO_ULTIMO, quando)
+    }
+
+    fun segnaAckMandato(firma: String) = edit { putString(KEY_ACK_FIRMA, firma) }
 
     fun setBloccatoDalGenitore(bloccato: Boolean) = edit { putBoolean(KEY_LOCKED, bloccato) }
 
@@ -359,38 +402,67 @@ class Prefs private constructor(context: Context) {
 
     // --- PIN -------------------------------------------------------------
 
+    /** Il PIN scelto stando davanti al tablet. Sale nuovo a ogni cambio. */
     fun setPin(pin: String) {
-        val salt = newSalt()
+        val sale = Pin.nuovoSale()
         edit {
-            putString(KEY_PIN_SALT, salt)
-            putString(KEY_PIN_HASH, hash(pin, salt))
+            putString(KEY_PIN_SALT, sale)
+            putString(KEY_PIN_HASH, Pin.impronta(pin, sale, Pin.GIRI))
+            putInt(KEY_PIN_GIRI, Pin.GIRI)
+            // KEY_PIN_DAL_SERVER si lascia dov'e: non e piu uguale
+            // all'impronta in uso, e proprio questa differenza e il modo in
+            // cui la sincronizzazione sa che il PIN l'ha cambiato una persona
+            // qui e non deve tornare indietro al prossimo giro.
         }
     }
 
     fun checkPin(pin: String): Boolean {
-        val salt = sp.getString(KEY_PIN_SALT, null) ?: return false
-        val stored = sp.getString(KEY_PIN_HASH, null) ?: return false
-        return stored == hash(pin, salt)
+        val sale = sp.getString(KEY_PIN_SALT, null) ?: return false
+        val salvata = sp.getString(KEY_PIN_HASH, null) ?: return false
+        return salvata == Pin.impronta(pin, sale, sp.getInt(KEY_PIN_GIRI, Pin.GIRI))
     }
 
-    private fun newSalt(): String {
-        val bytes = ByteArray(16)
-        SecureRandom().nextBytes(bytes)
-        return bytes.toHex()
-    }
-
-    private fun hash(pin: String, salt: String): String {
-        val digest = MessageDigest.getInstance("SHA-256")
-        var data = (salt + pin).toByteArray()
-        // Ventimila giri: un PIN di 4 cifre resta debole di per se, ma leggere
-        // l'hash dal file delle preferenze non basta piu a ricavarlo subito.
-        repeat(20_000) { data = digest.digest(data) }
-        return data.toHex()
+    /**
+     * Installa il PIN deciso dalla gestione a distanza. Arriva gia calcolato:
+     * il PIN in chiaro non passa dal server, vedi [Pin].
+     *
+     * **Si applica solo se e diverso dall'ultimo arrivato da li.** Senza
+     * questo controllo un PIN cambiato sul tablet durerebbe un minuto, e
+     * poi il documento - che e sempre lo stesso - lo rimetterebbe come prima.
+     * Il sale e nuovo a ogni salvataggio dalla web UI, quindi rimandare lo
+     * stesso PIN da li fa comunque un'impronta diversa e riparte.
+     *
+     * Non chiede niente a nessuno, al contrario del kiosk: e la strada per
+     * rientrare in un tablet di cui si e perso il PIN, e un PIN da
+     * confermare col PIN vecchio non servirebbe a quello. Chi comanda il
+     * server puo cambiare il PIN di un tablet - lo puo gia bloccare, del
+     * resto - ed e per questo che il server sta dietro a un accesso.
+     */
+    fun setPinDalServer(sale: String, giri: Int, impronta: String): EsitoPin {
+        if (!Pin.saleValido(sale) || !Pin.improntaValida(impronta) || !Pin.giriValidi(giri)) {
+            return EsitoPin.NON_VALIDO
+        }
+        if (sp.getString(KEY_PIN_DAL_SERVER, null) == impronta) return EsitoPin.GIA_APPLICATO
+        edit {
+            putString(KEY_PIN_SALT, sale)
+            putString(KEY_PIN_HASH, impronta)
+            putInt(KEY_PIN_GIRI, giri)
+            putString(KEY_PIN_DAL_SERVER, impronta)
+        }
+        return EsitoPin.APPLICATO
     }
 
     companion object {
         private const val KEY_PIN_HASH = "pin_hash"
         private const val KEY_PIN_SALT = "pin_salt"
+        private const val KEY_PIN_GIRI = "pin_giri"
+
+        /**
+         * L'ultima impronta installata dalla gestione a distanza. Non e il
+         * PIN in uso: e il promemoria che serve a non riapplicarlo a ogni
+         * sincronizzazione. Se i due coincidono, il PIN in uso e quello.
+         */
+        private const val KEY_PIN_DAL_SERVER = "pin_dal_server"
         private const val KEY_CHILD_NAME = "child_name"
         private const val KEY_ALLOWED = "allowed"
         private const val KEY_DAILY_LIMIT = "daily_limit"
@@ -421,6 +493,8 @@ class Prefs private constructor(context: Context) {
         private const val KEY_SYNCED_REV = "server_synced_revision"
         private const val KEY_LOCKED = "locked_by_parent"
         private const val KEY_RIFIUTATO = "server_rifiutato_dal"
+        private const val KEY_RIFIUTO_ULTIMO = "server_rifiuto_ultimo"
+        private const val KEY_ACK_FIRMA = "server_ack_firma"
         private const val KEY_ORIENTATION = "orientation"
         private const val KEY_KIOSK_RECENTS = "kiosk_recents"
 
@@ -434,8 +508,6 @@ class Prefs private constructor(context: Context) {
 
         fun todayKey(): String =
             SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Calendar.getInstance().time)
-
-        private fun ByteArray.toHex(): String = joinToString("") { byte -> "%02x".format(byte) }
 
         private fun encodeLimits(map: Map<String, Int>): String =
             map.entries.joinToString("|") { "${it.key}=${it.value}" }

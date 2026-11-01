@@ -6,7 +6,9 @@ import android.content.pm.PackageManager
 import android.provider.Settings
 import android.util.Log
 import it.iotatec.starkid.admin.Kiosk
+import it.iotatec.starkid.data.AreaGenitori
 import it.iotatec.starkid.data.BACKGROUND_PHOTO
+import it.iotatec.starkid.data.EsitoPin
 import it.iotatec.starkid.data.FasciaApp
 import it.iotatec.starkid.data.Prefs
 import it.iotatec.starkid.service.GuardService
@@ -26,20 +28,46 @@ import org.json.JSONObject
  * QUANTO E LENTA. Il tablet chiama, il server non chiama il tablet: non c'e
  * nessun canale aperto, nessuna notifica push, nessun servizio di Google in
  * mezzo. Vuol dire che una modifica fatta dal genitore arriva al prossimo
- * giro, non subito, e che il blocco a distanza ha lo stesso ritardo. E un
- * prezzo pagato apposta: un tablet che tiene una connessione aperta verso
- * casa e un tablet che si puo raggiungere da fuori.
+ * giro - un minuto, vedi [INTERVALLO_MILLIS] - e non subito, e che il blocco
+ * a distanza ha lo stesso ritardo. E un prezzo pagato apposta: un tablet che
+ * tiene una connessione aperta verso casa e un tablet che si puo raggiungere
+ * da fuori.
  *
  * COSA PARTE DA QUI. La revisione applicata, i campi non applicati e le
  * cinque spie dei permessi. Niente del bambino: non il nome, non il PIN, non
  * quanto ha giocato e a cosa. Quello resta sul tablet.
+ *
+ * E chiamare ogni minuto vuol dire millequattrocento giri al giorno, percio
+ * la conferma non riparte se non ha niente di nuovo da dire: vedi
+ * [firmaAck]. Il documento invece si richiede ogni volta, perche e l'unico
+ * modo che ha il tablet di sapere che e cambiato.
  */
 object Sync {
 
     private const val TAG = "StarKidSync"
 
-    /** Ogni quanto, al massimo, si richiama il server. */
-    const val INTERVALLO_MILLIS = 5L * 60L * 1000L
+    /**
+     * Ogni quanto, al massimo, si richiama il server: un minuto.
+     *
+     * Cinquantacinque secondi e non sessanta tondi perche il risvegliatore in
+     * GuardService aspetta un minuto **dopo** ogni giro: col numero esatto
+     * basterebbe un orologio di sistema che torna indietro di mezzo secondo
+     * (succede, e l'ora di rete che si riallinea) per far saltare un giro e
+     * dimezzare la cadenza senza che nessuno capisca perche. I cinque secondi
+     * sono il margine.
+     */
+    const val INTERVALLO_MILLIS = 55L * 1000L
+
+    /**
+     * Ogni quanto si richiama il server che ci risponde 401.
+     *
+     * Serve perche il controllo normale guarda l'ultima sincronizzazione
+     * **riuscita**: un tablet rifiutato non ne ha mai una, quindi passava il
+     * controllo ogni volta e chiamava il server ogni minuto, per sempre. Il
+     * commento qui sotto diceva "si continua a chiedere piu piano" e non era
+     * vero: adesso lo e.
+     */
+    const val INTERVALLO_RIFIUTATO_MILLIS = 30L * 60L * 1000L
 
     sealed interface Esito {
         /** Il tablet non e legato a nessun server: e il caso normale. */
@@ -98,15 +126,24 @@ object Sync {
      * Un giro completo. Va chiamata fuori dal thread principale.
      *
      * @param forzata ignora l'intervallo: la usa il genitore quando preme
-     *   "sincronizza adesso" e non ha voglia di aspettare cinque minuti.
+     *   "sincronizza adesso" e non ha voglia di aspettare il giro.
      */
     fun esegui(context: Context, forzata: Boolean = false): Esito {
         val prefs = Prefs.get(context)
         var config = prefs.current
 
         if (config.serverUrl.isBlank() || config.serverToken.isBlank()) return Esito.NonConfigurato
-        if (!forzata && System.currentTimeMillis() - config.lastSync < INTERVALLO_MILLIS) {
-            return Esito.NonConfigurato
+        val adesso = System.currentTimeMillis()
+        if (!forzata) {
+            if (adesso - config.lastSync < INTERVALLO_MILLIS) return Esito.NonConfigurato
+            // Mentre il server non ci riconosce si chiede piu piano. Il
+            // controllo sopra non basta: guarda l'ultima sincronizzazione
+            // riuscita, che in questo stato non arriva mai.
+            if (config.rifiutatoDal > 0L &&
+                adesso - config.ultimoRifiuto < INTERVALLO_RIFIUTATO_MILLIS
+            ) {
+                return Esito.NonRiconosciuto(config.rifiutatoDal)
+            }
         }
 
         return try {
@@ -129,7 +166,18 @@ object Sync {
                 rifiutati.size >= CAMPI_APPLICABILI -> "rejected"
                 else -> "partial"
             }
-            if (revisione > 0) server.conferma(revisione, esito, rifiutati)
+            // La conferma si rimanda solo se dice qualcosa di nuovo. Non e
+            // solo traffico risparmiato: riconfermare la stessa revisione
+            // sessanta volte all'ora riscrive ack_il nel database del
+            // server, e chi guarda quella colonna crede che sia appena
+            // successo qualcosa. La firma comprende i campi rifiutati, non
+            // solo la revisione: una app installata nel frattempo cambia
+            // l'esito a revisione ferma, e quello il server deve saperlo.
+            val firma = firmaAck(revisione, esito, rifiutati)
+            if (revisione > 0 && firma != config.firmaAck) {
+                server.conferma(revisione, esito, rifiutati)
+                prefs.segnaAckMandato(firma)
+            }
 
             server.spie(
                 deviceOwner = Kiosk.canManage(context),
@@ -185,7 +233,7 @@ object Sync {
     }
 
     /** Quanti campi del documento questo tablet sa applicare. */
-    private const val CAMPI_APPLICABILI = 13
+    private const val CAMPI_APPLICABILI = 14
 
     /**
      * Applica il documento e torna i campi che NON e riuscito ad applicare,
@@ -290,6 +338,30 @@ object Sync {
         }
         prefs.setKioskRecents(d.optBoolean("kiosk_recenti", prima.kioskRecents))
 
+        // Le politiche del kiosk non stanno nelle preferenze: le tiene
+        // Android, e cambiano solo chiamando setLockTaskFeatures e
+        // setLockTaskPackages. Scrivere la preferenza e basta vuol dire un
+        // documento che risulta "applicato" e un tablet in cui non e
+        // cambiato niente - successo davvero: recenti spente dal server e
+        // taskbar ancora li.
+        //
+        // Se ne occupa anche MainActivity, ma solo mentre la sua schermata e
+        // viva: con il bambino dentro un'altra app non c'e nessuno, e questo
+        // giro e l'unico momento in cui qualcuno passa di qua. Si salta
+        // quando il genitore e nella sua area, perche li il kiosk ha un
+        // varco aperto per le impostazioni che non va richiuso sotto le
+        // mani di chi lo sta usando.
+        val dopo = prefs.current
+        val cambiate = dopo.kioskRecents != prima.kioskRecents ||
+            dopo.allowedPackages != prima.allowedPackages
+        if (cambiate && dopo.kioskEnabled && !AreaGenitori.dentro) {
+            Kiosk.applyPolicies(
+                context = context,
+                allowedPackages = dopo.allowedPackages,
+                allowRecents = dopo.kioskRecents,
+            )
+        }
+
         // --- blocco a distanza --------------------------------------------
         // Questo invece si applica subito in tutti e due i versi: e il
         // genitore che chiude e che riapre, e non c'e niente da confermare
@@ -297,8 +369,46 @@ object Sync {
         // blocco.
         prefs.setBloccatoDalGenitore(d.optBoolean("bloccato", false))
 
+        // --- il PIN dell'area genitori -------------------------------------
+        // Arriva come impronta, mai in chiaro: il calcolo l'ha fatto il
+        // browser (vedi data/Pin.kt, che e lo stesso in tre posti). Il campo
+        // assente, o a null, vuol dire "da li non si dice niente sul PIN": il
+        // tablet tiene il suo, e non vuol dire "togli il PIN", che sarebbe un
+        // modo di aprire l'area genitori da lontano.
+        //
+        // Niente conferma sul tablet, al contrario del kiosk, e di proposito:
+        // questa e la strada per rientrare in un tablet di cui si e perso il
+        // PIN, e un PIN da confermare col PIN vecchio non servirebbe a
+        // quello.
+        d.optJSONObject("impronta_pin")?.let { p ->
+            val esito = prefs.setPinDalServer(
+                sale = p.optString("sale"),
+                giri = p.optInt("giri", 0),
+                impronta = p.optString("impronta"),
+            )
+            when (esito) {
+                EsitoPin.APPLICATO -> Log.i(TAG, "PIN dell'area genitori cambiato dalla gestione")
+                EsitoPin.GIA_APPLICATO -> Unit
+                EsitoPin.NON_VALIDO -> rifiutati += "impronta_pin" to "valore_non_applicabile"
+            }
+        }
+
         return rifiutati
     }
+
+    /**
+     * La riga che riassume una conferma: revisione, esito e campi rifiutati.
+     * Due giri che darebbero al server la stessa notizia hanno la stessa
+     * firma, e il secondo non parte.
+     */
+    private fun firmaAck(
+        revisione: Int,
+        esito: String,
+        rifiutati: List<Pair<String, String>>,
+    ): String = (
+        listOf(revisione.toString(), esito) +
+            rifiutati.sortedBy { it.first }.map { "${it.first}=${it.second}" }
+        ).joinToString("|")
 
     private fun installata(context: Context, pacchetto: String): Boolean = runCatching {
         context.packageManager.getApplicationInfo(pacchetto, 0)

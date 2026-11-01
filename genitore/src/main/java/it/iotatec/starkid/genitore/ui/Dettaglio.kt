@@ -36,6 +36,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import it.iotatec.starkid.genitore.Pin
 import it.iotatec.starkid.genitore.Schermata
 import it.iotatec.starkid.genitore.Stato
 import it.iotatec.starkid.genitore.net.Spia
@@ -250,7 +251,7 @@ private fun Modulo(stato: Stato, idTablet: String, originale: JSONObject) {
                 if (bozza.optBoolean("bloccato")) {
                     Spacer(Modifier.height(8.dp))
                     Avviso(
-                        "Arriva alla prossima chiamata del tablet, entro cinque minuti: il " +
+                        "Arriva alla prossima chiamata del tablet, entro un minuto: il " +
                             "tablet chiama il server, il server non chiama il tablet. Se e " +
                             "spento o senza rete, arriva quando torna. Il PIN sul tablet non " +
                             "lo apre.",
@@ -337,6 +338,18 @@ private fun Modulo(stato: Stato, idTablet: String, originale: JSONObject) {
                         color = Tinte.TestoTenue,
                     )
                 }
+            }
+        }
+
+        // ---- PIN ---------------------------------------------------------
+        // Questa invece si scrive da qui, al contrario delle regole per app:
+        // quattro cifre su un telefono si battono meglio che su qualunque
+        // altra cosa, e il momento in cui serve - "ho dimenticato il PIN del
+        // tablet di mio figlio" - e esattamente quello in cui si ha il
+        // telefono in mano e il tablet no.
+        item {
+            PinDaQui(bozza.opt("impronta_pin")) { nuova ->
+                modifica { put("impronta_pin", nuova ?: JSONObject.NULL) }
             }
         }
 
@@ -565,6 +578,69 @@ private fun AppPermesse(attuali: List<String>, onCambia: (List<String>) -> Unit)
             onClick = { onCambia(attuali + nuova); nuova = "" },
             enabled = valido.matches(nuova) && nuova !in attuali,
         ) { Text("Aggiungi") }
+    }
+}
+
+/**
+ * Il PIN dell'area genitori, da qui.
+ *
+ * [corrente] e quello che c'e nel documento: o un oggetto con sale, giri e
+ * impronta, o JSONObject.NULL. Le cifre non ci sono e non si possono
+ * mostrare - nemmeno il server le ha - quindi qui si dice solo se un PIN da
+ * qui c'e o no, e se ne scrive uno nuovo.
+ */
+@Composable
+private fun PinDaQui(corrente: Any?, onCambia: (JSONObject?) -> Unit) {
+    var scritto by remember { mutableStateOf("") }
+    val cEGia = corrente is JSONObject
+    val valido = Pin.valido(scritto)
+
+    Carta {
+        Titoletto("PIN dell'area genitori")
+        Text(
+            if (cEGia) {
+                "Un PIN mandato dalla gestione c'e gia. Qual e non si puo rileggere: " +
+                    "qui c'e solo la sua impronta, e nemmeno il server sa a che cifre " +
+                    "corrisponda. Per cambiarlo, scrivine uno nuovo."
+            } else {
+                "Da qui non e mai stato mandato un PIN: sul tablet vale quello scelto " +
+                    "stando davanti al tablet."
+            },
+            style = MaterialTheme.typography.bodyMedium,
+            color = Tinte.TestoTenue,
+        )
+        Spacer(Modifier.height(10.dp))
+        OutlinedTextField(
+            value = scritto,
+            onValueChange = { nuovo -> scritto = nuovo.filter { it in '0'..'9' }.take(Pin.LUNGHEZZA_MASSIMA) },
+            label = { Text("PIN nuovo, da ${Pin.LUNGHEZZA_MINIMA} a ${Pin.LUNGHEZZA_MASSIMA} cifre") },
+            singleLine = true,
+            isError = scritto.isNotEmpty() && !valido,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedButton(
+                // Il calcolo e ventimila giri di SHA-256: su un telefono
+                // sono decimi di secondo, e succede al tocco, non mentre si
+                // scrive. Non va spostato dentro onValueChange.
+                onClick = { onCambia(Pin.impronta(scritto)); scritto = "" },
+                enabled = valido,
+            ) { Text("Manda questo PIN") }
+            if (cEGia) {
+                TextButton(onClick = { onCambia(null); scritto = "" }) {
+                    Text("Smetti di mandarlo")
+                }
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+        Text(
+            "Il PIN non arriva al server: parte l'impronta, calcolata qui. " +
+                "\"Smetti di mandarlo\" non toglie il PIN dal tablet - quello da " +
+                "lontano non si puo fare - lascia al tablet quello che ha.",
+            style = MaterialTheme.typography.bodySmall,
+            color = Tinte.TestoTenue,
+        )
     }
 }
 

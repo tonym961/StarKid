@@ -308,6 +308,8 @@
 
     SK.$('#app').value = (Array.isArray(cfg.app_permesse) ? cfg.app_permesse : []).join('\n');
 
+    raccontaPin(cfg);
+
     regole = {};
     (Array.isArray(cfg.regole_app) ? cfg.regole_app : []).forEach(function (voce) {
       if (!voce || !voce.pacchetto) return;
@@ -368,11 +370,66 @@
         fine: SK.oraInMinuti(SK.$('#fascia-fine').value),
         giorni: giorni
       },
+      /* Quello che c'e adesso. Il PIN nuovo, che va calcolato e quindi
+         arriva dopo, lo mette salva(): cosi raccogli() resta immediata e
+         "scarica" continua a funzionare senza aspettare niente. */
+      impronta_pin: base ? (base.impronta_pin || null) : null,
       app_permesse: app,
       regole_app: raccogliRegole(),
       giochi_spenti: spenti,
       suoni: SK.$('#suoni').checked
     };
+  }
+
+  /* ---------------------------------------------------------------- PIN */
+
+  /* Cosa dire del PIN, guardando quello che c'e nel documento. Le cifre non
+     si possono mostrare: qui c'e solo l'impronta, e nemmeno il server sa a
+     quale PIN corrisponda. */
+  function raccontaPin(cfg) {
+    var stato = SK.$('#pin-stato');
+    if (cfg && cfg.impronta_pin) {
+      stato.textContent = 'Un PIN mandato da qui c\'e gia. Qual e non si puo ' +
+        'rileggere, nemmeno da questa pagina: scrivine uno nuovo per cambiarlo.';
+    } else {
+      stato.textContent = 'Da qui non e mai stato mandato un PIN: sul tablet ' +
+        'vale quello scelto davanti al tablet.';
+    }
+    SK.$('#pin').value = '';
+    SK.$('#pin-ripeti').value = '';
+    SK.$('#pin-togli').checked = false;
+  }
+
+  /* Il PIN del modulo, risolto in quello che va messo nel documento.
+     Rifiuta con { campo, motivo }, come i problemi di validaConfig, cosi
+     l'errore si accende sul campo giusto invece che in cima alla pagina. */
+  function pinPerIlDocumento() {
+    var scritto = SK.$('#pin').value.trim();
+    var ripetuto = SK.$('#pin-ripeti').value.trim();
+    var togli = SK.$('#pin-togli').checked;
+    var corrente = base ? (base.impronta_pin || null) : null;
+
+    if (togli && scritto) {
+      return Promise.reject({
+        campo: 'impronta_pin',
+        motivo: 'o mandi un PIN nuovo o smetti di mandarlo: tutte e due insieme no'
+      });
+    }
+    if (togli) return Promise.resolve(null);
+    if (!scritto && !ripetuto) return Promise.resolve(corrente);
+    if (!SK.pinValido(scritto)) {
+      return Promise.reject({
+        campo: 'impronta_pin',
+        motivo: 'il PIN sono da ' + SK.PIN_CIFRE_MIN + ' a ' + SK.PIN_CIFRE_MAX +
+          ' cifre, niente altro'
+      });
+    }
+    if (scritto !== ripetuto) {
+      return Promise.reject({ campo: 'pin-ripeti', motivo: 'le due volte non coincidono' });
+    }
+    return SK.preparaPin(scritto).catch(function (errore) {
+      return Promise.reject({ campo: 'impronta_pin', motivo: errore.message });
+    });
   }
 
   function aggiornaAiutoLimite() {
@@ -392,11 +449,36 @@
     evento.preventDefault();
     var bottone = SK.$('#salva');
     var messaggio = SK.$('#messaggio');
-    var documento = SK.soloChiaviConfig(raccogli());
+
+    /* Il PIN va calcolato prima, e il calcolo e lento apposta: ventimila
+       giri di SHA-256 sono qualche decimo di secondo. Da qui in poi tutto
+       il salvataggio sta dentro la promessa. */
+    SK.occupato(bottone, true, 'Salvo...');
+    pinPerIlDocumento().then(
+      function (impronta) { pubblica(bottone, messaggio, impronta); },
+      function (problema) {
+        SK.occupato(bottone, false);
+        segnaErrori([problema]);
+        SK.mostraErrore(messaggio, { messaggio: 'Non ho salvato: ' + problema.motivo + '.' },
+          'Controlla prima di salvare');
+        var primo = SK.$('[aria-invalid="true"]');
+        if (primo) primo.focus();
+      }
+    );
+  }
+
+  function pubblica(bottone, messaggio, impronta) {
+    /* Prima che applica() rifaccia base: serve solo per dire, alla fine, se
+       il PIN e cambiato davvero o se e lo stesso di prima. */
+    var precedente = base ? (base.impronta_pin || null) : null;
+    var grezzo = raccogli();
+    grezzo.impronta_pin = impronta;
+    var documento = SK.soloChiaviConfig(grezzo);
     var problemi = SK.validaConfig(documento);
     var fuori = segnaErrori(problemi);
 
     if (problemi.length) {
+      SK.occupato(bottone, false);
       SK.mostraErrore(messaggio, {
         messaggio: 'Non ho salvato: ci sono ' + problemi.length + (problemi.length === 1 ? ' campo' : ' campi') +
           ' da correggere. I campi sbagliati sono segnati in rosso qui sotto.',
@@ -416,10 +498,12 @@
         'Il Device Owner si ottiene solo riportando il tablet alle condizioni di fabbrica e rifacendo l\'arruolamento col QR.\n\n' +
         'Salvo comunque il resto?'
       );
-      if (!avanti) return;
+      if (!avanti) { SK.occupato(bottone, false); return; }
     }
 
-    SK.occupato(bottone, true, 'Pubblico...');
+    /* Non SK.occupato un'altra volta: il bottone e gia occupato da salva(),
+       e la seconda chiamata si porterebbe via il testo originale. */
+    bottone.textContent = 'Pubblico...';
     SK.apiSessione('PUT', '/api/v1/tablets/' + encodeURIComponent(ID) + '/config', documento)
       .then(function (risposta) {
         SK.occupato(bottone, false);
@@ -434,6 +518,10 @@
           '. Il tablet la prende al prossimo collegamento e poi dice se l\'ha applicata.';
         if (documento.kiosk) {
           testo += ' Il kiosk e stato CHIESTO: lo accende solo se e Device Owner.';
+        }
+        if (impronta && (!precedente || precedente.impronta !== impronta.impronta)) {
+          testo += ' Il PIN nuovo vale da quando il tablet riceve questa revisione: ' +
+            'da li in poi quello vecchio non apre piu.';
         }
         SK.mostraMessaggio(SK.$('#messaggio'), 'ok', 'Salvato', testo);
         caricaStorico();

@@ -186,11 +186,12 @@ var SK = (function () {
   /* Schema CHIUSO: queste e solo queste chiavi vanno nel documento. */
   var CHIAVI_CONFIG = [
     'revisione', 'tema', 'sfondo', 'schermata', 'orientamento',
-    'kiosk', 'kiosk_recenti', 'bloccato', 'limite_giornaliero', 'fascia',
-    'app_permesse', 'regole_app', 'giochi_spenti', 'suoni'
+    'kiosk', 'kiosk_recenti', 'bloccato', 'impronta_pin', 'limite_giornaliero',
+    'fascia', 'app_permesse', 'regole_app', 'giochi_spenti', 'suoni'
   ];
   var CHIAVI_FASCIA = ['attiva', 'inizio', 'fine', 'giorni'];
   var CHIAVI_REGOLA = ['pacchetto', 'minuti', 'fascia'];
+  var CHIAVI_IMPRONTA = ['sale', 'giri', 'impronta'];
 
   var PAGINE_AMMESSE = ['index.html', 'tablets.html', 'tablet.html', 'nuovo.html', 'salute.html'];
 
@@ -513,9 +514,12 @@ var SK = (function () {
       orientamento: 'automatico',
       kiosk: false,
       kiosk_recenti: false,
+      bloccato: false,
+      impronta_pin: null,
       limite_giornaliero: 60,
       fascia: { attiva: false, inizio: 480, fine: 1200, giorni: [1, 2, 3, 4, 5, 6, 7] },
       app_permesse: [],
+      regole_app: [],
       giochi_spenti: [],
       suoni: true
     };
@@ -525,6 +529,97 @@ var SK = (function () {
 
   function sfondoAppartiene(tema, sfondo) {
     return sfondiDi(tema).some(function (s) { return s.id === sfondo; });
+  }
+
+  /* ------------------------------------------------------------- il PIN */
+
+  /* Il PIN dell'area genitori si cambia da qui, ma non passa da qui: al
+     server arrivano sale, giri e impronta, calcolati in questa pagina. Il
+     calcolo deve dare lo stesso risultato, carattere per carattere, di
+     data/Pin.kt sul tablet e di genitore/Pin.kt: tre copie della stessa
+     cosa, e il vettore di prova sta in PinTest.kt.
+
+     Va detto chiaro, perche e il limite della scelta: quattro cifre dietro a
+     un'impronta si ritrovano con diecimila tentativi, quindi questo non
+     rende il PIN un segreto per chi ha il database del server. Serve a non
+     farcelo passare in chiaro e a non lasciarlo scritto nel database, nei
+     log e nelle dieci revisioni dello storico, che restano. Un PIN piu
+     lungo e l'unica cosa che lo rende davvero difficile: per questo se ne
+     accettano fino a otto cifre. */
+  var PIN_CIFRE_MIN = 4;
+  var PIN_CIFRE_MAX = 8;
+  var PIN_GIRI = 20000;
+
+  function pinValido(pin) {
+    return typeof pin === 'string' &&
+      pin.length >= PIN_CIFRE_MIN && pin.length <= PIN_CIFRE_MAX &&
+      /^[0-9]+$/.test(pin);
+  }
+
+  function esadecimale(buffer) {
+    var byte = new Uint8Array(buffer);
+    var fuori = '';
+    for (var i = 0; i < byte.length; i++) {
+      fuori += (byte[i] < 16 ? '0' : '') + byte[i].toString(16);
+    }
+    return fuori;
+  }
+
+  function nuovoSale() {
+    var byte = new Uint8Array(16);
+    window.crypto.getRandomValues(byte);
+    return esadecimale(byte.buffer);
+  }
+
+  /* Il sale entra nel conto come la sua stringa esadecimale, non come i
+     sedici byte che rappresenta: e cosi dalla prima versione del tablet, e
+     cambiarlo adesso renderebbe irriconoscibile il PIN di ogni tablet gia in
+     giro. Ventimila giri in sequenza sono qualche decimo di secondo qui e
+     altrettanti sul tablet: non si alzano senza misurarli su un tablet
+     lento, perche quel numero lo paga chi batte il PIN, ogni volta. */
+  function giroDopoGiro(dati, rimasti) {
+    if (rimasti <= 0) return Promise.resolve(dati);
+    return window.crypto.subtle.digest('SHA-256', dati).then(function (uscita) {
+      /* Ricorsione sulle promesse, non un ciclo che costruisce ventimila
+         .then() prima di cominciare: la pila non cresce (ogni passo e un
+         microtask) e la memoria resta quella di un giro solo. */
+      return giroDopoGiro(uscita, rimasti - 1);
+    });
+  }
+
+  function improntaPin(pin, sale, giri) {
+    var quanti = giri || PIN_GIRI;
+    var partenza = new TextEncoder().encode(sale + pin).buffer;
+    return giroDopoGiro(partenza, quanti).then(function (dati) {
+      return { sale: sale, giri: quanti, impronta: esadecimale(dati) };
+    });
+  }
+
+  /* Il PIN nuovo, pronto da mettere nel documento. Il sale e sempre nuovo:
+     cosi rimandare lo stesso PIN fa comunque un'impronta diversa, e il
+     tablet capisce che deve riapplicarlo. */
+  function preparaPin(pin) {
+    if (!window.crypto || !window.crypto.subtle) {
+      return Promise.reject(new Error(
+        'Questo browser non sa calcolare l\'impronta del PIN (serve una pagina in https). ' +
+        'Il PIN si puo sempre cambiare stando davanti al tablet.'));
+    }
+    if (!pinValido(pin)) {
+      return Promise.reject(new Error(
+        'Il PIN sono da ' + PIN_CIFRE_MIN + ' a ' + PIN_CIFRE_MAX + ' cifre, niente altro.'));
+    }
+    return improntaPin(pin, nuovoSale(), PIN_GIRI);
+  }
+
+  function improntaValida(valore) {
+    if (valore === null || valore === undefined) return true;
+    if (typeof valore !== 'object' || Array.isArray(valore)) return false;
+    if (!/^[0-9a-f]{32}$/.test(String(valore.sale))) return false;
+    if (!/^[0-9a-f]{64}$/.test(String(valore.impronta))) return false;
+    if (!Number.isInteger(valore.giri) || valore.giri < 20000 || valore.giri > 200000) return false;
+    return Object.keys(valore).every(function (chiave) {
+      return CHIAVI_IMPRONTA.indexOf(chiave) >= 0;
+    });
   }
 
   /* Gli stessi controlli che fa il server, qui davanti. Non per fidarsi del
@@ -551,6 +646,14 @@ var SK = (function () {
     if (typeof cfg.kiosk_recenti !== 'boolean') no('kiosk_recenti', 'deve essere acceso o spento');
     if (typeof cfg.bloccato !== 'boolean') no('bloccato', 'deve essere acceso o spento');
     if (typeof cfg.suoni !== 'boolean') no('suoni', 'deve essere acceso o spento');
+
+    /* Qui dentro non c'e il PIN: ci sono sale, giri e impronta, e il
+       browser li ha appena calcolati. Si controlla la forma, perche un
+       documento storto farebbe rifiutare tutto il salvataggio dal server
+       con un messaggio meno chiaro di questo. */
+    if (!improntaValida(cfg.impronta_pin)) {
+      no('impronta_pin', 'l\'impronta del PIN non ha la forma giusta: rimetti il PIN e risalva');
+    }
 
     var limite = cfg.limite_giornaliero;
     if (!Number.isInteger(limite) || limite < 0 || limite > 1440) {
@@ -660,6 +763,16 @@ var SK = (function () {
           fine: f.fine,
           giorni: Array.isArray(f.giorni) ? f.giorni.slice().sort(function (a, b) { return a - b; }) : []
         };
+        return;
+      }
+      if (chiave === 'impronta_pin') {
+        /* null vuol dire "da qui non si dice niente sul PIN", e il tablet
+           tiene il suo. Non vuol dire "togli il PIN": quello da lontano non
+           si puo fare, se no sarebbe un modo per aprire l'area genitori. */
+        var imp = cfg.impronta_pin;
+        pulito.impronta_pin = (imp && typeof imp === 'object' && !Array.isArray(imp))
+          ? { sale: imp.sale, giri: imp.giri, impronta: imp.impronta }
+          : null;
         return;
       }
       if (chiave === 'regole_app') {
@@ -973,6 +1086,9 @@ var SK = (function () {
     data: data, quando: quando, dataEOra: dataEOra,
     configVuota: configVuota, sfondiDi: sfondiDi, sfondoAppartiene: sfondoAppartiene,
     validaConfig: validaConfig, soloChiaviConfig: soloChiaviConfig,
+    PIN_CIFRE_MIN: PIN_CIFRE_MIN, PIN_CIFRE_MAX: PIN_CIFRE_MAX, PIN_GIRI: PIN_GIRI,
+    pinValido: pinValido, preparaPin: preparaPin, improntaPin: improntaPin,
+    improntaValida: improntaValida,
     normalizzaTablet: normalizzaTablet, spieDi: spieDi, spieCritiche: spieCritiche,
     testoMotivo: testoMotivo,
     arruolato: tabletArruolato, listaSpie: listaSpie, cartelloLimiti: cartelloLimiti,

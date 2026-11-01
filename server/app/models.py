@@ -41,6 +41,7 @@ def _carica_schema() -> dict[str, Any]:
 SCHEMA: dict[str, Any] = _carica_schema()
 _PROP: dict[str, Any] = SCHEMA["properties"]
 _FASCIA: dict[str, Any] = _PROP["fascia"]["properties"]
+_IMPRONTA: dict[str, Any] = _PROP["impronta_pin"]["properties"]
 
 TEMI: tuple[str, ...] = tuple(_PROP["tema"]["enum"])
 SFONDI: tuple[str, ...] = tuple(_PROP["sfondo"]["enum"])
@@ -53,6 +54,14 @@ MASSIMO_APP: int = int(_PROP["app_permesse"]["maxItems"])
 LUNGHEZZA_PACCHETTO: int = int(_PROP["app_permesse"]["items"]["maxLength"])
 PACCHETTO = re.compile(_PROP["app_permesse"]["items"]["pattern"])
 MINUTO_MASSIMO: int = int(_FASCIA["inizio"]["maximum"])
+
+# Il PIN: qui passano solo sale, giri e impronta, e il server non sa calcolarli
+# ne verificarli. Non e pigrizia: non avendo il PIN in chiaro non puo. Quindi
+# controlla la forma e basta, e il mestiere lo fanno il browser e il tablet.
+SALE = re.compile(_IMPRONTA["sale"]["pattern"])
+IMPRONTA = re.compile(_IMPRONTA["impronta"]["pattern"])
+GIRI_MINIMI: int = int(_IMPRONTA["giri"]["minimum"])
+GIRI_MASSIMI: int = int(_IMPRONTA["giri"]["maximum"])
 
 # I nomi dei campi, per i "campi_rifiutati" che manda il tablet: anche quelli
 # sono vocabolario chiuso, un dispositivo non deve poter scrivere una stringa
@@ -115,8 +124,12 @@ if set(VALORI_INIZIALI) != CAMPI_DOCUMENTO:
 # ---------------------------------------------------------------------------
 
 CAMPI_VIETATI: dict[str, str] = {
-    "pin": "il PIN dell'area genitori non lascia il tablet",
-    "pin_hash": "il PIN dell'area genitori non lascia il tablet",
+    # Il PIN si cambia da qui, ma non passa di qui: quello che viaggia e
+    # impronta_pin, cioe sale e impronta calcolati nel browser. Le cifre no,
+    # ne sotto questo nome ne sotto un altro.
+    "pin": "il PIN in chiaro non arriva al server: da qui passa solo impronta_pin",
+    "pin_hash": "l'impronta del PIN si chiama impronta_pin e ha dentro sale, giri e impronta",
+    "pin_sale": "sale, giri e impronta stanno insieme dentro impronta_pin",
     "bambino": "il nome del bambino non arriva al server",
     "nome_bambino": "il nome del bambino non arriva al server",
     "avatar": "l'avatar si sceglie sul tablet, non da qui",
@@ -184,6 +197,42 @@ class Fascia(Richiesta):
     # regola piu severa di quella che applica il dispositivo.
 
 
+class ImprontaPin(Richiesta):
+    """Il PIN dell'area genitori, come impronta.
+
+    Qui dentro non c'e il PIN. Ci sono il sale, i giri e il risultato, che il
+    browser calcola da solo e manda gia fatti: il server riceve
+    sessantaquattro caratteri esadecimali e non e in grado di dire a quale PIN
+    corrispondano, ne di verificarne uno. Chi legge questo file fra un anno
+    non deve aggiungere un controllo "e il PIN giusto?": non si puo, ed e
+    voluto.
+
+    Resta vero - va detto, perche e il limite di questa scelta - che quattro
+    cifre dietro a un'impronta si ritrovano con diecimila tentativi. Non e
+    quindi un segreto per chi ha il database. Serve a non far passare il PIN
+    in chiaro e a non lasciarlo scritto nel database, nei log e nelle dieci
+    revisioni dello storico, che restano.
+    """
+
+    sale: str
+    giri: int = Field(ge=GIRI_MINIMI, le=GIRI_MASSIMI)
+    impronta: str
+
+    @field_validator("sale")
+    @classmethod
+    def _sale(cls, valore: str) -> str:
+        if not SALE.fullmatch(valore):
+            raise ValueError("il sale sono sedici byte in esadecimale minuscolo")
+        return valore
+
+    @field_validator("impronta")
+    @classmethod
+    def _impronta(cls, valore: str) -> str:
+        if not IMPRONTA.fullmatch(valore):
+            raise ValueError("l'impronta sono 64 caratteri esadecimali minuscoli")
+        return valore
+
+
 class RegolaApp(Richiesta):
     """Quanto e quando, per una singola app.
 
@@ -235,6 +284,11 @@ class DocumentoConfig(Richiesta):
     # nessuno, mentre il kiosk acceso va confermato col PIN sul tablet.
     # Qui non c'e niente da confermare: e il genitore che chiude.
     bloccato: bool
+    # null vuol dire "da qui non si dice niente sul PIN", non "togli il PIN":
+    # un PIN che si cancella da lontano sarebbe un modo per aprire l'area
+    # genitori da fuori. Il valore iniziale e quindi null, e un tablet che
+    # non ha mai sentito parlare di questo campo continua col PIN suo.
+    impronta_pin: ImprontaPin | None = None
     limite_giornaliero: int = Field(ge=0, le=LIMITE_MASSIMO)
     fascia: Fascia
     app_permesse: list[str]

@@ -13,6 +13,7 @@
     "kiosk",
     "kiosk_recenti",
     "bloccato",
+    "impronta_pin",
     "limite_giornaliero",
     "fascia",
     "app_permesse",
@@ -73,6 +74,32 @@
       "description": "Il genitore ha chiuso il tablet da remoto. Non e il kiosk, che dice DOVE si puo stare, e non e un limite di tempo, che si esaurisce da solo: e 'adesso basta', e si toglie solo da dove e stato messo. Il PIN sul tablet NON lo apre, altrimenti un blocco a distanza che si annulla dal tablet non sarebbe un blocco ma un suggerimento. Il tablet lo applica quando riceve il documento, quindi il ritardo e quello della prossima sincronizzazione e non zero: la web UI lo deve dire, invece di far credere che sia immediato.",
       "type": "boolean",
       "default": false
+    },
+    "impronta_pin": {
+      "description": "Il PIN dell'area genitori, cambiato da qui. Non c'e il PIN: ci sono il sale, i giri e l'impronta, calcolati nel browser (web/app.js, improntaPin) o nell'app dei genitori e mandati gia fatti. Il tablet li mette al posto dei suoi e da quel momento l'area genitori si apre col PIN nuovo. null vuol dire che da qui non si dice niente sul PIN e il tablet tiene il suo: null NON vuol dire 'togli il PIN', perche un PIN che si cancella da lontano sarebbe un modo per aprire l'area genitori da fuori. Il tablet lo installa solo quando e diverso dall'ultimo arrivato da qui, altrimenti un PIN cambiato sul tablet tornerebbe indietro alla prima sincronizzazione; il sale e nuovo a ogni salvataggio, quindi rimandare lo stesso PIN da qui riparte comunque. Da dire chiaro, perche e la ragione per cui questo campo e fatto cosi e non meglio: quattro cifre dietro a un'impronta si ritrovano con diecimila tentativi, quindi chi ha il database ricava il PIN. Il campo non rende il PIN un segreto per il server; serve a non farlo passare in chiaro e a non lasciarlo scritto - nel database, nei log, nelle dieci revisioni dello storico, che restano per sempre.",
+      "$comment": "Il calcolo sta in tre posti che devono dare lo stesso esito: app/data/Pin.kt sul tablet, improntaPin in server/web/app.js, genitore/Pin.kt nell'app dei genitori. Il vettore di prova e in app/src/test/.../PinTest.kt.",
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["sale", "giri", "impronta"],
+      "properties": {
+        "sale": {
+          "description": "Sedici byte casuali in esadecimale minuscolo. Entra nel calcolo come questa stringa, non come i byte che rappresenta.",
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        },
+        "giri": {
+          "description": "Quante volte si ripete SHA-256. Il minimo e quello che fa il tablet quando il PIN si imposta stando davanti; il massimo e un tetto, perche un documento che dicesse dieci milioni lascerebbe ferma la tastiera del PIN.",
+          "type": "integer",
+          "minimum": 20000,
+          "maximum": 200000
+        },
+        "impronta": {
+          "description": "Il risultato, in esadecimale minuscolo.",
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      "default": null
     },
     "limite_giornaliero": {
       "description": "Tetto complessivo in minuti, 0 = senza limite. Il massimo e 1440, un giorno intero.",
@@ -229,5 +256,5 @@
       }
     }
   ],
-  "$comment": "Campi che non esisteranno mai qui, e il motivo: nome del bambino, avatar e PIN (il server non deve sapere chi e il bambino ne come si apre l'area genitori), IMEI o seriale (non serve identificare l'hardware, basta il token), uso per singola app e minuti consumati (sono il diario di un bambino, restano sul tablet), qualunque URL, percorso o comando (il server non deve poter esprimere 'esegui'), password del Wi-Fi (sta nel QR, che si genera nel browser). Chi aggiunge un campo a questo file lo aggiunge anche a app/models.py e ai test in tests/test_campi_vietati.py."
+  "$comment": "Campi che non esisteranno mai qui, e il motivo: nome del bambino e avatar (il server non deve sapere chi e il bambino), il PIN in chiaro (si cambia da qui, ma passa solo come impronta_pin: sale e impronta calcolati nel browser, mai le cifre), IMEI o seriale (non serve identificare l'hardware, basta il token), uso per singola app e minuti consumati (sono il diario di un bambino, restano sul tablet), qualunque URL, percorso o comando (il server non deve poter esprimere 'esegui'), password del Wi-Fi (sta nel QR, che si genera nel browser). Chi aggiunge un campo a questo file lo aggiunge anche a app/models.py e ai test in tests/test_campi_vietati.py."
 }

@@ -38,7 +38,12 @@
     bambino: 'bambino',
     tema: 'tema',
     kiosk: 'kiosk',
-    limite: 'limite_giornaliero'
+    limite: 'limite_giornaliero',
+    /* In chiaro, e qui si puo: il QR va da questo schermo alla fotocamera
+       del tablet senza passare dal server, esattamente come la password del
+       Wi-Fi qui sopra. Dal server il PIN non passa mai - li viaggia
+       l'impronta, vedi improntaPin in app.js. */
+    pin: 'pin'
   };
 
   var creato = null;     /* { id, nome, token } */
@@ -122,6 +127,10 @@
     var bambino = SK.$('#bambino').value.trim();
     if (bambino) extra[EXTRA.bambino] = bambino;
     extra[EXTRA.tema] = SK.$('#tema-iniziale').value;
+    /* Un PIN storto non entra nel QR: meglio un tablet che lo chiede al
+       primo avvio che uno con dentro un PIN che non e quello scritto qui. */
+    var pin = SK.$('#pin-iniziale').value.trim();
+    if (SK.pinValido(pin)) extra[EXTRA.pin] = pin;
     if (SK.$('#kiosk-iniziale').checked) extra[EXTRA.kiosk] = true;
     var limite = parseInt(SK.$('#limite-iniziale').value, 10);
     if (!isNaN(limite) && limite >= 0) extra[EXTRA.limite] = limite;
@@ -182,6 +191,17 @@
       zonaErrore.appendChild(SK.avviso('guasto', 'Non riesco a disegnare il QR', e.message));
       abilitaUscite(false);
     }
+
+    /* Un PIN scritto male sparirebbe dal QR in silenzio, e di silenzioso
+       qui non deve esserci niente: il QR si usa una volta, davanti a un
+       tablet appena resettato. */
+    var pin = SK.$('#pin-iniziale').value.trim();
+    if (pin && !SK.pinValido(pin)) {
+      zonaErrore.appendChild(SK.avviso('attesa', 'Il PIN non e nel QR',
+        'Il PIN sono da ' + SK.PIN_CIFRE_MIN + ' a ' + SK.PIN_CIFRE_MAX +
+        ' cifre, niente altro. Cosi com\'e non l\'ho messo: il tablet lo chiedera ' +
+        'la prima volta che si apre l\'area genitori.'));
+    }
   }
 
   function abilitaUscite(acceso) {
@@ -214,7 +234,8 @@
       JSON.stringify(contenuto(), null, 2)
     );
     SK.mostraMessaggio(SK.$('#messaggio'), 'attesa', 'File salvato',
-      'Dentro ci sono il codice di arruolamento e la password del Wi-Fi: cancellalo appena hai finito.');
+      'Dentro ci sono il codice di arruolamento, la password del Wi-Fi e il PIN ' +
+      'dell\'area genitori: cancellalo appena hai finito.');
   }
 
   /* --------------------------------------------------------------- avvio */

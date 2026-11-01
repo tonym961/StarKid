@@ -36,12 +36,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import it.iotatec.starkid.data.Pin
 
 /** Larghezza piena del tastierino, quando lo schermo la concede. */
 private val KEYPAD_WIDTH = 300.dp
 
-const val PIN_MIN_LENGTH = 4
-private const val PIN_MAX_LENGTH = 8
+// Le lunghezze stanno in data/Pin.kt, dove sta il calcolo: le stesse cifre
+// le controllano anche il browser e l'app dei genitori, e tre numeri scritti
+// in posti diversi prima o poi diventano tre numeri diversi.
+const val PIN_MIN_LENGTH = Pin.LUNGHEZZA_MINIMA
+private const val PIN_MAX_LENGTH = Pin.LUNGHEZZA_MASSIMA
 
 /**
  * Tastierino numerico per il PIN del genitore. Si usa una tastiera dedicata e
@@ -295,7 +299,12 @@ private fun KeypadKey(
  * portarsi dietro stato altrove.
  */
 @Composable
-fun PinSetup(onPinChosen: (String) -> Unit, onCancel: (() -> Unit)? = null) {
+fun PinSetup(
+    onPinChosen: (String) -> Unit,
+    onCancel: (() -> Unit)? = null,
+    /** Una riga in piu sotto al titolo, quando c'e qualcosa da sapere. */
+    nota: String? = null,
+) {
     var first by remember { mutableStateOf<String?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
 
@@ -303,7 +312,8 @@ fun PinSetup(onPinChosen: (String) -> Unit, onCancel: (() -> Unit)? = null) {
     if (pending == null) {
         PinPad(
             title = "Scegli il PIN",
-            subtitle = "Serve ai genitori per entrare nelle impostazioni.\nAlmeno $PIN_MIN_LENGTH cifre.",
+            subtitle = "Serve ai genitori per entrare nelle impostazioni.\nAlmeno " +
+                "$PIN_MIN_LENGTH cifre." + (if (nota != null) "\n$nota" else ""),
             error = error,
             onSubmit = { chosen ->
                 error = null

@@ -4,18 +4,33 @@ Qui stanno le build firmate che si installano senza compilare niente. Ci sono
 perche l'app dei genitori non passa dal Play Store: la si scarica da qui, la si
 mette sul telefono e si apre.
 
-## StarKid-Genitori-1.0.1.apk
+## StarKid-Genitori-1.0.2.apk
 
 L'app di gestione per il telefono del genitore: la stessa cosa che fa la web UI,
 ma a portata di tasca. Elenco dei tablet, configurazione, storico delle
 revisioni, blocco e sblocco a distanza, QR di arruolamento.
 
+Dalla 1.0.2 cambia anche il **PIN dell'area genitori** del tablet: le cifre si
+battono qui e non escono dal telefono, al server va la loro impronta. Serve
+quando il PIN si e dimenticato, cioe quando si ha in mano il telefono e non il
+tablet.
+
 | | |
 |---|---|
 | pacchetto | `it.iotatec.starkid.genitore` |
-| versione | 1.0.1 (versionCode 1) |
+| versione | 1.0.2 (versionCode 2) |
 | Android minimo | 8.0 (API 26) |
 | firma | `CN=StarKid, O=iotatec, C=IT` |
+| SHA-256 | `33560a3ce09fadfaa2c64dba60ee4c279dd4dfeb6dac5bb920aa904f9590e149` |
+
+## StarKid-Genitori-1.0.1.apk
+
+La precedente, lasciata qui apposta: le vecchie non si cancellano. Non sa
+cambiare il PIN.
+
+| | |
+|---|---|
+| versione | 1.0.1 (versionCode 1) |
 | SHA-256 | `89c9079434625bbbd4d70327807d9184d7e122210291de298462c6917781f9d5` |
 
 Prima di installarla, su Android serve dare il permesso "installa app sconosciute"

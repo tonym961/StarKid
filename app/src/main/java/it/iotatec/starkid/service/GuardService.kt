@@ -84,9 +84,10 @@ class GuardService : Service() {
         }
         // La sincronizzazione col server ha un giro suo, lento e su
         // Dispatchers.IO: non deve mai far aspettare il controllo delle app,
-        // che gira ogni quattro secondi. Sync.esegui() ha la sua pausa
-        // interna, quindi risvegliarla ogni minuto non vuol dire chiamare il
-        // server ogni minuto.
+        // che gira ogni quattro secondi. La sveglia e di un minuto e la pausa
+        // dentro Sync.esegui() e di cinquantacinque secondi, quindi il server
+        // si chiama una volta al minuto; il margine c'e perche con i due
+        // numeri uguali un orologio che si riallinea farebbe saltare un giro.
         if (sincronizzatore?.isActive != true) {
             sincronizzatore = scope.launch(Dispatchers.IO) {
                 while (isActive) {

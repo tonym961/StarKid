@@ -34,6 +34,7 @@
   <symbol id="ico-occhio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Mostra</title><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></symbol>
   <symbol id="ico-scarica" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Scarica</title><path d="M12 3.5v11"/><path d="M7.5 10.5L12 15l4.5-4.5"/><path d="M4 18.5h16"/></symbol>
   <symbol id="ico-copia" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Copia</title><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M6 15H5.5A1.5 1.5 0 0 1 4 13.5V5.5A1.5 1.5 0 0 1 5.5 4h8A1.5 1.5 0 0 1 15 5.5V6"/></symbol>
+  <symbol id="ico-chiave" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>PIN</title><circle cx="8" cy="8" r="4.5"/><path d="M11.2 11.2 20 20"/><path d="M17 17l-2 2"/></symbol>
 </defs></svg>
 
 <a class="salta" href="#principale">Salta al contenuto</a>
@@ -234,6 +235,16 @@
           <span class="aiuto">Vale solo col kiosk acceso: serve ai bambini piu grandi che passano fra due app permesse.</span>
         </span>
       </label>
+
+      <div class="avviso" id="nota-recenti">
+        <h3>Sui tablet le recenti portano con se la barra</h3>
+        <p>Da Android 12 i tablet hanno la <strong>taskbar</strong> in basso, e
+        fa parte delle recenti: accendendo questa voce compare la barra, e con
+        la barra il tasto che apre il cassetto con <strong>tutte</strong> le app
+        del tablet. Le app non permesse non si aprono lo stesso - le ferma il
+        kiosk - ma il bambino le vede e le puo provare. Spenta, la barra non
+        c'e: resta il gesto per tornare a StarKid, e basta.</p>
+      </div>
     </fieldset>
 
     <!-- Il blocco a distanza sta in un riquadro suo e non dentro "Kiosk",
@@ -250,7 +261,7 @@
         <h3>Non e immediato, ed e giusto cosi</h3>
         <p>Il tablet chiama il server, il server non chiama il tablet: non c'e
         nessuna porta aperta verso casa tua. Il blocco arriva alla prossima
-        chiamata, entro <strong>cinque minuti</strong>. Se il tablet e spento o
+        chiamata, entro <strong>un minuto</strong>. Se il tablet e spento o
         senza rete, arriva quando torna.</p>
       </div>
 
@@ -258,6 +269,54 @@
         <input type="checkbox" id="bloccato">
         <span>Tablet bloccato
           <span class="aiuto">Il PIN sul tablet non lo apre: altrimenti non sarebbe un blocco a distanza.</span>
+        </span>
+      </label>
+    </fieldset>
+
+    <fieldset class="carta">
+      <legend>PIN</legend>
+      <h2><svg class="icona" aria-hidden="true"><use href="#ico-chiave"/></svg> Il PIN dell'area genitori</h2>
+      <p class="piccolo tenue">Da qui si cambia il PIN che apre l'area
+      genitori sul tablet. Serve soprattutto quando lo si e dimenticato: non
+      chiede quello vecchio, e non lo puo chiedere, se no non servirebbe a
+      niente.</p>
+
+      <p class="piccolo tenue" id="pin-stato">&nbsp;</p>
+
+      <div class="avviso">
+        <h3>Il PIN non arriva al server</h3>
+        <p>Le cifre restano in questa pagina: il browser ne calcola
+        un'<strong>impronta</strong> e manda solo quella. Il server non sa qual
+        e il PIN e non puo saperlo. Detto onestamente, pero: quattro cifre
+        dietro a un'impronta si ritrovano provandole tutte, quindi questo
+        serve a non far girare il PIN in chiaro - non a renderlo un segreto
+        per chi avesse il database. Se la cosa ti pesa, usane sei o otto.</p>
+      </div>
+
+      <div class="due-colonne">
+        <div class="campo">
+          <label for="pin">PIN nuovo</label>
+          <input type="password" id="pin" inputmode="numeric" autocomplete="new-password"
+                 minlength="4" maxlength="8" placeholder="da 4 a 8 cifre"
+                 aria-describedby="errore-impronta_pin">
+          <div class="errore-campo nascosto" id="errore-impronta_pin"></div>
+        </div>
+        <div class="campo">
+          <label for="pin-ripeti">Ripetilo</label>
+          <input type="password" id="pin-ripeti" inputmode="numeric" autocomplete="new-password"
+                 minlength="4" maxlength="8" placeholder="le stesse cifre"
+                 aria-describedby="errore-pin-ripeti">
+          <div class="errore-campo nascosto" id="errore-pin-ripeti"></div>
+        </div>
+      </div>
+      <p class="piccolo tenue">Lascia vuoto per non cambiarlo. Il PIN nuovo
+      parte col salvataggio e vale dal momento in cui il tablet lo riceve: chi
+      ha il tablet in mano e non lo sa, resta fuori.</p>
+
+      <label class="interruttore" for="pin-togli">
+        <input type="checkbox" id="pin-togli">
+        <span>Smetti di mandare il PIN da qui
+          <span class="aiuto">Il tablet tiene quello che ha. Non e "togli il PIN": un PIN che si cancella da lontano sarebbe un modo per aprire l'area genitori da fuori.</span>
         </span>
       </label>
     </fieldset>

@@ -310,7 +310,16 @@ class MainActivity : ComponentActivity() {
             screen != Screen.PIN_GATE &&
             screen != Screen.PIN_SETUP
 
-        LaunchedEffect(config.allowedPackages, config.kioskEnabled, inParentArea) {
+        // kioskRecents sta fra le chiavi perche le funzioni del lock task le
+        // tiene Android: cambiare la preferenza senza richiamare
+        // setLockTaskFeatures lasciava la taskbar dov'era, e il genitore
+        // vedeva l'interruttore spento e la barra accesa.
+        LaunchedEffect(
+            config.allowedPackages,
+            config.kioskEnabled,
+            config.kioskRecents,
+            inParentArea,
+        ) {
             if (config.kioskEnabled) {
                 Kiosk.applyPolicies(
                     context = this@MainActivity,
@@ -466,6 +475,15 @@ class MainActivity : ComponentActivity() {
                     screen = Screen.PARENT
                 },
                 onCancel = { screen = Screen.PARENT },
+                // Un PIN che cambia da solo fa sembrare rotto il tablet: se
+                // quello in uso e arrivato dalla gestione, si dice, e si dice
+                // anche che da li puo tornare a cambiare.
+                nota = if (config.pinDalServer) {
+                    "Adesso vale il PIN mandato dalla gestione a distanza. " +
+                        "Quello che scegli qui vale finche da li non ne mandano un altro."
+                } else {
+                    null
+                },
             )
 
             Screen.PARENT -> ParentHome(
