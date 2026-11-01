@@ -53,6 +53,7 @@ import it.iotatec.starkid.data.KidsConfig
 import it.iotatec.starkid.data.ORIENT_AUTO
 import it.iotatec.starkid.data.ORIENT_PORTRAIT
 import it.iotatec.starkid.data.Prefs
+import it.iotatec.starkid.data.Risvegli
 import it.iotatec.starkid.domain.BlockReason
 import it.iotatec.starkid.domain.Guard
 import it.iotatec.starkid.games.CarGame
@@ -92,6 +93,7 @@ import it.iotatec.starkid.ui.Skin
 import it.iotatec.starkid.ui.Skins
 import it.iotatec.starkid.ui.applySkinChrome
 import it.iotatec.starkid.sync.Sync
+import it.iotatec.starkid.ui.Risveglio
 import it.iotatec.starkid.ui.ServerScreen
 import it.iotatec.starkid.usage.UsageReader
 import kotlinx.coroutines.CoroutineScope
@@ -133,6 +135,7 @@ class MainActivity : ComponentActivity() {
      */
     private var homePresses by mutableStateOf(0)
 
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         prefs = Prefs.get(this)
@@ -164,6 +167,7 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         homePresses++
     }
+
 
     override fun onResume() {
         super.onResume()
@@ -304,12 +308,30 @@ class MainActivity : ComponentActivity() {
         when (screen) {
             Screen.HOME, Screen.GAME -> when {
                 !config.pinSet -> WelcomeScreen(onStart = { screen = Screen.PIN_SETUP })
+                // Il blocco viene PRIMA del risveglio: se il tablet e chiuso
+                // dal genitore o fuori orario, trascinare la stella non deve
+                // nemmeno sembrare una strada.
                 verdict != BlockReason.NONE -> LockScreen(
                     reason = verdict,
                     childName = config.childName,
                     onParentArea = {
                         pinError = null
                         screen = Screen.PIN_GATE
+                    },
+                )
+                Risvegli.daRisvegliare -> Risveglio(
+                    nomeBambino = config.childName,
+                    avatar = config.avatar,
+                    skin = skin,
+                    backgroundId = config.background,
+                    photo = photo,
+                    onSbloccato = {
+                        Risvegli.sbloccato()
+                        // Si torna sempre a casa, mai dentro il gioco che era
+                        // aperto quando lo schermo si e spento: riaccendere il
+                        // tablet e ritrovarsi in mezzo a una partita e brutto.
+                        screen = Screen.HOME
+                        openGame = null
                     },
                 )
                 screen == Screen.GAME && openGame != null -> GameRouter(

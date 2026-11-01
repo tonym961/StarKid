@@ -5,7 +5,9 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.IntentFilter
 import android.content.Intent
 import android.os.IBinder
 import it.iotatec.starkid.LockActivity
@@ -13,6 +15,7 @@ import it.iotatec.starkid.MainActivity
 import it.iotatec.starkid.R
 import it.iotatec.starkid.data.InstalledApps
 import it.iotatec.starkid.data.Prefs
+import it.iotatec.starkid.data.Risvegli
 import it.iotatec.starkid.domain.BlockReason
 import it.iotatec.starkid.domain.Guard
 import it.iotatec.starkid.sync.Sync
@@ -46,12 +49,26 @@ class GuardService : Service() {
     private lateinit var prefs: Prefs
     private lateinit var usage: UsageReader
 
+    /**
+     * "Il tablet si e riacceso". Sta qui e non nell'Activity perche
+     * ACTION_SCREEN_OFF arriva solo a un ricevitore registrato a runtime, e
+     * un ricevitore dell'Activity vive quanto l'Activity: se lo schermo si
+     * spegne mentre il bambino e dentro un'altra app permessa, StarKid e
+     * ferma e non lo riceve. Il servizio invece gira sempre.
+     */
+    private val schermoSpento = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action == Intent.ACTION_SCREEN_OFF) Risvegli.schermoSpento()
+        }
+    }
+
     override fun onCreate() {
         super.onCreate()
         inMarcia = true
         prefs = Prefs.get(this)
         usage = UsageReader(this)
         createChannel()
+        registerReceiver(schermoSpento, IntentFilter(Intent.ACTION_SCREEN_OFF))
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -82,6 +99,7 @@ class GuardService : Service() {
 
     override fun onDestroy() {
         inMarcia = false
+        runCatching { unregisterReceiver(schermoSpento) }
         scope.cancel()
         super.onDestroy()
     }
