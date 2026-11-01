@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -148 561 148"
+     role="img" aria-label="StarKid">
+  <!-- Generato da design/genera.sh: non si modifica a mano. -->
+  <g fill="none" stroke-width="26" stroke-linecap="round" stroke-linejoin="round">
+    <g stroke="#FFFFFF">
+  <path d="M69.89 -100.98A28.5 28.5 0 1 0 41.5 -70A28.5 28.5 0 1 1 13.11 -43.98"/>
+  <path d="M111 -121L111 -13M98 -100L146 -100"/>
+  <path d="M171 -50A37 37 0 1 1 245 -50A37 37 0 1 1 171 -50M245 -87L245 -13"/>
+  <path d="M282 -87L282 -13M282 -59A28 28 0 0 1 310 -87"/>
+    </g>
+    <g stroke="#FFC846" fill="#FFC846">
+  <path d="M340 -127L340 -13M388 -127L342 -72M346 -72L392 -13"/>
+  <path d="M433 -87L433 -13"/>
+  <path d="M474 -50A37 37 0 1 1 548 -50A37 37 0 1 1 474 -50M548 -135L548 -13"/>
+  <circle cx="433" cy="-122" r="13" fill="#FFC846" stroke="none"/>
+    </g>
+  </g>
+</svg>

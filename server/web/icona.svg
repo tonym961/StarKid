@@ -1,6 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="StarKid">
-  <!-- Una stella su sfondo lilla: la stessa idea del logo del progetto,
-       ridotta a quello che si distingue in una linguetta del browser. -->
-  <rect width="32" height="32" rx="7" fill="#5b3fd1"/>
-  <path d="M16 5.5l3.2 6.9 7.3.9-5.4 5.1 1.4 7.4L16 22.2l-6.5 3.6 1.4-7.4-5.4-5.1 7.3-.9z" fill="#ffe08a"/>
+  <!-- Generato da design/genera.sh: non si modifica a mano.
+       Niente volto: a 16px due occhi da mezzo pixel sembrano sporco. -->
+  <defs>
+    <linearGradient id="oro" x1="0.1" y1="0" x2="0.5" y2="1">
+      <stop offset="0" stop-color="#FFE48F"/>
+      <stop offset="0.55" stop-color="#FFC846"/>
+      <stop offset="1" stop-color="#F09A2B"/>
+    </linearGradient>
+    <linearGradient id="cielo" x1="0" y1="0" x2="0.4" y2="1">
+      <stop offset="0" stop-color="#1B2550"/>
+      <stop offset="1" stop-color="#070B1E"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="7" fill="url(#cielo)"/>
+  <g transform="translate(16 16) scale(0.139011)">
+    <path d="M-8.111 -72.887Q0 -91.723 8.111 -72.887L21.09 -42.751Q27.038 -28.938 42.013 -27.549L74.685 -24.519Q95.106 -22.625 79.699 -9.09L55.047 12.566Q43.749 22.492 47.055 37.163L54.27 69.173Q58.779 89.179 41.145 78.708L12.931 61.955Q0 54.277 -12.931 61.955L-41.145 78.708Q-58.779 89.179 -54.27 69.173L-47.055 37.163Q-43.749 22.492 -55.047 12.566L-79.699 -9.09Q-95.106 -22.625 -74.685 -24.519L-42.013 -27.549Q-27.038 -28.938 -21.09 -42.751Z" fill="url(#oro)"/>
+  </g>
 </svg>

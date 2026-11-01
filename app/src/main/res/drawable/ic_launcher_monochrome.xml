@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generato da design/genera.sh: non si modifica a mano.
+     Android 13 e oltre tinge questo strato con i colori del telefono: deve
+     essere una sagoma sola, senza sfumature e senza volto, perche il volto a
+     tinta unita sparirebbe comunque. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group android:translateX="54" android:translateY="54"
+           android:scaleX="0.312775" android:scaleY="0.312775">
+        <path android:pathData="M-8.111 -72.887Q0 -91.723 8.111 -72.887L21.09 -42.751Q27.038 -28.938 42.013 -27.549L74.685 -24.519Q95.106 -22.625 79.699 -9.09L55.047 12.566Q43.749 22.492 47.055 37.163L54.27 69.173Q58.779 89.179 41.145 78.708L12.931 61.955Q0 54.277 -12.931 61.955L-41.145 78.708Q-58.779 89.179 -54.27 69.173L-47.055 37.163Q-43.749 22.492 -55.047 12.566L-79.699 -9.09Q-95.106 -22.625 -74.685 -24.519L-42.013 -27.549Q-27.038 -28.938 -21.09 -42.751Z" android:fillColor="#FFFFFF"/>
+    </group>
+</vector>

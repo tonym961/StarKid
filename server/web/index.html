@@ -46,7 +46,15 @@
      in un .avviso, e tutto il resto sta dentro il modulo. -->
 <main id="principale" class="stretta">
 
-  <h1>Star<span class="tenue">Kid</span></h1>
+  <!-- Il marchio e disegnato, non scritto: stella.svg e parola.svg escono
+       tutti e due da design/genera.sh. Il testo resta qui dentro per chi
+       legge con la voce e per quando le immagini non arrivano; la CSS lo
+       toglie dalla vista ma non dalla pagina. -->
+  <h1>
+    <img src="stella.svg" alt="" width="76" height="76">
+    <img src="parola.svg" alt="" width="131" height="35">
+    <span class="solo-voce">StarKid</span>
+  </h1>
   <p class="tenue">I tablet dei tuoi bambini, da qui.</p>
 
   <div id="messaggio" class="nascosto" aria-live="polite"></div>

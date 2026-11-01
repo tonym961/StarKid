@@ -1,56 +1,58 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="960" height="280" viewBox="0 0 960 280" role="img" aria-label="StarKid">
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="280"
+     viewBox="0 0 960 280" role="img" aria-label="StarKid">
   <title>StarKid</title>
+  <!-- Generato da design/genera.sh: non si modifica a mano. -->
   <defs>
-    <linearGradient id="sky" x1="0" y1="0" x2="0.3" y2="1">
+    <linearGradient id="oro" x1="0.1" y1="0" x2="0.5" y2="1">
+      <stop offset="0" stop-color="#FFE48F"/>
+      <stop offset="0.55" stop-color="#FFC846"/>
+      <stop offset="1" stop-color="#F09A2B"/>
+    </linearGradient>
+    <linearGradient id="cielo" x1="0" y1="0" x2="0.3" y2="1">
       <stop offset="0" stop-color="#1F2A63"/>
       <stop offset="1" stop-color="#070B1E"/>
     </linearGradient>
-    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#FFE57F"/>
-      <stop offset="1" stop-color="#FFB300"/>
-    </linearGradient>
-    <linearGradient id="flame" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#FFD54F"/>
-      <stop offset="1" stop-color="#FF7043"/>
-    </linearGradient>
   </defs>
-
-  <rect width="960" height="280" rx="40" fill="url(#sky)"/>
-
-  <!-- cielo stellato -->
-  <g fill="#FFFFFF">
-    <circle cx="62" cy="48" r="2.6" opacity="0.85"/>
-    <circle cx="128" cy="236" r="2" opacity="0.6"/>
-    <circle cx="246" cy="62" r="1.8" opacity="0.7"/>
-    <circle cx="300" cy="212" r="2.4" opacity="0.5"/>
-    <circle cx="412" cy="44" r="1.8" opacity="0.6"/>
-    <circle cx="520" cy="238" r="2.2" opacity="0.5"/>
-    <circle cx="636" cy="52" r="2" opacity="0.65"/>
-    <circle cx="742" cy="226" r="1.8" opacity="0.5"/>
-    <circle cx="828" cy="70" r="2.6" opacity="0.8"/>
-    <circle cx="902" cy="190" r="2" opacity="0.6"/>
-    <circle cx="880" cy="112" r="1.6" opacity="0.45"/>
-    <circle cx="690" cy="150" r="1.6" opacity="0.4"/>
+  <rect width="960" height="280" rx="40" fill="url(#cielo)"/>
+  <circle cx="62" cy="48" r="2.6" fill="#FFFFFF" opacity="0.85"/>
+  <circle cx="128" cy="236" r="2" fill="#FFFFFF" opacity="0.60"/>
+  <circle cx="246" cy="62" r="1.8" fill="#FFFFFF" opacity="0.70"/>
+  <circle cx="300" cy="232" r="2.4" fill="#FFFFFF" opacity="0.50"/>
+  <circle cx="412" cy="44" r="1.8" fill="#FFFFFF" opacity="0.60"/>
+  <circle cx="520" cy="238" r="2.2" fill="#FFFFFF" opacity="0.50"/>
+  <circle cx="636" cy="52" r="2" fill="#FFFFFF" opacity="0.65"/>
+  <circle cx="742" cy="236" r="1.8" fill="#FFFFFF" opacity="0.50"/>
+  <circle cx="828" cy="60" r="2.6" fill="#FFFFFF" opacity="0.80"/>
+  <circle cx="902" cy="230" r="2" fill="#FFFFFF" opacity="0.60"/>
+  <circle cx="880" cy="42" r="1.6" fill="#FFFFFF" opacity="0.45"/>
+  <circle cx="160" cy="252" r="1.6" fill="#FFFFFF" opacity="0.40"/>
+  <g transform="translate(185.270 200.000) scale(0.810811)">
+    <g transform="translate(66.000 -70.000) scale(0.764561)">
+      <path d="M-8.111 -72.887Q0 -91.723 8.111 -72.887L21.09 -42.751Q27.038 -28.938 42.013 -27.549L74.685 -24.519Q95.106 -22.625 79.699 -9.09L55.047 12.566Q43.749 22.492 47.055 37.163L54.27 69.173Q58.779 89.179 41.145 78.708L12.931 61.955Q0 54.277 -12.931 61.955L-41.145 78.708Q-58.779 89.179 -54.27 69.173L-47.055 37.163Q-43.749 22.492 -55.047 12.566L-79.699 -9.09Q-95.106 -22.625 -74.685 -24.519L-42.013 -27.549Q-27.038 -28.938 -21.09 -42.751Z" fill="url(#oro)"/>
+  <g fill="#0B1330">
+    <circle cx="-21" cy="-14" r="9.5"/>
+    <circle cx="21" cy="-14" r="9.5"/>
   </g>
-
-  <!-- la stella -->
-  <path fill="url(#gold)"
-        d="M150 78 L166.2 127.8 L218.5 127.8 L176.2 158.5 L192.3 208.2
-           L150 177.5 L107.7 208.2 L123.8 158.5 L81.5 127.8 L133.8 127.8 Z"/>
-
-  <!-- il razzo, in volo verso l'alto a destra -->
-  <g transform="translate(222 92) rotate(38)">
-    <path fill="#FFFFFF"
-          d="M0 -34 C9 -21 13 -6 13 8 L13 22 L-13 22 L-13 8 C-13 -6 -9 -21 0 -34 Z"/>
-    <path fill="#E53935" d="M0 -34 C6 -26 10 -16 11 -8 L-11 -8 C-10 -16 -6 -26 0 -34 Z"/>
-    <path fill="#E53935" d="M13 8 L25 28 L13 22 Z"/>
-    <path fill="#E53935" d="M-13 8 L-25 28 L-13 22 Z"/>
-    <circle cx="0" cy="-2" r="6" fill="#1F2A63"/>
-    <path fill="url(#flame)" d="M-7 22 L0 46 L7 22 Z"/>
+  <path d="M-15 8Q0 26 15 8" fill="none" stroke="#0B1330" stroke-width="7.5" stroke-linecap="round"/>
+  <g fill="#F2714E" opacity="0.3">
+    <ellipse cx="-38" cy="4" rx="11" ry="7"/>
+    <ellipse cx="38" cy="4" rx="11" ry="7"/>
   </g>
-
-  <!-- marchio -->
-  <text x="300" y="150" font-family="Verdana,DejaVu Sans,sans-serif" font-size="78" font-weight="bold" fill="#FFFFFF">Star</text>
-  <text x="474" y="150" font-family="Verdana,DejaVu Sans,sans-serif" font-size="78" font-weight="bold" fill="#FFC846">Kid</text>
-  <text x="302" y="196" font-family="Verdana,DejaVu Sans,sans-serif" font-size="27" fill="#B6C1E8">Launcher Android per bambini</text>
+    </g>
+    <g transform="translate(166.000 0)"
+       fill="none" stroke-width="26" stroke-linecap="round" stroke-linejoin="round">
+      <g stroke="#FFFFFF">
+  <path d="M69.89 -100.98A28.5 28.5 0 1 0 41.5 -70A28.5 28.5 0 1 1 13.11 -43.98"/>
+  <path d="M111 -121L111 -13M98 -100L146 -100"/>
+  <path d="M171 -50A37 37 0 1 1 245 -50A37 37 0 1 1 171 -50M245 -87L245 -13"/>
+  <path d="M282 -87L282 -13M282 -59A28 28 0 0 1 310 -87"/>
+      </g>
+      <g stroke="#FFC846" fill="#FFC846">
+  <path d="M340 -127L340 -13M388 -127L342 -72M346 -72L392 -13"/>
+  <path d="M433 -87L433 -13"/>
+  <path d="M474 -50A37 37 0 1 1 548 -50A37 37 0 1 1 474 -50M548 -135L548 -13"/>
+  <circle cx="433" cy="-122" r="13" fill="#FFC846" stroke="none"/>
+      </g>
+    </g>
+  </g>
 </svg>

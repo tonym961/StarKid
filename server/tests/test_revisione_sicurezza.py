@@ -363,3 +363,86 @@ def test_install_copia_tutto_quello_che_serve_per_partire() -> None:
     # ricorda che il controllo esiste.
     for cartella in ("app", "web", "schema"):
         assert 'cp -a "$SRC/%s"' % cartella in testo, cartella
+
+
+# ---------------------------------------------------------------------------
+# Il marchio
+# ---------------------------------------------------------------------------
+
+SERVER = Path(__file__).resolve().parent.parent
+PROGETTO = SERVER.parent
+
+# Sulla VPS esiste solo server/: il resto del progetto (docs/, l'app Android)
+# non ci viene copiato, e non deve esserci. I pezzi di marchio che stanno
+# fuori da server/ si controllano quindi solo dove il progetto e intero, e
+# quando non lo e il test lo DICE invece di passare in silenzio.
+PROGETTO_INTERO = (PROGETTO / "docs").is_dir() and (PROGETTO / "app/src/main/res").is_dir()
+
+
+def test_il_marchio_e_una_stella_sola_dappertutto() -> None:
+    """Gli otto file del marchio portano la STESSA stella, carattere per carattere.
+
+    Prima il logo era un path di dieci vertici messi a occhio, ricopiato in
+    quattro posti con quattro misure diverse: la favicon, la testata, le
+    stelline dei giudizi e l'icona Android erano quattro stelle imparentate
+    alla lontana. Adesso il path lo calcola design/stella.sh e lo scrive
+    design/genera.sh, una volta sola, in tutti i file. Questo test fallisce
+    appena qualcuno ne ritocca uno a mano - che e esattamente il modo in cui
+    un sistema di segni torna a essere un mucchio di disegni.
+    """
+    web = SERVER / "web"
+    drawable = PROGETTO / "app/src/main/res/drawable"
+    file_marchio = [web / "stella.svg", web / "marchio.svg", web / "icona.svg", web / "app.css"]
+    if PROGETTO_INTERO:
+        file_marchio += [
+            PROGETTO / "docs/logo.svg",
+            drawable / "ic_launcher_foreground.xml",
+            drawable / "ic_launcher_monochrome.xml",
+        ]
+    # La prima curva della stella basta a riconoscerla: e il vertice della
+    # punta in alto, e cambia appena si tocca il raggio o l'arrotondamento.
+    impronta = "M-8.111 -72.887Q0 -91.723 8.111 -72.887"
+    for f in file_marchio:
+        assert f.is_file(), f"manca {f}"
+        assert impronta in f.read_text(encoding="utf-8"), (
+            f"{f.name} non ha la stella generata: rilancia ./design/genera.sh"
+        )
+
+
+def test_i_file_generati_dicono_di_esserlo() -> None:
+    """Chi apre uno di questi file deve capire subito che non va modificato li."""
+    generati = [
+        SERVER / "web/stella.svg",
+        SERVER / "web/parola.svg",
+        SERVER / "web/marchio.svg",
+        SERVER / "web/icona.svg",
+    ]
+    if PROGETTO_INTERO:
+        generati += [
+            PROGETTO / "docs/logo.svg",
+            PROGETTO / "app/src/main/res/drawable/ic_launcher_foreground.xml",
+            PROGETTO / "app/src/main/res/drawable/ic_launcher_background.xml",
+            PROGETTO / "app/src/main/res/drawable/ic_launcher_monochrome.xml",
+        ]
+    for f in generati:
+        assert "design/genera.sh" in f.read_text(encoding="utf-8"), f.name
+
+
+def test_il_nome_del_prodotto_non_e_piu_testo() -> None:
+    """Un marchio scritto con un font di sistema cambia disegno da un telefono
+    all'altro, e su Android Verdana non c'e proprio. Le cinque pagine devono
+    mettere l'immagine, e il foglio di stile non deve piu avere la pila di
+    caratteri del marchio.
+    """
+    web = SERVER / "web"
+    css = (web / "app.css").read_text(encoding="utf-8")
+    assert "--font-marchio:" not in css, "la pila Verdana del marchio e tornata"
+    for pagina in ("galleria.html", "nuovo.html", "salute.html", "tablet.html", "tablets.html"):
+        testo = (web / pagina).read_text(encoding="utf-8")
+        assert 'class="marchio"' in testo, pagina
+        assert 'src="marchio.svg"' in testo, f"{pagina}: il marchio non e l'immagine"
+        assert "Star<span>Kid</span>" not in testo, f"{pagina}: marchio ancora scritto a mano"
+    accesso = (web / "index.html").read_text(encoding="utf-8")
+    assert 'src="stella.svg"' in accesso and 'src="parola.svg"' in accesso
+    # Il nome resta nella pagina per chi legge con la voce.
+    assert ">StarKid</span>" in accesso, "il nome non c'e piu nemmeno per i lettori di schermo"

@@ -23,3 +23,6 @@ __pycache__/
 *.db-wal
 venv/
 .venv/
+
+# Uscite del generatore del marchio: si rifanno con ./design/genera.sh
+design/out/

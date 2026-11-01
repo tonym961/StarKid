@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Lo sfondo della finestra mentre l'app parte. -->
     <color name="launcher_background">#FFF6ECFF</color>
-    <color name="ic_launcher_background">#FF42A5F5</color>
+    <!-- ic_launcher_background non c'e piu: lo sfondo dell'icona adattiva non
+         e un colore piatto ma un disegno, @drawable/ic_launcher_background,
+         generato da design/genera.sh insieme al resto del marchio. -->
 </resources>

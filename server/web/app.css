@@ -86,15 +86,19 @@
      coincidono di proposito: su un telefono il motivo non si legge mai. */
   --stelle-larghe: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='790' height='790'%3E%3Cg fill='white' opacity='.62'%3E%3Ccircle cx='71' cy='203' r='1.9'/%3E%3Ccircle cx='298' cy='97' r='1.9'/%3E%3Ccircle cx='512' cy='341' r='1.9'/%3E%3Ccircle cx='167' cy='588' r='1.9'/%3E%3Ccircle cx='639' cy='166' r='1.9'/%3E%3Ccircle cx='401' cy='703' r='1.9'/%3E%3Ccircle cx='713' cy='529' r='1.9'/%3E%3C/g%3E%3C/svg%3E");
 
-  /* Stella piena: e esattamente il path di icona.svg, copiato tale e quale,
-     quindi la stella della testata e la stella della linguetta del browser
-     sono la stessa stella. */
-  --m-stella-piena: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 5.5l3.2 6.9 7.3.9-5.4 5.1 1.4 7.4L16 22.2l-6.5 3.6 1.4-7.4-5.4-5.1 7.3-.9z'/%3E%3C/svg%3E");
+  /* Stella piena: la stessa geometria del marchio, generata da
+     design/genera.sh insieme a tutto il resto - cinque punte a 72 gradi
+     esatti, arrotondate con una quadratica per vertice. Non si ritocca qui:
+     si cambia il numero in design/genera.sh e si rigenera, altrimenti fra
+     sei mesi la stella del logo e quella dei giudizi sono due stelle diverse.
+     Qui NON c'e il volto e non c'e la sfumatura: questa e un'icona, il
+     marchio e un'altra cosa. */
+  --m-stella-piena: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-86.324 -86.324 172.648 172.648'%3E%3Cpath d='M-8.111 -72.887Q0 -91.723 8.111 -72.887L21.09 -42.751Q27.038 -28.938 42.013 -27.549L74.685 -24.519Q95.106 -22.625 79.699 -9.09L55.047 12.566Q43.749 22.492 47.055 37.163L54.27 69.173Q58.779 89.179 41.145 78.708L12.931 61.955Q0 54.277 -12.931 61.955L-41.145 78.708Q-58.779 89.179 -54.27 69.173L-47.055 37.163Q-43.749 22.492 -55.047 12.566L-79.699 -9.09Q-95.106 -22.625 -74.685 -24.519L-42.013 -27.549Q-27.038 -28.938 -21.09 -42.751Z'/%3E%3C/svg%3E");
 
   /* Stella vuota: lo stesso path, solo contornato. Serve a dire "manca una
      stella" invece di "una stella ha cambiato colore": e la forma, non il
      colore, a portare l'informazione. */
-  --m-stella-vuota: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 5.5l3.2 6.9 7.3.9-5.4 5.1 1.4 7.4L16 22.2l-6.5 3.6 1.4-7.4-5.4-5.1 7.3-.9z' fill='none' stroke='black' stroke-width='2.6' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --m-stella-vuota: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-86.324 -86.324 172.648 172.648'%3E%3Cpath d='M-8.111 -72.887Q0 -91.723 8.111 -72.887L21.09 -42.751Q27.038 -28.938 42.013 -27.549L74.685 -24.519Q95.106 -22.625 79.699 -9.09L55.047 12.566Q43.749 22.492 47.055 37.163L54.27 69.173Q58.779 89.179 41.145 78.708L12.931 61.955Q0 54.277 -12.931 61.955L-41.145 78.708Q-58.779 89.179 -54.27 69.173L-47.055 37.163Q-43.749 22.492 -55.047 12.566L-79.699 -9.09Q-95.106 -22.625 -74.685 -24.519L-42.013 -27.549Q-27.038 -28.938 -21.09 -42.751Z' fill='none' stroke='black' stroke-width='15' stroke-linejoin='round'/%3E%3C/svg%3E");
 
   /* ---- tema chiaro: LA CARTA (ed e il tema Pulito dell'app) ---------- */
   --sfondo: #F3F0F9;
@@ -138,8 +142,11 @@
 
   /* ---- LA NOTTE: valori fissi, identici nei due temi ------------------ */
   --notte: #070B1E;              /* SpaceInk: lo stesso fondo del logo */
-  --oro: #FFC846;                /* il "Kid" del logo - 12,65:1 sulla notte */
-  --oro-alto: #FFE57F;           /* alto del gradiente oro del logo */
+  --oro: #FFC846;                /* il "Kid" del marchio - 12,65:1 sulla
+                                    notte. E anche il tono di mezzo della
+                                    sfumatura della stella: #FFE48F in alto,
+                                    questo al centro, #F09A2B in basso. I tre
+                                    valori veri stanno in design/genera.sh. */
   --notte-testo: #EAEEFF;        /* 16,90:1 sulla notte */
   --notte-tenue: #B6C1E8;        /* 10,96:1 */
   --notte-bordo: #28325C;        /* solo filetto interno */
@@ -164,12 +171,15 @@
   --r-piccolo: 6px;
   --r-pillola: 999px;
 
-  /* ---- tipografia: tre pile, tutte di sistema ------------------------ */
+  /* ---- tipografia: due pile, tutte e due di sistema ------------------ */
+  /* C'era anche --font-marchio, che era Verdana e serviva a scrivere il nome
+     del prodotto nella testata. Il commento di allora diceva: "su Android non
+     c'e e si cade su Roboto. Costo accettato: sono due parole, e un font non
+     si puo scaricare". Il costo non era accettabile - un marchio che cambia
+     disegno a seconda del telefono non e un marchio - e la via d'uscita non
+     era scaricare un font: era disegnare le sette lettere. Adesso il nome e
+     un SVG (design/parola.sh) e qui non serve piu nessuna pila. */
   --font-testo: system-ui, -apple-system, "Segoe UI Variable Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  /* La stessa pila dichiarata dentro docs/logo.svg. Dove Verdana c'e la
-     testata e identica al logo; su Android non c'e e si cade su Roboto.
-     Costo accettato: sono due parole, e un font non si puo scaricare. */
-  --font-marchio: Verdana, "DejaVu Sans", system-ui, sans-serif;
   --font-mono: ui-monospace, "Cascadia Mono", SFMono-Regular, Consolas, "Liberation Mono", monospace;
 }
 
@@ -325,6 +335,20 @@ li { margin-bottom: 4px; }
 }
 .salta:focus { left: 8px; top: 8px; }
 
+/* Via dagli occhi ma non dalla pagina: lo legge chi usa la voce. Non si usa
+   display:none ne visibility:hidden, che lo toglierebbero anche a lei. */
+.solo-voce {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* Utilita, con lo stesso nome e lo stesso significato di prima: il JS le
    scrive e le pagine le usano. */
 .tenue { color: var(--testo-tenue); }
@@ -472,29 +496,28 @@ html { scroll-padding-bottom: 220px; }
   border-bottom: 1px solid var(--oro);
 }
 
+/* IL MARCHIO E UN DISEGNO, NON DEL TESTO.
+   Prima qui c'era "Star" in Verdana grassetto con "Kid" d'oro, piu una
+   stellina fatta con una maschera. Due problemi, non uno: Verdana e un
+   carattere da leggere, non da marchio, e soprattutto un marchio scritto
+   CAMBIA DISEGNO da un dispositivo all'altro - dove Verdana non c'e, e su
+   Android non c'e, scattava il ripiego e il nome del prodotto veniva
+   un'altra cosa. Adesso le pagine mettono <img src="marchio.svg">, che e
+   stella piu parola disegnate da design/genera.sh: identico ovunque, nitido
+   a qualsiasi ingrandimento, 2 KB, e l'alt porta il nome a chi legge con la
+   voce. Le misure in width/height nell'HTML non sono decorative: tengono il
+   posto prima che l'immagine arrivi, cosi la barra non sobbalza. */
 .marchio {
-  font: 700 18px/1 var(--font-marchio);
-  letter-spacing: -.005em;
-  color: #FFFFFF;                /* 19,52:1 sulla notte */
   text-decoration: none;
   display: inline-flex;
   align-items: center;
   min-height: 44px;
 }
-.marchio span { color: var(--oro); }   /* 12,65:1 */
-
-/* La stella del logo, lo stesso path di icona.svg, d'oro sulla notte.
-   Lo spazio dalla parola lo mette la stella con il suo margine, NON un gap
-   del flex: "Star" e <span>Kid</span> sono due elementi flex distinti, quindi
-   un gap cade anche fra loro e il nome del prodotto si legge "Star Kid". Si
-   vedeva in cima a tutte e cinque le pagine. */
-.marchio::before {
-  content: "";
-  width: 20px;
-  height: 20px;
-  margin-right: 8px;
-  flex: 0 0 auto;
-  background-color: var(--oro);
+.marchio img {
+  display: block;                /* senza, l'immagine sta sulla riga di base
+                                    e si porta dietro lo spazio del discendente */
+  height: 26px;
+  width: auto;
 }
 
 .barra nav { display: flex; gap: 4px; flex-wrap: wrap; }
@@ -578,23 +601,19 @@ main.stretta {
 }
 
 /* Solo i figli diretti che stanno davvero sulla notte. */
+/* Il titolo della pagina di accesso E il marchio, in grande: la stella col
+   volto sopra, la parola sotto. Qui c'e spazio, quindi la stella si porta
+   anche gli occhi e il sorriso - cosa che a 26px nella barra non avrebbe
+   senso, e infatti marchio.svg a quella misura e la stessa stella senza
+   volto. Il nome resta scritto nell'h1 per la voce: lo toglie .solo-voce. */
 main.stretta > h1 {
-  font: 700 26px/1.2 var(--font-marchio);
-  letter-spacing: -.01em;
-  color: #FFFFFF;
-  margin: 0 0 6px;
+  margin: 0 0 10px;
+  line-height: 0;                /* le due immagini sono blocchi: senza questo
+                                    l'h1 si tiene l'interlinea del testo che
+                                    non si vede */
 }
-/* index.html scrive Star<span class="tenue">Kid</span>: questa regola deve
-   vincere su .tenue, quindi sta dopo nel foglio. */
-main.stretta > h1 span { color: var(--oro); }
-main.stretta > h1::before {
-  content: "";
-  display: block;
-  width: 44px;
-  height: 44px;
-  margin: 0 auto 12px;
-  background-color: var(--oro-alto);
-}
+main.stretta > h1 img { display: block; margin: 0 auto; }
+main.stretta > h1 img + img { margin-top: 12px; }
 main.stretta > p { color: var(--notte-tenue); }
 main.stretta > p.piccolo { color: var(--notte-tenue); text-align: left; }
 
@@ -725,9 +744,11 @@ main.stretta #entra { width: 100%; min-height: 52px; font-size: 17px; }
    nelle spie, e le forme sono tre (piena / vuota ambra / vuota rossa). Lo
    stato non e MAI solo nel colore. */
 
-/* Le maschere. La prima riga di ogni coppia e per Safari fino a 15.3. */
-.marchio::before,
-main.stretta > h1::before,
+/* Le maschere. La prima riga di ogni coppia e per Safari fino a 15.3.
+   Il marchio NON e piu qui dentro: una stellina tinta con background-color
+   non puo avere ne sfumatura ne volto, e soprattutto il marchio e la spia di
+   un permesso non devono essere lo stesso oggetto. Qui restano solo le
+   icone. */
 .tablet::after,
 .spia.accesa::before {
   -webkit-mask-image: var(--m-stella-piena);
