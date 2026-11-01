@@ -189,7 +189,12 @@ class MainActivity : ComponentActivity() {
         // task - che e poi il motivo per cui dalle impostazioni non si
         // riusciva ad arrivare alle opzioni sviluppatore: a restringerle
         // non era StarKid, era Android.
-        if (prefs.current.kioskEnabled && !inManutenzione()) Kiosk.enter(this)
+        if (prefs.current.kioskEnabled && !inManutenzione()) {
+            // Richiude anche gli account: la manutenzione puo essere scaduta
+            // da sola, senza che nessuno sia passato da chiudiManutenzione().
+            Kiosk.consentiAccount(this, false)
+            Kiosk.enter(this)
+        }
     }
 
     override fun onPause() {
@@ -218,12 +223,21 @@ class MainActivity : ComponentActivity() {
     private fun apriManutenzione() {
         prefs.pauseGuard(MINUTI_MANUTENZIONE)
         Kiosk.exit(this)
+        // Anche gli account, per questi minuti. Alcune cose che il genitore
+        // viene a fare qui si fanno solo dentro un'altra app e solo da
+        // entrati: scegliere i canali approvati di YouTube Kids e proprio
+        // una di quelle. Si richiude sotto, e si richiude anche se la
+        // manutenzione scade da sola (vedi onResume).
+        Kiosk.consentiAccount(this, true)
     }
 
     private fun chiudiManutenzione() {
         if (!inManutenzione()) return
         prefs.resumeGuard()
-        if (prefs.current.kioskEnabled) Kiosk.enter(this)
+        if (prefs.current.kioskEnabled) {
+            Kiosk.consentiAccount(this, false)
+            Kiosk.enter(this)
+        }
     }
 
     @Composable

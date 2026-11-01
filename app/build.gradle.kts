@@ -26,8 +26,8 @@ android {
         // Numerazione: 1.0.1, 1.0.2 ... fino a 1.0.99. Il versionCode e
         // l'ultimo numero: Android aggiorna solo se cresce, quindi non va
         // mai riusato ne abbassato.
-        versionCode = 3
-        versionName = "1.0.3"
+        versionCode = 4
+        versionName = "1.0.4"
     }
 
     signingConfigs {

@@ -192,7 +192,36 @@ object Kiosk {
         runCatching { dpm.clearUserRestriction(admin, UserManager.DISALLOW_FACTORY_RESET) }
         runCatching { dpm.clearUserRestriction(admin, UserManager.DISALLOW_ADD_USER) }
         runCatching { dpm.clearUserRestriction(admin, UserManager.DISALLOW_UNINSTALL_APPS) }
+        // Questa mancava, ed era la peggiore delle quattro: il kiosk spento
+        // lasciava gli account bloccati per sempre, su quell'utente, senza
+        // nessun modo di riaprirli. Si vedeva solo provando a entrare in un
+        // servizio - per esempio in YouTube Kids, dove per scegliere i canali
+        // approvati bisogna per forza accedere.
+        runCatching { dpm.clearUserRestriction(admin, UserManager.DISALLOW_MODIFY_ACCOUNTS) }
         runCatching { dpm.setLockTaskPackages(admin, emptyArray()) }
+    }
+
+    /**
+     * Apre o richiude la modifica degli account, lasciando stare tutto il
+     * resto del kiosk.
+     *
+     * Ha una vita sua, separata da [applyPolicies], perche c'e un momento in
+     * cui serve aperta col kiosk acceso: la manutenzione. Il genitore esce
+     * verso un'altra app e li dentro fa una cosa che da StarKid non si puo
+     * fare - accedere a YouTube Kids per scegliere i canali che il bambino
+     * puo vedere, per dirne una. Si richiude quando la manutenzione finisce.
+     */
+    fun consentiAccount(context: Context, si: Boolean) {
+        if (!canManage(context)) return
+        val dpm = policyManager(context)
+        val admin = admin(context)
+        runCatching {
+            if (si) {
+                dpm.clearUserRestriction(admin, UserManager.DISALLOW_MODIFY_ACCOUNTS)
+            } else {
+                dpm.addUserRestriction(admin, UserManager.DISALLOW_MODIFY_ACCOUNTS)
+            }
+        }
     }
 
     /**
