@@ -352,16 +352,29 @@
       <p class="piccolo tenue">Oltre ai giochi di StarKid, solo queste. Tutto
       il resto resta chiuso anche se e installato sul tablet.</p>
 
-      <div class="campo">
-        <label for="app">Nomi dei pacchetti, uno per riga</label>
-        <textarea id="app" spellcheck="false" autocapitalize="none"
-                  placeholder="com.esempio.gioco&#10;org.esempio.disegno"
-                  aria-describedby="aiuto-app errore-app_permesse"></textarea>
-        <span class="aiuto" id="aiuto-app">Il nome del pacchetto si legge sul tablet, in Area
-        genitori &gt; App permesse, e si scrive per intero, con i punti. Se
-        qui l'elenco e vuoto, al bambino restano i giochi di StarKid.</span>
-        <div class="errore-campo nascosto" id="errore-app_permesse"></div>
-      </div>
+      <p class="piccolo tenue" id="app-quando">&nbsp;</p>
+
+      <!-- L'elenco lo riempie il JS con quello che il tablet ha dichiarato
+           di avere installato. I nomi delle app li scrive chi ha fatto
+           l'app, non noi: si mettono con textContent e sempre accanto al
+           nome del pacchetto. -->
+      <div id="app-elenco"></div>
+
+      <div class="errore-campo nascosto" id="errore-app_permesse"></div>
+
+      <details id="app-mano">
+        <summary>Scrivine una a mano</summary>
+        <div class="campo">
+          <label for="app">Nomi dei pacchetti, uno per riga</label>
+          <textarea id="app" spellcheck="false" autocapitalize="none"
+                    placeholder="com.esempio.gioco&#10;org.esempio.disegno"
+                    aria-describedby="aiuto-app"></textarea>
+          <span class="aiuto" id="aiuto-app">Serve per un'app non ancora
+          installata, o se il tablet non ha mandato l'elenco. Le spunte qui
+          sopra e questo riquadro sono la stessa cosa: cambiando una cambia
+          l'altro.</span>
+        </div>
+      </details>
     </fieldset>
 
     <fieldset class="carta">

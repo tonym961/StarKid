@@ -7,9 +7,9 @@ import java.net.URL
 import javax.net.ssl.HttpsURLConnection
 
 /**
- * Le quattro chiamate che il tablet fa al server di gestione.
+ * Le cinque chiamate che il tablet fa al server di gestione.
  *
- * Nessuna libreria: sono quattro rotte, tutte JSON, e HttpURLConnection
+ * Nessuna libreria: sono cinque rotte, tutte JSON, e HttpURLConnection
  * basta. Il tablet e un launcher che deve restare leggero e che funziona
  * benissimo senza rete; non e il caso di portarsi dentro un client HTTP per
  * questo.
@@ -63,6 +63,18 @@ class Server(private val indirizzo: String, private val token: String) {
             .put("guard_running", guardRunning)
             .put("default_home", defaultHome),
     )
+
+    /**
+     * L'elenco delle app installate, perche il genitore le spunti invece di
+     * scriverne il nome a mano. Dice cosa c'e, non cosa e stato usato.
+     */
+    fun appInstallate(app: List<Pair<String, String>>): JSONObject {
+        val elenco = JSONArray()
+        for ((pacchetto, nome) in app) {
+            elenco.put(JSONObject().put("pacchetto", pacchetto).put("nome", nome))
+        }
+        return chiama("POST", "/api/v1/device/apps", JSONObject().put("app", elenco))
+    }
 
     // -----------------------------------------------------------------------
 

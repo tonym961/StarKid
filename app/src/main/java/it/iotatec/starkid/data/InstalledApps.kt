@@ -73,6 +73,37 @@ object InstalledApps {
     }
 
     /**
+     * Pacchetto ed etichetta delle app avviabili, senza icone.
+     *
+     * E quello che si manda al server, perche il genitore spunti le app da
+     * un elenco invece di scriverne il nome a mano. Le icone non ci sono di
+     * proposito: costano a caricarle e di la non servirebbero a niente, e
+     * farebbero diventare un inventario di cento app qualche megabyte.
+     *
+     * StarKid non si elenca da sola: non e una app che il genitore debba
+     * permettere, e gia tutto il resto.
+     */
+    @Suppress("DEPRECATION") // queryIntentActivities(Intent, Int) va bene fino a SDK 35
+    fun inventario(context: Context): List<Pair<String, String>> {
+        val pm = context.packageManager
+        val query = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+        return runCatching {
+            pm.queryIntentActivities(query, 0)
+                .asSequence()
+                .map { it.activityInfo.applicationInfo }
+                .filter { it.packageName != context.packageName }
+                .distinctBy { it.packageName }
+                .map { info ->
+                    val etichetta = runCatching { pm.getApplicationLabel(info).toString() }
+                        .getOrDefault(info.packageName)
+                    info.packageName to etichetta
+                }
+                .sortedBy { it.second.lowercase() }
+                .toList()
+        }.getOrDefault(emptyList())
+    }
+
+    /**
      * I pacchetti che sanno fare da schermata iniziale, StarKid compresa.
      *
      * Serve al sorvegliante per accorgersi che davanti c'e **un altro

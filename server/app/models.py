@@ -63,6 +63,12 @@ IMPRONTA = re.compile(_IMPRONTA["impronta"]["pattern"])
 GIRI_MINIMI: int = int(_IMPRONTA["giri"]["minimum"])
 GIRI_MASSIMI: int = int(_IMPRONTA["giri"]["maximum"])
 
+# L'inventario delle app che il tablet dichiara. Non sta nello schema del
+# documento perche non e configurazione: va nell'altro verso, dal tablet al
+# server, e serve solo a far scegliere il genitore da un elenco.
+MASSIMO_INVENTARIO = 400
+LUNGHEZZA_ETICHETTA = 60
+
 # I nomi dei campi, per i "campi_rifiutati" che manda il tablet: anche quelli
 # sono vocabolario chiuso, un dispositivo non deve poter scrivere una stringa
 # qualunque nella pagina del genitore.
@@ -501,6 +507,65 @@ class RichiestaAck(Richiesta):
         if len(set(nomi)) != len(nomi):
             raise ValueError("c'e un campo rifiutato due volte")
         return self
+
+
+class AppInstallata(Richiesta):
+    """Una app che c'e sul tablet: nome del pacchetto e come si chiama.
+
+    Il nome lo decide l'app stessa, quindi e testo che non abbiamo scritto
+    noi. Per i motivi dei campi rifiutati il testo libero dal dispositivo e
+    stato rifiutato del tutto; qui non si puo - "com.google.android.youtube"
+    non e un'etichetta da mettere davanti a una persona - e allora si
+    stringe: niente caratteri di controllo e sessanta caratteri, che non
+    bastano a scriverci una frase che convinca qualcuno a fare qualcosa. La
+    pagina del genitore mostra sempre anche il nome del pacchetto accanto,
+    cosi e chiaro di che app si parla.
+    """
+
+    pacchetto: str
+    nome: str = ""
+
+    @field_validator("pacchetto")
+    @classmethod
+    def _pacchetto(cls, valore: str) -> str:
+        nome = valore.strip()
+        if len(nome) > LUNGHEZZA_PACCHETTO or not PACCHETTO.fullmatch(nome):
+            raise ValueError("%r non e un nome di pacchetto Android" % valore)
+        return nome
+
+    @field_validator("nome")
+    @classmethod
+    def _nome(cls, valore: str) -> str:
+        return _CONTROLLO.sub("", valore).strip()[:LUNGHEZZA_ETICHETTA]
+
+
+class RichiestaAppInstallate(Richiesta):
+    """L'inventario che manda il tablet.
+
+    Arriva tutto insieme e sostituisce il precedente: un inventario a pezzi
+    non e un inventario. Il server non ne fa niente da solo - non tocca
+    app_permesse, non decide niente - lo tiene da parte perche la pagina del
+    genitore possa mostrare un elenco da spuntare. La configurazione continua
+    ad andare in una direzione sola.
+    """
+
+    app: list[AppInstallata] = Field(default_factory=list)
+
+    @field_validator("app")
+    @classmethod
+    def _app(cls, valore: list[AppInstallata]) -> list[AppInstallata]:
+        if len(valore) > MASSIMO_INVENTARIO:
+            raise ValueError("troppe app, al massimo %d" % MASSIMO_INVENTARIO)
+        visti: set[str] = set()
+        pulite: list[AppInstallata] = []
+        for voce in valore:
+            # Un pacchetto ripetuto non e un errore del tablet che valga un
+            # 422: sono due activity della stessa app. Si tiene la prima.
+            if voce.pacchetto in visti:
+                continue
+            visti.add(voce.pacchetto)
+            pulite.append(voce)
+        return sorted(pulite, key=lambda voce: (voce.nome.lower(), voce.pacchetto))
 
 
 class RichiestaSalute(Richiesta):

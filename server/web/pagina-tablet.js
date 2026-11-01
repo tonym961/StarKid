@@ -147,6 +147,121 @@
     }).filter(function (riga) { return riga.length > 0; });
   }
 
+  /* ------------------------------------------------- le app del tablet */
+
+  /* Quello che il tablet ha dichiarato di avere installato: null finche non
+     si sa, [] se non ha mai mandato niente. La differenza conta, perche le
+     due cose vanno dette in due modi diversi. */
+  var inventario = null;
+  var inventarioIl = null;
+
+  function caricaInventario() {
+    return SK.apiSessione('GET', '/api/v1/tablets/' + encodeURIComponent(ID) + '/apps')
+      .then(function (risposta) {
+        inventario = (risposta && Array.isArray(risposta.app)) ? risposta.app : [];
+        inventarioIl = risposta ? risposta.aggiornato_il : null;
+      })
+      .catch(function () {
+        /* Un elenco che non arriva non deve impedire di configurare: resta
+           il riquadro per scriverle a mano. */
+        inventario = [];
+        inventarioIl = null;
+      })
+      .then(disegnaElencoApp);
+  }
+
+  /* La textarea resta la verita: le spunte la scrivono, e da li leggono
+     raccogli() e le regole per app. Cosi non ci sono due elenchi da tenere
+     d'accordo, che e il modo classico di ritrovarsene uno sbagliato.
+
+     Quello che NON si fa e ridisegnare l'elenco: le caselle ci sono gia e
+     sono giuste, e rifarle vorrebbe dire buttare via quella appena toccata
+     con dentro il fuoco della tastiera. Chi spunta tre app di fila con Tab
+     e barra spaziatrice, dopo la prima si ritroverebbe in cima alla
+     pagina. */
+  function spunta(pacchetto, acceso) {
+    var elenco = appScritte();
+    var dentro = elenco.indexOf(pacchetto);
+    if (acceso && dentro < 0) elenco.push(pacchetto);
+    if (!acceso && dentro >= 0) elenco.splice(dentro, 1);
+    SK.$('#app').value = elenco.join('\n');
+    sporco = true;
+    disegnaRegole();
+  }
+
+  function rigaApp(pacchetto, nome, permessa, mancante) {
+    var id = 'app-' + pacchetto.replace(/[^a-zA-Z0-9]/g, '_');
+    var etichetta = SK.el('label', { classe: 'interruttore' });
+    etichetta.setAttribute('for', id);
+    var casella = SK.el('input', { id: id });
+    casella.type = 'checkbox';
+    casella.checked = permessa;
+    casella.addEventListener('change', function () { spunta(pacchetto, this.checked); });
+    etichetta.appendChild(casella);
+
+    var testo = SK.el('span', {});
+    /* Il nome lo scrive l'app, non noi: textContent, e sempre col nome del
+       pacchetto accanto, cosi si vede di che app si tratta davvero. */
+    testo.appendChild(document.createTextNode(nome || pacchetto));
+    var sotto = SK.el('span', { classe: 'aiuto' });
+    /* Senza nome il titolo e gia il pacchetto: ripeterlo sotto non dice
+       niente a nessuno. */
+    if (nome) sotto.appendChild(SK.el('span', { classe: 'pacchetto', testo: pacchetto }));
+    if (mancante) {
+      sotto.appendChild(document.createTextNode(
+        (nome ? ' - ' : '') + 'permessa, ma il tablet non la elenca fra le sue app'));
+    }
+    if (sotto.childNodes.length) testo.appendChild(sotto);
+    etichetta.appendChild(testo);
+    return etichetta;
+  }
+
+  function disegnaElencoApp() {
+    var contenitore = SK.svuota(SK.$('#app-elenco'));
+    var quando = SK.$('#app-quando');
+    var permesse = appScritte();
+
+    if (inventario === null) {
+      quando.textContent = 'Sto chiedendo al server quali app ha il tablet...';
+      return;
+    }
+
+    if (inventario.length === 0) {
+      quando.textContent = 'Il tablet non ha ancora mandato l\'elenco delle sue app. ' +
+        'Lo manda al prossimo collegamento, e da allora qui ci sono le spunte. ' +
+        'Intanto si scrivono a mano qui sotto.';
+      SK.$('#app-mano').open = true;
+    } else {
+      quando.textContent = 'Elenco dichiarato dal tablet' +
+        (inventarioIl ? ' ' + SK.quando(inventarioIl) : '') +
+        ': ' + inventario.length + (inventario.length === 1 ? ' app.' : ' app.') +
+        ' Spunta quelle che il bambino puo aprire.';
+    }
+
+    var elencate = [];
+    inventario.forEach(function (voce) {
+      if (!voce || !voce.pacchetto) return;
+      elencate.push(voce.pacchetto);
+      contenitore.appendChild(
+        rigaApp(voce.pacchetto, voce.nome, permesse.indexOf(voce.pacchetto) >= 0, false));
+    });
+
+    /* Permesse ma non installate: un'app tolta dal tablet, o scritta a mano
+       prima di installarla. Si vedono lo stesso, se no sparirebbero dalla
+       vista pur restando nel documento. */
+    permesse.forEach(function (pacchetto) {
+      if (elencate.indexOf(pacchetto) >= 0) return;
+      contenitore.appendChild(rigaApp(pacchetto, '', true, true));
+    });
+
+    if (contenitore.childNodes.length === 0) {
+      contenitore.appendChild(SK.el('p', {
+        classe: 'piccolo tenue',
+        testo: 'Nessuna app spuntata: al bambino restano i giochi di StarKid.'
+      }));
+    }
+  }
+
   function disegnaRegole() {
     var contenitore = SK.svuota(SK.$('#regole-app'));
     var elenco = appScritte();
@@ -309,6 +424,8 @@
     SK.$('#app').value = (Array.isArray(cfg.app_permesse) ? cfg.app_permesse : []).join('\n');
 
     raccontaPin(cfg);
+
+    disegnaElencoApp();
 
     regole = {};
     (Array.isArray(cfg.regole_app) ? cfg.regole_app : []).forEach(function (voce) {
@@ -634,8 +751,11 @@
        Se l'elenco non arriva, la configurazione si modifica comunque. */
     var elenco = SK.apiSessione('GET', '/api/v1/tablets').catch(function () { return null; });
     var configurazione = SK.apiSessione('GET', '/api/v1/tablets/' + encodeURIComponent(ID) + '/config');
+    /* Parte insieme alle altre due e non aspetta nessuno: se le app del
+       tablet non arrivano, la configurazione si modifica lo stesso. */
+    var app = caricaInventario();
 
-    return Promise.all([elenco, configurazione]).then(function (risultati) {
+    return Promise.all([elenco, configurazione, app]).then(function (risultati) {
       var dati = risultati[0];
       if (dati) {
         var grezzi = Array.isArray(dati) ? dati : (dati.tablets || dati.dispositivi || []);
@@ -679,8 +799,10 @@
     /* L'elenco delle regole segue quello delle app: si ridisegna appena si
        smette di scrivere, non a ogni tasto, o una riga a meta farebbe
        comparire e sparire righe mentre si digita. */
-    SK.$('#app').addEventListener('change', disegnaRegole);
-    SK.$('#app').addEventListener('blur', disegnaRegole);
+    /* Scrivendo a mano si rifanno tutte e due: le spunte qui sopra e le
+       regole per app guardano lo stesso elenco. */
+    SK.$('#app').addEventListener('change', function () { disegnaElencoApp(); disegnaRegole(); });
+    SK.$('#app').addEventListener('blur', function () { disegnaElencoApp(); disegnaRegole(); });
     SK.$('#scarica').addEventListener('click', scarica);
     SK.$('#annulla').addEventListener('click', function () {
       if (!base) return;

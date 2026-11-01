@@ -1739,3 +1739,21 @@ pre {
 .solo-admin { display: none; }
 :root[data-ruolo="admin"] .solo-admin { display: block; }
 :root[data-ruolo="admin"] .solo-non-admin { display: none; }
+
+/* L'elenco delle app che il tablet dichiara di avere. Il nome di
+   pacchetto va in monospace anche qui, dentro l'aiuto di un interruttore:
+   e l'unica cosa che distingue due app che si chiamano uguale. */
+.aiuto .pacchetto {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  overflow-wrap: anywhere;
+}
+
+/* "Scrivine una a mano": si apre solo a chi serve, e chiuso non deve
+   sembrare un errore della pagina. */
+#app-mano { margin-top: 14px; }
+#app-mano > summary {
+  cursor: pointer;
+  color: var(--tenue, #667);
+  font-size: 0.92rem;
+}
+#app-mano[open] > summary { margin-bottom: 10px; }

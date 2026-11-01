@@ -364,6 +364,27 @@ MIGRAZIONI: list[tuple[int, tuple[str, ...]]] = [
             """,
         ),
     ),
+    (
+        3,
+        (
+            # --- l'inventario delle app del tablet -------------------------
+            # Il tablet dice quali app ha installato, cosi il genitore le
+            # spunta da un elenco invece di scrivere "com.esempio.gioco" a
+            # mano - che era il modo piu sicuro di sbagliare una lettera e
+            # non capire perche quell'app non si apre.
+            #
+            # E un INVENTARIO, non un diario. Dice cosa c'e sul tablet, non
+            # cosa ha usato il bambino ne per quanto: quello resta sul
+            # tablet, ed e scritto fra i campi vietati in app/models.py.
+            #
+            # Una colonna JSON e non una tabella: si scrive e si legge sempre
+            # tutta insieme, non si cerca mai per singola app, e non la
+            # mette in relazione con niente. E la stessa strada di "salute",
+            # che e la stessa cosa in piccolo.
+            "ALTER TABLE tablet ADD COLUMN app_installate TEXT",
+            "ALTER TABLE tablet ADD COLUMN app_installate_il INTEGER",
+        ),
+    ),
 ]
 
 

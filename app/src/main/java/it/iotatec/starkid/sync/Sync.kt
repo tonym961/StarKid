@@ -10,11 +10,13 @@ import it.iotatec.starkid.data.AreaGenitori
 import it.iotatec.starkid.data.BACKGROUND_PHOTO
 import it.iotatec.starkid.data.EsitoPin
 import it.iotatec.starkid.data.FasciaApp
+import it.iotatec.starkid.data.InstalledApps
 import it.iotatec.starkid.data.Prefs
 import it.iotatec.starkid.service.GuardService
 import it.iotatec.starkid.usage.UsageReader
 import org.json.JSONArray
 import org.json.JSONObject
+import java.security.MessageDigest
 
 /**
  * La sincronizzazione col server di gestione.
@@ -186,6 +188,25 @@ object Sync {
                 guardRunning = GuardService.inMarcia,
                 defaultHome = laCasaEStarKid(context),
             )
+
+            // L'inventario delle app, solo quando cambia. Cambia quando si
+            // installa o si disinstalla qualcosa, cioe quasi mai, e con un
+            // giro al minuto mandarlo sempre vorrebbe dire qualche centinaio
+            // di righe al minuto per non dire niente di nuovo.
+            val inventario = InstalledApps.inventario(context)
+            val firmaApp = firmaInventario(inventario)
+            if (firmaApp != config.firmaApp) {
+                // Dentro runCatching perche l'inventario e un di piu: un
+                // server piu vecchio non conosce questa rotta e risponde
+                // 404, e un 404 qui fermerebbe tutto il giro - configurazione
+                // applicata ma mai segnata come riuscita, e da capo ogni
+                // minuto. Il tablet puo essere piu nuovo del suo server.
+                runCatching {
+                    server.appInstallate(inventario)
+                    prefs.segnaAppMandate(firmaApp)
+                    Log.i(TAG, "mandato l'elenco delle app: ${inventario.size}")
+                }.onFailure { Log.w(TAG, "elenco delle app non mandato: ${it.message}") }
+            }
 
             prefs.segnaSincronizzato(revisione)
             Esito.Fatto(revisione, rifiutati.size)
@@ -409,6 +430,21 @@ object Sync {
         listOf(revisione.toString(), esito) +
             rifiutati.sortedBy { it.first }.map { "${it.first}=${it.second}" }
         ).joinToString("|")
+
+    /**
+     * Un riassunto dell'inventario, per sapere se e cambiato.
+     *
+     * Un digest e non l'elenco intero perche l'elenco sta nelle preferenze
+     * e sono qualche migliaio di caratteri; e non il codice hash di Java,
+     * che su qualche miliardo di confronti sbaglia, e sbagliare qui vuol
+     * dire un'app installata che sul server non compare mai.
+     */
+    private fun firmaInventario(app: List<Pair<String, String>>): String {
+        val testo = app.joinToString("\n") { "${it.first}\t${it.second}" }
+        return MessageDigest.getInstance("SHA-256")
+            .digest(testo.toByteArray())
+            .joinToString("") { "%02x".format(it) }
+    }
 
     private fun installata(context: Context, pacchetto: String): Boolean = runCatching {
         context.packageManager.getApplicationInfo(pacchetto, 0)

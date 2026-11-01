@@ -37,6 +37,7 @@ from . import VERSIONE_API, auth, config_doc, db
 from .models import (
     DocumentoConfig,
     RichiestaAck,
+    RichiestaAppInstallate,
     RichiestaArruolamento,
     RichiestaConcessioni,
     RichiestaLogin,
@@ -469,6 +470,29 @@ def salute_dispositivo(
     return {"esito": "registrato"}
 
 
+@app.post("/api/v1/device/apps")
+def app_del_dispositivo(
+    dati: RichiestaAppInstallate, tablet: sqlite3.Row = Depends(auth.dispositivo)
+) -> dict[str, Any]:
+    """L'inventario delle app installate, che il genitore poi spunta.
+
+    E il secondo canale dal tablet al server, dopo le spie, e come quello
+    non cambia niente: il server lo mette da parte e basta. In particolare
+    **non** tocca app_permesse. Un tablet che si auto-autorizzasse le app
+    sarebbe esattamente il contrario di questo progetto.
+
+    E un inventario, non un diario: dice cosa c'e installato, non cosa e
+    stato aperto ne per quanto. Quei numeri restano sul tablet, e stanno
+    fra i campi vietati.
+    """
+    elenco = [voce.model_dump() for voce in dati.app]
+    db.esegui(
+        "UPDATE tablet SET app_installate = ?, app_installate_il = ? WHERE id = ?",
+        (json.dumps(elenco, ensure_ascii=False), db.adesso(), tablet["id"]),
+    )
+    return {"esito": "registrato", "quante": len(elenco)}
+
+
 # ---------------------------------------------------------------------------
 # Lato web: accesso
 # ---------------------------------------------------------------------------
@@ -721,6 +745,34 @@ def scrivi_config(
         )
     registro.info("tablet %s: revisione %s", id_tablet, nuovo["revisione"])
     return nuovo
+
+
+@app.get("/api/v1/tablets/{id_tablet}/apps")
+def app_installate(
+    id_tablet: str = Path(pattern=ID_TABLET),
+    sessione: sqlite3.Row = Depends(auth.sessione_attiva),
+) -> dict[str, Any]:
+    """Cosa ha detto il tablet di avere installato.
+
+    Sta in una rotta sua e non dentro l'elenco dei tablet: sono centinaia di
+    righe per tablet, e l'elenco lo si apre per vedere se e tutto a posto,
+    non per scegliere le app.
+
+    Il nome delle app lo dichiara il tablet e non lo abbiamo scritto noi:
+    chi lo mostra usa textContent e lo accompagna col nome del pacchetto,
+    come fa web/pagina-tablet.js.
+    """
+    tablet = _tablet(id_tablet, sessione)
+    grezzo = tablet["app_installate"]
+    elenco: list[dict[str, Any]] = []
+    if grezzo:
+        try:
+            letto = json.loads(grezzo)
+        except (ValueError, TypeError):
+            letto = []
+        if isinstance(letto, list):
+            elenco = [v for v in letto if isinstance(v, dict) and v.get("pacchetto")]
+    return {"app": elenco, "aggiornato_il": tablet["app_installate_il"]}
 
 
 @app.get("/api/v1/tablets/{id_tablet}/history")
