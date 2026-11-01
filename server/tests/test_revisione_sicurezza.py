@@ -489,3 +489,49 @@ def test_install_copia_il_database_prima_di_riavviare() -> None:
     # sta il ".backup" con il controllo di integrita.
     copia = (DEPLOY / "starkid-backup.sh").read_text(encoding="utf-8")
     assert ".backup" in copia and "integrity_check" in copia
+
+
+def test_il_motivo_del_kiosk_sta_nel_vocabolario() -> None:
+    """Il tablet manda "serve_conferma_pin": se non e previsto, l'ack prende 422.
+
+    Il kiosk acceso dalla web UI e solo una richiesta, e il tablet risponde
+    che non l'ha applicata. Quel motivo deve esistere in tre posti che non si
+    parlano: il vocabolario del server, il traduttore della web UI e il
+    client del tablet. Finche non c'erano tutti e tre, il rifiuto del kiosk
+    spariva in un 422 che nessuno guardava.
+    """
+    from app.models import MOTIVI_RIFIUTO
+
+    assert "serve_conferma_pin" in MOTIVI_RIFIUTO
+    app_js = (SERVER / "web/app.js").read_text(encoding="utf-8")
+    assert "serve_conferma_pin:" in app_js, "la web UI non sa tradurre questo motivo"
+    if PROGETTO_INTERO:
+        sync = (PROGETTO / "app/src/main/java/it/iotatec/starkid/sync/Sync.kt").read_text(
+            encoding="utf-8"
+        )
+        assert '"serve_conferma_pin"' in sync
+
+
+def test_il_tablet_non_si_sgancia_da_solo_su_un_401() -> None:
+    """Un 401 non deve far buttare il token del dispositivo.
+
+    Era il guasto piu caro del progetto: il token si rifa solo con
+    "app.cli riarruola" PIU il codice portato fisicamente a quel tablet, cioe
+    un giro nelle camere dei bambini. E un 401 non vuol dire quasi mai "sei
+    stato cancellato": vuol dire anche che il server e stato ripristinato da
+    una copia presa prima che quel tablet si arruolasse, e in quel caso il
+    token torna valido da solo - ma un tablet gia sganciato no.
+    """
+    if not PROGETTO_INTERO:
+        pytest.skip("qui c'e solo server/: l'app Android non e stata copiata")
+    sync = (PROGETTO / "app/src/main/java/it/iotatec/starkid/sync/Sync.kt").read_text(
+        encoding="utf-8"
+    )
+    # Il ramo del 401 non deve dimenticare l'arruolamento.
+    ramo = sync.split("if (e.tokenMorto)")[1].split("} else {")[0]
+    assert "dimenticaArruolamento" not in ramo, (
+        "il tablet butta il token al primo 401: si recupera solo andando sul posto"
+    )
+    assert "segnaRifiutato" in ramo, "il rifiuto non viene nemmeno registrato"
+    # E lo sgancio deve restare una cosa che fa una persona.
+    assert "fun scollega(" in sync

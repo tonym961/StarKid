@@ -45,8 +45,12 @@ object Sync {
         data object NonConfigurato : Esito
         data class Fatto(val revisione: Int, val rifiutati: Int) : Esito
         data class Fallita(val perche: String) : Esito
-        /** Il server non ci riconosce piu: il token e stato buttato. */
-        data object Sganciato : Esito
+        /**
+         * Il server risponde 401. Il token NON viene buttato: si continua a
+         * chiedere, piu piano, e lo sgancio resta una decisione di una
+         * persona. [da] e quando il rifiuto e cominciato.
+         */
+        data class NonRiconosciuto(val da: Long) : Esito
     }
 
     /**
@@ -138,13 +142,34 @@ object Sync {
             Esito.Fatto(revisione, rifiutati.size)
         } catch (e: ErroreServer) {
             if (e.tokenMorto) {
-                // Non si ritenta un token che il server ha buttato: il tablet
-                // torna a vivere da solo, come prima di essere arruolato, e
-                // lo dice nel log invece di sbattere contro un 401 ogni
-                // cinque minuti per sempre.
-                Log.w(TAG, "il server non ci riconosce piu: sgancio")
-                prefs.dimenticaArruolamento()
-                Esito.Sganciato
+                // NON si butta il token.
+                //
+                // La versione di prima faceva dimenticareArruolamento() al
+                // primo 401, con la scusa di non sbattere contro un errore
+                // ogni cinque minuti. Era il guasto piu caro di tutto il
+                // progetto: il token si rifa solo con "app.cli riarruola" PIU
+                // il codice portato fisicamente a quel tablet. Un giro nelle
+                // camere dei bambini, per un codice di stato.
+                //
+                // E un 401 non vuol dire quasi mai "sei stato cancellato".
+                // Vuol dire anche: il server e stato ripristinato da una
+                // copia presa prima che questo tablet si arruolasse (la riga
+                // c'e ma hash_dispositivo e NULL), oppure e in mezzo a una
+                // migrazione, oppure qualcuno ha sbagliato un deploy. In
+                // tutti quei casi il token torna valido da solo, e un tablet
+                // che si e gia sganciato invece non torna indietro.
+                //
+                // Quindi: si segna da quando il server non ci riconosce, si
+                // continua a chiedere piano, e la decisione di sganciarsi
+                // resta di una persona - dall'area genitori, "Scollega dal
+                // server". Chi amministra lo vede: dal server quel tablet
+                // risulta zitto, e la differenza fra "zitto" e "sganciato"
+                // conta.
+                if (prefs.current.rifiutatoDal == 0L) {
+                    prefs.segnaRifiutato(System.currentTimeMillis())
+                }
+                Log.w(TAG, "il server non ci riconosce (401): tengo il token e riprovo piano")
+                Esito.NonRiconosciuto(prefs.current.rifiutatoDal)
             } else {
                 Log.w(TAG, "sincronizzazione fallita: ${e.message}")
                 Esito.Fallita(e.message ?: "errore del server")

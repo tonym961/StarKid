@@ -252,17 +252,29 @@ def test_accendere_il_kiosk_e_solo_una_richiesta(
     assert scritta.json()["kiosk_stato"] == "in attesa"
 
     # Il tablet dice che non l'ha acceso: nessuno ha confermato col PIN.
-    genitore.post(
+    #
+    # Il motivo deve stare nel vocabolario chiuso di MOTIVI_RIFIUTO: prima
+    # qui c'era la frase "serve il PIN sul tablet", che il server rifiutava
+    # con 422. Lo status non veniva guardato, e l'assert sotto passava
+    # comunque, perche "in attesa" e vero anche quando nessun ack e mai
+    # arrivato. Il test raccontava una cosa e ne provava un'altra.
+    ack = genitore.post(
         "/api/v1/device/ack",
         headers=dispositivo["intestazioni"],
         json={
             "revisione": scritta.json()["revisione"],
             "esito": "partial",
-            "campi_rifiutati": [{"campo": "kiosk", "motivo": "serve il PIN sul tablet"}],
+            "campi_rifiutati": [{"campo": "kiosk", "motivo": "serve_conferma_pin"}],
         },
     )
+    assert ack.status_code == 200, ack.text
     elenco = genitore.get("/api/v1/tablets").json()["tablets"]
     assert elenco[0]["kiosk"] == "in attesa"
+    # E ora si vede davvero che il rifiuto e stato registrato, che era il
+    # punto del test.
+    assert elenco[0]["campi_rifiutati"] == [
+        {"campo": "kiosk", "motivo": "serve_conferma_pin"}
+    ]
 
     # Spegnerlo invece e un ordine, e basta applicarlo.
     spenta = genitore.put(

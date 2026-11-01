@@ -74,6 +74,16 @@ data class KidsConfig(
     /** L ultima revisione confermata al server: serve a non riconfermarla. */
     val syncedRevision: Int = 0,
     /**
+     * Da quando il server risponde 401 a questo tablet, 0 = mai.
+     *
+     * Il token NON si butta al primo 401: si segna da quando, si continua a
+     * chiedere piu piano, e lo sgancio resta una decisione di una persona.
+     * Un token buttato si rifa solo portando un codice nuovo a quel tablet,
+     * e un 401 vuol dire anche "il server e stato ripristinato da una copia
+     * vecchia", che si aggiusta da solo.
+     */
+    val rifiutatoDal: Long = 0L,
+    /**
      * Il genitore ha chiuso il tablet da remoto. Non e il kiosk e non e un
      * limite di tempo: e "adesso basta", e si toglie solo da dove e stato
      * messo. Il PIN sul tablet NON lo apre, se no non sarebbe un blocco a
@@ -135,6 +145,7 @@ class Prefs private constructor(context: Context) {
         lastSync = sp.getLong(KEY_LAST_SYNC, 0L),
         syncedRevision = sp.getInt(KEY_SYNCED_REV, 0),
         lockedByParent = sp.getBoolean(KEY_LOCKED, false),
+        rifiutatoDal = sp.getLong(KEY_RIFIUTATO, 0L),
         orientation = sp.getString(KEY_ORIENTATION, ORIENT_LANDSCAPE) ?: ORIENT_LANDSCAPE,
         kioskRecents = sp.getBoolean(KEY_KIOSK_RECENTS, false),
     )
@@ -240,12 +251,18 @@ class Prefs private constructor(context: Context) {
         putString(KEY_SERVER_TOKEN, "")
         putBoolean(KEY_ENROLLED, false)
         putInt(KEY_SYNCED_REV, 0)
+        putLong(KEY_RIFIUTATO, 0L)
     }
 
     fun segnaSincronizzato(revisione: Int) = edit {
         putLong(KEY_LAST_SYNC, System.currentTimeMillis())
         putInt(KEY_SYNCED_REV, revisione)
+        // Un giro andato a buon fine cancella il rifiuto: se era passeggero,
+        // non deve restare scritto da nessuna parte.
+        putLong(KEY_RIFIUTATO, 0L)
     }
+
+    fun segnaRifiutato(quando: Long) = edit { putLong(KEY_RIFIUTATO, quando) }
 
     fun setBloccatoDalGenitore(bloccato: Boolean) = edit { putBoolean(KEY_LOCKED, bloccato) }
 
@@ -360,6 +377,7 @@ class Prefs private constructor(context: Context) {
         private const val KEY_LAST_SYNC = "server_last_sync"
         private const val KEY_SYNCED_REV = "server_synced_revision"
         private const val KEY_LOCKED = "locked_by_parent"
+        private const val KEY_RIFIUTATO = "server_rifiutato_dal"
         private const val KEY_ORIENTATION = "orientation"
         private const val KEY_KIOSK_RECENTS = "kiosk_recents"
 

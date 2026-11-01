@@ -65,6 +65,30 @@ fun ServerScreen(
         ) {
             ScreenHeader("Server di gestione", onBack)
 
+            if (config.enrolled && config.rifiutatoDal > 0L) {
+                // Il tablet NON si e sganciato da solo, e questo riquadro e
+                // il motivo per cui puo permetterselo: dice cosa succede e
+                // lascia la decisione a chi legge. Un token buttato si rifa
+                // solo portando un codice nuovo fin qui.
+                SectionCard("Il server non ci riconosce") {
+                    Text(
+                        text = "Da ${quando(config.rifiutatoDal)} il server risponde che questo " +
+                            "tablet non lo conosce.",
+                        style = MaterialTheme.typography.bodyLarge,
+                    )
+                    Spacer(Modifier.size(8.dp))
+                    Text(
+                        text = "Il codice non e stato buttato, e il tablet continua a chiedere. " +
+                            "Spesso e passeggero: il server ripristinato da una copia vecchia, un " +
+                            "aggiornamento a meta. In quei casi torna a funzionare da solo.\n\n" +
+                            "Se invece il tablet e stato cancellato dal server, non tornera: " +
+                            "scollegalo qui sotto e ricollegalo con un codice nuovo.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+
             if (config.enrolled) {
                 SectionCard("Collegato") {
                     Text(config.serverUrl, style = MaterialTheme.typography.bodyLarge)

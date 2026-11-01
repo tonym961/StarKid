@@ -346,6 +346,7 @@ class RichiestaArruolamento(Richiesta):
 MOTIVI_RIFIUTO: tuple[str, ...] = (
     "serve_device_owner",       # la politica richiede device owner, qui non c'e
     "serve_profile_owner",      # idem per il profilo
+    "serve_conferma_pin",       # il kiosk acceso da qui va confermato sul tablet
     "permesso_mancante",        # manca un permesso che l'utente deve concedere
     "non_supportato",           # la versione di Android non ha questa funzione
     "app_non_installata",       # un pacchetto dell'elenco non c'e sul tablet

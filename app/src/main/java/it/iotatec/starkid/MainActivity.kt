@@ -696,6 +696,9 @@ private fun raccontaEsito(esito: Sync.Esito): String = when (esito) {
             " applicare: sul server si vede quali e perche."
     }
     is Sync.Esito.Fallita -> "Non ha funzionato: ${esito.perche}"
-    Sync.Esito.Sganciato -> "Il server non riconosce piu questo tablet: e stato scollegato."
+    is Sync.Esito.NonRiconosciuto ->
+        "Il server non riconosce questo tablet. Il codice NON e stato buttato: se e un guasto " +
+            "passeggero torna a funzionare da solo. Se invece il tablet e stato cancellato dal " +
+            "server, qui c'e \"Scollega dal server\" e poi ci si ricollega con un codice nuovo."
     Sync.Esito.NonConfigurato -> "Non c'e nessun server configurato."
 }
