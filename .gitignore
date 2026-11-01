@@ -26,3 +26,11 @@ venv/
 
 # Uscite del generatore del marchio: si rifanno con ./design/genera.sh
 design/out/
+
+# Rete di sicurezza: una copia del database di produzione dentro il
+# repository porterebbe in git lhash della password e quello del token di
+# un tablet. Le copie vanno fuori (vedi C:\AI\StarKid-copie).
+*.db
+*.db-wal
+*.db-shm
+copie-*/
