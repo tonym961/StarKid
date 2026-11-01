@@ -13,6 +13,7 @@ import android.os.IBinder
 import it.iotatec.starkid.LockActivity
 import it.iotatec.starkid.MainActivity
 import it.iotatec.starkid.R
+import it.iotatec.starkid.admin.Kiosk
 import it.iotatec.starkid.data.AreaGenitori
 import it.iotatec.starkid.data.InstalledApps
 import it.iotatec.starkid.data.Prefs
@@ -121,6 +122,30 @@ class GuardService : Service() {
         // Manutenzione: il genitore e uscito apposta verso un'altra app.
         if (System.currentTimeMillis() < config.guardPausedUntil) return
         if (!config.pinSet) return
+
+        // Kiosk acceso e lock task spento: qualcosa l'ha fatto cadere, e il
+        // tablet e aperto mentre tutti e due - il server e la schermata -
+        // dicono che e chiuso. Succede quando un aggiornamento dell'app
+        // arriva mentre in mostra c'e il blocco: in lock task entra
+        // MainActivity, e LockActivity sta in un task suo (singleInstance,
+        // taskAffinity vuota), quindi non ci entra nessuno.
+        //
+        // Il controllo sta QUI, prima di guardare cosa c'e in primo piano,
+        // perche quella domanda non serve e spesso non ha risposta: con la
+        // stessa schermata ferma da minuti il lettore d'uso non ha eventi da
+        // raccontare e torna null, e con lui se ne andava anche questo
+        // controllo. Durante la manutenzione e nell'area genitori non si
+        // arriva fin qui, ed e giusto: li il lock task e spento apposta.
+        //
+        // Non si fa entrare LockActivity in lock task: bloccherebbe il suo
+        // task, e tornare a MainActivity - che e un altro task - sarebbe una
+        // trappola per chi guarda. Si riporta davanti MainActivity, che
+        // entra lei; il blocco torna sopra al giro dopo, come sempre.
+        if (config.kioskEnabled && Kiosk.canManage(this) && !Kiosk.inLockTask(this)) {
+            tornaACasa()
+            return
+        }
+
         if (!usage.hasPermission()) return
 
         val usageMillis = usage.usageTodayMillis()
@@ -136,6 +161,11 @@ class GuardService : Service() {
             usedMinutesToday = usedToday,
             today = Prefs.todayKey(),
         )
+        // Si scrive anche dove MainActivity lo possa leggere. Senza, premendo
+        // Home su un tablet chiuso compariva la schermata del bambino, e ci
+        // restava i quattro secondi che il sorvegliante impiega a rimettere
+        // il blocco: Home e permesso dentro il kiosk, e la casa e StarKid.
+        bloccoGenerale = if (global.chiudeIlTablet) global else BlockReason.NONE
         if (global != BlockReason.NONE) {
             showLock(global)
             return
@@ -149,6 +179,7 @@ class GuardService : Service() {
         nascondiBloccoGenerale()
 
         val foreground = usage.foregroundPackage(POLL_MILLIS * 4) ?: return
+
         if (foreground == packageName) return
 
         // Davanti c'e un altro launcher. Non e una app che il bambino ha
@@ -204,7 +235,7 @@ class GuardService : Service() {
 
     private fun nascondiBloccoGenerale() {
         val motivo = LockActivity.motivoInCorso ?: return
-        if (motivo !in MOTIVI_GENERALI) return
+        if (!motivo.chiudeIlTablet) return
         val intent = Intent(this, LockActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
             putExtra(LockActivity.EXTRA_REASON, BlockReason.NONE.name)
@@ -260,6 +291,19 @@ class GuardService : Service() {
         var inMarcia: Boolean = false
             private set
 
+        /**
+         * Il motivo per cui il tablet e chiuso adesso, o NONE.
+         *
+         * Lo scrive il sorvegliante, che e l'unico a saperlo per davvero -
+         * la fascia e i minuti li conta lui - e lo legge MainActivity, che
+         * cosi non apre la schermata del bambino su un tablet chiuso. Vale
+         * solo per i motivi che chiudono tutto: quelli di una app sola non
+         * riguardano la casa.
+         */
+        @Volatile
+        var bloccoGenerale: BlockReason = BlockReason.NONE
+            private set
+
         private const val CHANNEL_ID = "guard"
         private const val NOTIFICATION_ID = 42
         private const val POLL_MILLIS = 4_000L
@@ -267,15 +311,10 @@ class GuardService : Service() {
         /** Quanto si aspetta prima di riprovare a tornare a casa. */
         private const val RIENTRO_MILLIS = 10_000L
 
-        /**
-         * I motivi che non dipendono da quale app c'era davanti, e che
-         * possono cadere da soli mentre il blocco e ancora sullo schermo.
-         */
-        private val MOTIVI_GENERALI = setOf(
-            BlockReason.LOCKED_BY_PARENT,
-            BlockReason.OUTSIDE_SCHEDULE,
-            BlockReason.DAILY_LIMIT,
-        )
+        // L'elenco dei motivi che chiudono tutto il tablet stava qui, ed era
+        // il secondo posto che lo sapeva: adesso lo sa solo BlockReason, che
+        // e dove va saputo, perche la stessa distinzione serve anche al
+        // tasto Indietro di LockActivity.
 
         fun start(context: Context) {
             val intent = Intent(context.applicationContext, GuardService::class.java)

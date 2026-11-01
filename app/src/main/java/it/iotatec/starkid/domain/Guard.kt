@@ -22,7 +22,27 @@ enum class BlockReason {
      * tempo come DAILY_LIMIT e non finisce da solo come OUTSIDE_SCHEDULE:
      * resta finche il genitore non lo toglie da dove lo ha messo.
      */
-    LOCKED_BY_PARENT,
+    LOCKED_BY_PARENT;
+
+    /**
+     * Questo motivo chiude tutto il tablet, non una app sola.
+     *
+     * Serve in due punti, e in tutti e due cambia cosa fa il tablet:
+     *
+     * - **Indietro.** Da un'app bloccata, indietro porta a casa, ed e
+     *   giusto: il bambino era dentro una cosa che non puo usare e la casa
+     *   e dove deve tornare. Da un tablet chiuso, a casa non si va: ci si
+     *   andava davvero, e per i quattro secondi prima che il sorvegliante
+     *   rimettesse il blocco il bambino aveva la sua schermata con dentro i
+     *   giochi. Una volta per ogni pressione di indietro.
+     * - **Il blocco che cade.** Questi motivi possono finire mentre il
+     *   blocco e ancora sullo schermo - il genitore riapre il tablet da
+     *   lontano, arriva l'ora, un bonus rimette minuti - e allora il blocco
+     *   si toglie da solo. Quelli di una app sola no: li l'app vietata non e
+     *   piu davanti, e togliere il blocco ce la riporterebbe.
+     */
+    val chiudeIlTablet: Boolean
+        get() = this == LOCKED_BY_PARENT || this == OUTSIDE_SCHEDULE || this == DAILY_LIMIT
 }
 
 /**

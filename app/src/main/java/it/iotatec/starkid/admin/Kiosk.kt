@@ -238,8 +238,16 @@ object Kiosk {
 
     // --- lock task, lato Activity ----------------------------------------
 
-    fun isLocked(activity: Activity): Boolean {
-        val am = activity.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+    fun isLocked(activity: Activity): Boolean = inLockTask(activity)
+
+    /**
+     * Il tablet e in lock task adesso. Uguale a [isLocked] ma da un Context
+     * qualunque: serve al sorvegliante, che e un servizio e di Activity non
+     * ne ha.
+     */
+    fun inLockTask(context: Context): Boolean {
+        val am = context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
+            ?: return false
         return am.lockTaskModeState != ActivityManager.LOCK_TASK_MODE_NONE
     }
 

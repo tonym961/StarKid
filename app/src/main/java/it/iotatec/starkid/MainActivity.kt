@@ -183,6 +183,24 @@ class MainActivity : ComponentActivity() {
         AreaGenitori.primoPiano(true)
         // L'avvio del servizio dal primo piano e quello che Android non rifiuta.
         GuardService.start(this)
+
+        // Il tablet e chiuso: qui non si entra. Dentro il kiosk il tasto
+        // Home e permesso apposta, e la casa e StarKid, quindi premendolo si
+        // arrivava alla schermata del bambino e ci si restava i quattro
+        // secondi che il sorvegliante impiega a rimettere il blocco - ogni
+        // volta che lo si premeva. Adesso il blocco torna in un battito, e
+        // la schermata del bambino non si vede proprio.
+        //
+        // Non durante la manutenzione: li il genitore ha aperto la porta e
+        // sta lavorando, e la sua area ha il PIN davanti.
+        val chiuso = GuardService.bloccoGenerale
+        if (chiuso.chiudeIlTablet && !inManutenzione()) {
+            startActivity(
+                Intent(this, LockActivity::class.java)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    .putExtra(LockActivity.EXTRA_REASON, chiuso.name),
+            )
+        }
         // Durante la manutenzione NON si rientra nel kiosk. Senza questa
         // condizione il genitore usciva verso le impostazioni, tornava un
         // attimo su StarKid e si ritrovava di nuovo chiuso dentro il lock

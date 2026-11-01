@@ -137,6 +137,11 @@ data class KidsConfig(
      */
     val firmaAck: String = "",
     /**
+     * Riassunto dell'ultimo elenco di app mandato al server. Stessa idea:
+     * l'inventario cambia quando si installa qualcosa, non ogni minuto.
+     */
+    val firmaApp: String = "",
+    /**
      * Il genitore ha chiuso il tablet da remoto. Non e il kiosk e non e un
      * limite di tempo: e "adesso basta", e si toglie solo da dove e stato
      * messo. Il PIN sul tablet NON lo apre, se no non sarebbe un blocco a
@@ -204,6 +209,7 @@ class Prefs private constructor(context: Context) {
         rifiutatoDal = sp.getLong(KEY_RIFIUTATO, 0L),
         ultimoRifiuto = sp.getLong(KEY_RIFIUTO_ULTIMO, 0L),
         firmaAck = sp.getString(KEY_ACK_FIRMA, "") ?: "",
+        firmaApp = sp.getString(KEY_APP_FIRMA, "") ?: "",
         orientation = sp.getString(KEY_ORIENTATION, ORIENT_LANDSCAPE) ?: ORIENT_LANDSCAPE,
         kioskRecents = sp.getBoolean(KEY_KIOSK_RECENTS, false),
     )
@@ -327,9 +333,10 @@ class Prefs private constructor(context: Context) {
         putInt(KEY_SYNCED_REV, 0)
         putLong(KEY_RIFIUTATO, 0L)
         putLong(KEY_RIFIUTO_ULTIMO, 0L)
-        // La firma della conferma vale per un server solo: col prossimo
-        // arruolamento la prima conferma deve partire comunque.
+        // Le firme valgono per un server solo: col prossimo arruolamento la
+        // prima conferma e il primo inventario devono partire comunque.
         putString(KEY_ACK_FIRMA, "")
+        putString(KEY_APP_FIRMA, "")
     }
 
     fun segnaSincronizzato(revisione: Int) = edit {
@@ -348,6 +355,8 @@ class Prefs private constructor(context: Context) {
     }
 
     fun segnaAckMandato(firma: String) = edit { putString(KEY_ACK_FIRMA, firma) }
+
+    fun segnaAppMandate(firma: String) = edit { putString(KEY_APP_FIRMA, firma) }
 
     fun setBloccatoDalGenitore(bloccato: Boolean) = edit { putBoolean(KEY_LOCKED, bloccato) }
 
@@ -495,6 +504,7 @@ class Prefs private constructor(context: Context) {
         private const val KEY_RIFIUTATO = "server_rifiutato_dal"
         private const val KEY_RIFIUTO_ULTIMO = "server_rifiuto_ultimo"
         private const val KEY_ACK_FIRMA = "server_ack_firma"
+        private const val KEY_APP_FIRMA = "server_app_firma"
         private const val KEY_ORIENTATION = "orientation"
         private const val KEY_KIOSK_RECENTS = "kiosk_recents"
 

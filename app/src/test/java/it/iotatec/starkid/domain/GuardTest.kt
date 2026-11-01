@@ -214,4 +214,26 @@ class GuardTest {
         val config = base.copy(dailyLimitMinutes = 60, bonusMinutes = 30, bonusDate = today)
         assertEquals(60, Guard.remainingMinutes(config, 30, today))
     }
+
+    // --- chi chiude tutto il tablet, e chi una app sola ---------------------
+
+    @Test
+    fun `i motivi che chiudono il tablet sono tre`() {
+        // Non e una distinzione cosmetica: da qui dipende se il tasto
+        // Indietro porta a casa (LockActivity) e se il blocco si toglie da
+        // solo quando il motivo cade (GuardService). Sbagliarla vuol dire o
+        // un tablet chiuso da cui si esce premendo Indietro, o un bambino
+        // riportato dentro l'app che gli e appena stata vietata.
+        assertTrue(BlockReason.LOCKED_BY_PARENT.chiudeIlTablet)
+        assertTrue(BlockReason.OUTSIDE_SCHEDULE.chiudeIlTablet)
+        assertTrue(BlockReason.DAILY_LIMIT.chiudeIlTablet)
+    }
+
+    @Test
+    fun `i motivi di una app sola non chiudono il tablet`() {
+        assertFalse(BlockReason.APP_NOT_ALLOWED.chiudeIlTablet)
+        assertFalse(BlockReason.APP_LIMIT.chiudeIlTablet)
+        assertFalse(BlockReason.APP_OUTSIDE_WINDOW.chiudeIlTablet)
+        assertFalse(BlockReason.NONE.chiudeIlTablet)
+    }
 }

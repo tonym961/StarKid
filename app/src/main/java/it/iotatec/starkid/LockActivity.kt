@@ -66,7 +66,16 @@ class LockActivity : ComponentActivity() {
         var pinError by remember { mutableStateOf<String?>(null) }
         val current by reason
 
-        BackHandler(enabled = true) { goHome() }
+        // Indietro porta a casa solo quando a essere bloccata e una app.
+        // Col tablet chiuso non c'e nessun posto dove andare, e lasciarcelo
+        // andare voleva dire regalare al bambino la sua schermata per i
+        // quattro secondi prima che il sorvegliante rimettesse il blocco:
+        // abbastanza per aprire un gioco, e si poteva rifare a ogni
+        // pressione. Resta abilitato, perche disabilitandolo il tasto
+        // tornerebbe al sistema e chiuderebbe l'Activity.
+        BackHandler(enabled = true) {
+            if (!current.chiudeIlTablet) goHome()
+        }
 
         // Il motivo e caduto mentre il blocco era davanti: si toglie da solo.
         // Lo decide il servizio, che e l'unico a sapere se la regola vale
