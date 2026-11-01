@@ -57,10 +57,18 @@
       SK.el('a', { href: 'tablet.html?id=' + encodeURIComponent(tablet.id), testo: tablet.nome })
     ]));
 
-    scheda.appendChild(SK.el('div', { classe: 'riga-bottoni' }, [
+    var righeStato = [
       SK.el('span', { classe: 'etichetta ' + stato.classe, testo: stato.testo }),
       SK.el('span', { classe: 'piccolo tenue', testo: 'visto ' + SK.quando(tablet.ultimo_contatto) })
-    ]));
+    ];
+    /* Un tablet chiuso si deve vedere da qui, senza aprirlo: e la cosa che
+       si cerca di fretta. "Chiuso da te" e non "chiuso": lo stato del server,
+       che il tablet applica quando richiama - e se non l'ha ancora fatto lo
+       dice gia la riga della configurazione qui sotto. */
+    if (tablet.bloccato) {
+      righeStato.splice(1, 0, SK.el('span', { classe: 'etichetta guasto', testo: 'Chiuso da te' }));
+    }
+    scheda.appendChild(SK.el('div', { classe: 'riga-bottoni' }, righeStato));
 
     var cartello = SK.cartelloLimiti(tablet);
     if (cartello) scheda.appendChild(cartello);

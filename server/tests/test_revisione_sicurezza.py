@@ -469,3 +469,23 @@ def test_il_comando_per_creare_account_dice_da_dove_lanciarlo() -> None:
             assert "env -C" in riga or "cd " in riga, (
                 f"{dove}: `{riga.strip()}` non dice da quale cartella lanciarlo"
             )
+
+
+def test_install_copia_il_database_prima_di_riavviare() -> None:
+    """Il riavvio fa partire codice nuovo su un database vecchio.
+
+    Finche si aggiungono campi al documento non succede niente, ma il giorno
+    in cui una versione cambia le tabelle l'unica rete sarebbe la copia del
+    timer, cioe fino a ventiquattro ore prima. E la copia va fatta con
+    "sqlite3 .backup": salva_copia() dello script fa "cp -a", e un database
+    in WAL copiato a freddo puo venire via a meta.
+    """
+    testo = (DEPLOY / "install.sh").read_text(encoding="utf-8")
+    prima = testo.split("systemctl restart starkid.service")[0]
+    assert "starkid-backup.sh" in prima, (
+        "install.sh riavvia il servizio senza aver copiato il database"
+    )
+    # E deve usare quello script, non cp: lo script e l'unico posto in cui
+    # sta il ".backup" con il controllo di integrita.
+    copia = (DEPLOY / "starkid-backup.sh").read_text(encoding="utf-8")
+    assert ".backup" in copia and "integrity_check" in copia

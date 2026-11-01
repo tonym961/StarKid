@@ -565,9 +565,16 @@ def _riassunto(tablet: sqlite3.Row) -> dict[str, Any]:
         # Un tablet con la configurazione illeggibile non deve far sparire
         # l'elenco: si vede che c'e e che va risistemato.
         voce["kiosk"] = "sconosciuto"
+        voce["bloccato"] = None
         voce["configurazione_leggibile"] = False
     else:
         voce["kiosk"] = config_doc.stato_kiosk(tablet, documento)
+        # Nell'elenco e non solo nella scheda: un tablet chiuso si deve vedere
+        # senza doverlo aprire, perche e la cosa che si cerca di fretta.
+        # "pubblicato" e non "applicato": e quello che il server ha deciso,
+        # non quello che il tablet ha confermato - per sapere se e arrivato
+        # c'e gia "allineato".
+        voce["bloccato"] = bool(documento.get("bloccato"))
         voce["configurazione_leggibile"] = True
     return voce
 

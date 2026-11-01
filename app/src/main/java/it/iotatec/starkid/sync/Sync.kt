@@ -159,7 +159,7 @@ object Sync {
     }
 
     /** Quanti campi del documento questo tablet sa applicare. */
-    private const val CAMPI_APPLICABILI = 11
+    private const val CAMPI_APPLICABILI = 12
 
     /**
      * Applica il documento e torna i campi che NON e riuscito ad applicare,

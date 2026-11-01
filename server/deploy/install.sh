@@ -449,6 +449,36 @@ done
 
 systemctl daemon-reload
 systemctl enable starkid.service >/dev/null
+
+# --- Una copia del database PRIMA di riavviare -----------------------------
+# salva_copia() sopra non serve qui, e sarebbe anzi sbagliata: fa "cp -a", e
+# un database in WAL copiato a freddo puo venire via a meta. Si usa lo stesso
+# script del timer, che fa "sqlite3 .backup" e poi controlla l'integrita.
+#
+# Perche proprio qui: da questo punto in poi parte la versione nuova del
+# codice sul database vecchio. Finche si aggiungono solo campi al documento
+# di configurazione non succede niente, ma il giorno in cui una versione
+# cambia le tabelle, l'unica rete sarebbe la copia del timer - cioe fino a
+# ventiquattro ore prima. Una copia costa un secondo.
+if [ -f "$STATE_DIR/starkid.db" ]; then
+    # "sudo -u utente env VAR=..." e non "sudo -u utente VAR=...": la seconda
+    # forma passa solo se sudoers concede setenv, e qui non lo concede nessuno.
+    if sudo -u "$UTENTE" env \
+        STARKID_DB="$STATE_DIR/starkid.db" \
+        STARKID_BACKUP_DIR="$BACKUP_DIR" \
+        "$APP_DIR/bin/starkid-backup.sh" >/dev/null 2>&1; then
+        log "copia del database fatta prima di riavviare (sqlite3 .backup, integrita verificata)"
+    else
+        avviso "la copia del database PRIMA del riavvio non e riuscita."
+        avviso "Non e un motivo per fermarsi se stai solo aggiornando il codice, ma se questa"
+        avviso "versione cambia le tabelle, fermati qui e guarda: $BACKUP_DIR"
+        conferma "Vado avanti lo stesso?" "avanti senza copia" \
+            || errore "fermato da te: il servizio vecchio sta ancora girando, niente e cambiato"
+    fi
+else
+    log "nessun database ancora: niente da copiare"
+fi
+
 systemctl restart starkid.service
 systemctl enable --now starkid-backup.timer >/dev/null
 log "servizio avviato, timer della copia di sicurezza attivo"

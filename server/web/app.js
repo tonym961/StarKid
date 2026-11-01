@@ -646,6 +646,10 @@ var SK = (function () {
       ultimo_contatto: primo(t.visto_il, t.ultimo_contatto, t.visto, t.ultima_visita, null),
       salute_aggiornata: primo(t.salute_il, t.salute_aggiornata, t.salute_quando, null),
       arruolato: primo(t.arruolato, t.iscritto, null),
+      /* null = la configurazione non si rilegge, quindi non si sa; e diverso
+         da false, che vuol dire "aperto". L'elenco mostra il cartello solo
+         sul true. */
+      bloccato: (t.bloccato === true || t.bloccato === false) ? t.bloccato : null,
       salute: salute,
       grezzo: t
     };

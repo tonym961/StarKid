@@ -235,6 +235,31 @@ private fun Modulo(stato: Stato, idTablet: String, originale: JSONObject) {
             }
         }
 
+        // ---- blocco a distanza -------------------------------------------
+        // In un riquadro suo e non dentro "Kiosk": il kiosk dice DOVE il
+        // bambino puo stare, questo dice che adesso non puo stare da nessuna
+        // parte. Sta in alto perche e la cosa che si cerca di fretta.
+        item {
+            Carta {
+                Titoletto("Blocco")
+                Interruttore(
+                    "Tablet bloccato",
+                    "Il tablet si ferma su una schermata che dice che lo hai chiuso tu.",
+                    bozza.optBoolean("bloccato"),
+                ) { modifica { put("bloccato", it) } }
+                if (bozza.optBoolean("bloccato")) {
+                    Spacer(Modifier.height(8.dp))
+                    Avviso(
+                        "Arriva alla prossima chiamata del tablet, entro cinque minuti: il " +
+                            "tablet chiama il server, il server non chiama il tablet. Se e " +
+                            "spento o senza rete, arriva quando torna. Il PIN sul tablet non " +
+                            "lo apre.",
+                        Tono.ATTESA,
+                    )
+                }
+            }
+        }
+
         // ---- kiosk -------------------------------------------------------
         item {
             Carta {
