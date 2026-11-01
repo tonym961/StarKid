@@ -49,11 +49,34 @@ class Api(contesto: Context) {
         get() = prefs.getString(CHIAVE_UTENTE, "").orEmpty()
         private set(v) { prefs.edit().putString(CHIAVE_UTENTE, v).apply() }
 
+    /** admin, genitore oppure osservatore. Vuoto finche non si entra. */
+    var ruolo: String
+        get() = prefs.getString(CHIAVE_RUOLO, "").orEmpty()
+        private set(v) { prefs.edit().putString(CHIAVE_RUOLO, v).apply() }
+
     /** C e una sessione da provare? Non vuol dire che sia ancora valida. */
     fun forseDentro(): Boolean = indirizzo.isNotEmpty() && cookie.isNotEmpty()
 
     fun dimentica() {
-        prefs.edit().remove(CHIAVE_COOKIE).remove(CHIAVE_CSRF).remove(CHIAVE_UTENTE).apply()
+        prefs.edit()
+            .remove(CHIAVE_COOKIE).remove(CHIAVE_CSRF)
+            .remove(CHIAVE_UTENTE).remove(CHIAVE_RUOLO)
+            .apply()
+    }
+
+    /**
+     * Chi sono, secondo il server.
+     *
+     * Serve a riprendere il ruolo quando la app riparte: il login e
+     * lunico momento in cui il ruolo arriva da solo, e fra un avvio e
+     * laltro la sessione resta ma quel dato no. Senza, a un osservatore
+     * ricomparirebbero i comandi di scrittura al secondo avvio.
+     */
+    fun chiSono(): JSONObject {
+        val risposta = chiama("GET", "/api/v1/auth/io", null)
+        ruolo = risposta.optString("ruolo", ruolo.ifEmpty { "genitore" })
+        utente = risposta.optString("utente", utente)
+        return risposta
     }
 
     // -----------------------------------------------------------------------
@@ -70,6 +93,7 @@ class Api(contesto: Context) {
         val risposta = chiama("POST", "/api/v1/auth/login", corpo, autenticata = false)
         csrf = risposta.optString("csrf")
         utente = risposta.optString("utente", nomeUtente)
+        ruolo = risposta.optString("ruolo", "genitore")
         return risposta
     }
 
@@ -214,6 +238,7 @@ class Api(contesto: Context) {
         const val CHIAVE_COOKIE = "cookie"
         const val CHIAVE_CSRF = "csrf"
         const val CHIAVE_UTENTE = "utente"
+        const val CHIAVE_RUOLO = "ruolo"
     }
 }
 

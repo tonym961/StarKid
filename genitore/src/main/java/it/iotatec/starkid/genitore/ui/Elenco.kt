@@ -109,12 +109,22 @@ fun Elenco(stato: Stato) {
             }
 
             item {
-                Button(
-                    onClick = { stato.vaiA(Schermata.Nuovo) },
-                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-                ) {
-                    Icon(Icons.Filled.Add, contentDescription = null)
-                    Text("  Aggiungi un tablet")
+                // Un osservatore prenderebbe 403: meglio non mettergli
+                // davanti il bottone. La serratura resta il server.
+                if (stato.solaLettura) {
+                    Avviso(
+                        "Il tuo accesso e in sola lettura: puoi guardare i tablet che ti " +
+                            "hanno dato, ma non cambiare niente e non aggiungerne.",
+                        Tono.SPENTO,
+                    )
+                } else {
+                    Button(
+                        onClick = { stato.vaiA(Schermata.Nuovo) },
+                        modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                    ) {
+                        Icon(Icons.Filled.Add, contentDescription = null)
+                        Text("  Aggiungi un tablet")
+                    }
                 }
             }
         }

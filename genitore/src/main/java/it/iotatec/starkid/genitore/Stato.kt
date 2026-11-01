@@ -35,6 +35,15 @@ class Stato(app: Application) : AndroidViewModel(app) {
     var indirizzo by mutableStateOf(api.indirizzo)
     var utente by mutableStateOf(api.utente)
 
+    /**
+     * admin, genitore o osservatore. Un osservatore vede tutto quello che
+     * gli e stato dato e non puo cambiare niente: il server gli risponde
+     * 403, e qui si evita di mettergli davanti i comandi che lo prenderebbero.
+     */
+    var ruolo by mutableStateOf(api.ruolo)
+
+    val solaLettura: Boolean get() = ruolo == "osservatore"
+
     var occupato by mutableStateOf(false)
         private set
     var errore by mutableStateOf<String?>(null)
@@ -77,6 +86,7 @@ class Stato(app: Application) : AndroidViewModel(app) {
         api.accedi(server, nomeUtente, password)
         indirizzo = api.indirizzo
         utente = api.utente
+        ruolo = api.ruolo
         tablet = api.elencoTablet()
         schermata = Schermata.Elenco
     }
@@ -88,7 +98,15 @@ class Stato(app: Application) : AndroidViewModel(app) {
         schermata = Schermata.Accesso
     }
 
-    fun carica() = lavora { tablet = api.elencoTablet() }
+    fun carica() = lavora {
+        // Il ruolo si rilegge a ogni giro: il login e lunico momento in cui
+        // arriva da solo, e fra un avvio e laltro la sessione resta ma quel
+        // dato no. Senza, a un osservatore ricomparirebbero i comandi di
+        // scrittura al secondo avvio della app.
+        api.chiSono()
+        ruolo = api.ruolo
+        tablet = api.elencoTablet()
+    }
 
     private fun caricaConfigurazione(id: String) = lavora {
         configurazione = api.configurazione(id)

@@ -319,9 +319,17 @@ private fun Modulo(stato: Stato, idTablet: String, originale: JSONObject) {
             Column {
                 Button(
                     onClick = { stato.salva(idTablet, bozza) },
-                    enabled = cambiato && !stato.occupato,
+                    enabled = cambiato && !stato.occupato && !stato.solaLettura,
                     modifier = Modifier.fillMaxWidth(),
-                ) { Text(if (cambiato) "Salva" else "Niente da salvare") }
+                ) {
+                    Text(
+                        when {
+                            stato.solaLettura -> "Non puoi salvare: accesso in sola lettura"
+                            cambiato -> "Salva"
+                            else -> "Niente da salvare"
+                        }
+                    )
+                }
                 Spacer(Modifier.height(6.dp))
                 Text(
                     "Il tablet la prende al prossimo collegamento, non subito.",
