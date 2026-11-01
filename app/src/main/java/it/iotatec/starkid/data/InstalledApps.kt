@@ -39,6 +39,12 @@ object InstalledApps {
     @Volatile
     private var packageCacheAt = 0L
 
+    @Volatile
+    private var homeCache: Set<String>? = null
+
+    @Volatile
+    private var homeCacheAt = 0L
+
     suspend fun all(context: Context, refresh: Boolean = false): List<AppEntry> {
         if (!refresh) cache?.let { return it }
         return withContext(Dispatchers.IO) { load(context).also { cache = it } }
@@ -63,6 +69,31 @@ object InstalledApps {
         }.getOrDefault(packageCache ?: emptySet())
         packageCache = packages
         packageCacheAt = now
+        return packages
+    }
+
+    /**
+     * I pacchetti che sanno fare da schermata iniziale, StarKid compresa.
+     *
+     * Serve al sorvegliante per accorgersi che davanti c'e **un altro
+     * launcher**. Non e un'app che il bambino ha aperto: e un pezzo di
+     * sistema che si e ripreso il posto di StarKid, e succede davvero - dopo
+     * un aggiornamento dell'app, che chiude l'activity e con lei il lock
+     * task. In [launchablePackages] non comparirebbe nemmeno, perche i
+     * launcher di solito non si elencano da soli nel cassetto delle app.
+     */
+    @Suppress("DEPRECATION") // queryIntentActivities(Intent, Int) va bene fino a SDK 35
+    fun homePackages(context: Context): Set<String> {
+        val now = System.currentTimeMillis()
+        homeCache?.let { if (now - homeCacheAt < PACKAGE_CACHE_MILLIS) return it }
+        val query = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+        val packages = runCatching {
+            context.packageManager.queryIntentActivities(query, 0)
+                .map { it.activityInfo.applicationInfo.packageName }
+                .toSet()
+        }.getOrDefault(homeCache ?: emptySet())
+        homeCache = packages
+        homeCacheAt = now
         return packages
     }
 

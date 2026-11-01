@@ -47,6 +47,9 @@ class GuardService : Service() {
     private var watcher: Job? = null
     private var sincronizzatore: Job? = null
 
+    /** Quando si e provato l'ultima volta a riportare davanti StarKid. */
+    private var ultimoRientro = 0L
+
     private lateinit var prefs: Prefs
     private lateinit var usage: UsageReader
 
@@ -147,6 +150,22 @@ class GuardService : Service() {
 
         val foreground = usage.foregroundPackage(POLL_MILLIS * 4) ?: return
         if (foreground == packageName) return
+
+        // Davanti c'e un altro launcher. Non e una app che il bambino ha
+        // aperto: e StarKid che e stata messa da parte, e con lei se n'e
+        // andato il lock task. Succede a ogni aggiornamento dell'app, che
+        // chiude l'activity, e succede dopo un arresto. Visto sul TB310FU:
+        // tablet lasciato sul launcher Lenovo, con dentro tutte le app, e del
+        // kiosk non restava niente mentre il server lo dava per acceso.
+        //
+        // Non si mostra nessun blocco - al bambino non c'e niente da
+        // spiegare - si torna a casa, e rientrando in MainActivity rientra
+        // anche il lock task.
+        if (config.kioskEnabled && foreground in InstalledApps.homePackages(this)) {
+            tornaACasa()
+            return
+        }
+
         // Interessano solo le vere app: barra di sistema, tastiere e servizi non
         // vanno toccati, o il blocco scatterebbe a ogni notifica.
         if (foreground !in InstalledApps.launchablePackages(this)) return
@@ -165,6 +184,24 @@ class GuardService : Service() {
      * toglierlo riporterebbe il bambino dentro l'app, per farcelo ribloccare
      * quattro secondi dopo. Da li si esce con indietro, che porta a casa.
      */
+    /**
+     * Riporta davanti StarKid, senza dire niente a nessuno.
+     *
+     * Con la pausa in mezzo perche, se l'avvio da sottofondo venisse
+     * rifiutato, questa verrebbe richiamata ogni quattro secondi per sempre.
+     * Quando invece funziona la pausa non si vede: al giro dopo davanti c'e
+     * StarKid e non si passa nemmeno di qui.
+     */
+    private fun tornaACasa() {
+        val adesso = System.currentTimeMillis()
+        if (adesso - ultimoRientro < RIENTRO_MILLIS) return
+        ultimoRientro = adesso
+        val intent = Intent(this, MainActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        }
+        runCatching { startActivity(intent) }
+    }
+
     private fun nascondiBloccoGenerale() {
         val motivo = LockActivity.motivoInCorso ?: return
         if (motivo !in MOTIVI_GENERALI) return
@@ -226,6 +263,9 @@ class GuardService : Service() {
         private const val CHANNEL_ID = "guard"
         private const val NOTIFICATION_ID = 42
         private const val POLL_MILLIS = 4_000L
+
+        /** Quanto si aspetta prima di riprovare a tornare a casa. */
+        private const val RIENTRO_MILLIS = 10_000L
 
         /**
          * I motivi che non dipendono da quale app c'era davanti, e che
