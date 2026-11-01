@@ -1683,3 +1683,41 @@ pre {
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
   margin-bottom: 24px;
 }
+
+/* ------------------------------------------------------------------ RUOLI
+   Un osservatore ha una sessione buona e pure il suo token CSRF: a fermarlo
+   e il server, con un 403. Queste righe non sono una difesa - servono a non
+   mettergli davanti dei bottoni che gli risponderebbero di no.
+   La regola e una sola e sta qui: ogni pagina mette .solo-chi-scrive su
+   quello che scrive, e non deve ricordarsi altro. */
+:root[data-ruolo="osservatore"] .solo-chi-scrive { display: none !important; }
+
+/* Il contrario: quello che si mostra SOLO a chi guarda e basta, per dirgli
+   perche non vede i bottoni invece di lasciarlo a chiedersi se e rotto. */
+.solo-sola-lettura { display: none; }
+:root[data-ruolo="osservatore"] .solo-sola-lettura { display: block; }
+
+/* Il nome di chi e entrato, nella barra. Accanto a Esci, perche la domanda
+   "chi sono adesso" nasce quasi sempre un attimo prima di uscire. */
+.barra .chi {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--notte-tenue);
+  font: 600 14px/1 var(--font-testo);
+  padding: 0 10px;
+}
+.barra .chi b { color: var(--notte-testo); font-weight: 700; }
+@media (max-width: 560px) {
+  /* Su un telefono la barra ha gia il marchio, le sezioni e Esci: il nome e
+     la prima cosa che si puo togliere. Resta nella pagina Utenti. */
+  .barra .chi { display: none; }
+}
+
+/* La pagina Utenti aperta da chi non e amministratore: il server risponde
+   403 a tutto, quindi lasciargli davanti il modulo e solo una presa in giro.
+   Si vede la sola riga che spiega perche. */
+.solo-admin { display: none; }
+:root[data-ruolo="admin"] .solo-admin { display: block; }
+:root[data-ruolo="admin"] .solo-non-admin { display: none; }

@@ -171,7 +171,15 @@
       var vuoto = SK.el('div', { classe: 'carta centrato' }, [
         SK.el('h2', { testo: 'Qui non c\'e ancora niente' }),
         SK.el('p', { testo: 'Aggiungi il primo tablet: il server ti da un codice di arruolamento e la pagina ti disegna il QR da inquadrare col tablet appena riportato alle condizioni di fabbrica.' }),
-        SK.el('a', { classe: 'bottone', href: 'nuovo.html', testo: 'Aggiungi un tablet' })
+        /* .solo-chi-scrive anche qui: questo bottone lo disegna il
+           JavaScript, quindi la classe messa nell'HTML non lo copre, e a un
+           osservatore resterebbe davanti l'unico bottone della pagina
+           vuota - quello che il server gli rifiuterebbe. */
+        SK.el('a', {
+          classe: 'bottone solo-chi-scrive',
+          href: 'nuovo.html',
+          testo: 'Aggiungi un tablet'
+        })
       ]);
       elenco.appendChild(vuoto);
       return;

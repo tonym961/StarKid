@@ -842,6 +842,43 @@ var SK = (function () {
       .then(function () { window.location.replace('index.html?motivo=uscito'); });
   }
 
+  /* Chi sono, letto una volta sola per pagina.
+
+     Prima non c'era modo di saperlo: nome e ruolo arrivavano soltanto nella
+     risposta del login, quindi dopo un ricaricamento la pagina non sapeva
+     piu chi fosse e mostrava tutto a tutti. Con un account solo non se ne
+     accorgeva nessuno. */
+  var _io = null;
+  function chiSono() {
+    if (_io) return _io;
+    _io = api('GET', '/api/v1/auth/io').then(function (dati) {
+      return {
+        utente: String(dati.utente || ''),
+        ruolo: String(dati.ruolo || 'genitore'),
+        puoAmministrare: dati.puo_amministrare === true,
+        solaLettura: dati.sola_lettura === true
+      };
+    });
+    return _io;
+  }
+
+  /* Il ruolo finisce su <html data-ruolo="...">, cosi la CSS puo nascondere
+     quello che non serve senza che ogni pagina se lo ricordi. NON e una
+     difesa: il server rifiuta comunque, con 403. Questo serve a non mettere
+     davanti a un osservatore dei bottoni che gli risponderebbero di no. */
+  function vestiPerIlRuolo(io) {
+    document.documentElement.setAttribute('data-ruolo', io.ruolo);
+    var nav = $('.barra nav');
+    if (nav && io.puoAmministrare && !$('.barra nav a[href="utenti.html"]')) {
+      var voce = el('a', { href: 'utenti.html', testo: 'Utenti' });
+      nav.appendChild(voce);
+      var pagina = window.location.pathname.split('/').pop() || 'index.html';
+      if (pagina === 'utenti.html') voce.classList.add('attiva');
+    }
+    var chi = $('#chi-sono');
+    if (chi) chi.textContent = io.utente;
+  }
+
   function avvia() {
     var bottone = $('#esci');
     if (bottone) bottone.addEventListener('click', function () { esci(); });
@@ -849,6 +886,11 @@ var SK = (function () {
     $$('.barra nav a').forEach(function (a) {
       if (a.getAttribute('href') === pagina) a.classList.add('attiva');
     });
+    /* Solo dove c'e una barra, cioe dentro: la pagina di accesso non ha
+       sessione e la chiamata risponderebbe 401 a vuoto. */
+    if ($('.barra nav')) {
+      chiSono().then(vestiPerIlRuolo).catch(function () { /* ci pensa la pagina */ });
+    }
   }
   document.addEventListener('DOMContentLoaded', avvia);
 
@@ -867,6 +909,7 @@ var SK = (function () {
     arruolato: tabletArruolato, listaSpie: listaSpie, cartelloLimiti: cartelloLimiti,
     avviso: avviso, mostraErrore: mostraErrore, mostraMessaggio: mostraMessaggio,
     pulisci: pulisci, occupato: occupato,
-    scarica: scarica, copia: copia, nomeFileSicuro: nomeFileSicuro, esci: esci
+    scarica: scarica, copia: copia, nomeFileSicuro: nomeFileSicuro, esci: esci,
+    chiSono: chiSono
   };
 })();

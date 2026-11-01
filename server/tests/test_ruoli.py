@@ -432,3 +432,34 @@ def test_le_rotte_dei_dispositivi_non_sono_cambiate(cliente: TestClient) -> None
     assert cliente.post(
         "/api/v1/device/enroll", json={"token_arruolamento": "a" * 20}
     ).status_code == 401
+
+
+def test_le_letture_non_pretendono_il_token_csrf(genitore: TestClient) -> None:
+    """Una GET che pretende il CSRF risponde 403 a chi ha fatto tutto giusto.
+
+    E successo davvero, e i test non l'avevano visto: mettono l'intestazione
+    CSRF come predefinita sul client, quindi la mandano anche sulle letture.
+    Il browser no, e la pagina Utenti rispondeva "token CSRF mancante" a un
+    amministratore appena entrato.
+
+    Qui si tolgono le intestazioni per il tempo della prova, come farebbe un
+    browser vero.
+    """
+    senza = dict(genitore.headers)
+    senza.pop("x-csrf-token", None)
+    for percorso in ("/api/v1/utenti", "/api/v1/auth/io", "/api/v1/tablets"):
+        risposta = genitore.get(percorso, headers={"x-csrf-token": ""})
+        assert risposta.status_code == 200, "%s ha risposto %s senza CSRF" % (
+            percorso, risposta.status_code,
+        )
+
+
+def test_le_scritture_lo_pretendono_eccome(genitore: TestClient) -> None:
+    """L'altra meta: senza token, una scrittura deve prendere 403."""
+    risposta = genitore.post(
+        "/api/v1/utenti",
+        json={"utente": "senzacsrf", "password": ALTRA_PAROLA, "ruolo": "genitore"},
+        headers={"x-csrf-token": ""},
+    )
+    assert risposta.status_code == 403
+    assert auth.utente_per_nome("senzacsrf") is None

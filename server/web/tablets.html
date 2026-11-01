@@ -66,6 +66,7 @@
     <a href="tablets.html">Tablet</a>
     <a href="salute.html">Servizio</a>
   </nav>
+  <span class="chi">Sei <b id="chi-sono">&nbsp;</b></span>
   <button type="button" id="esci" class="bottone fantasma">Esci</button>
 </header>
 
@@ -81,12 +82,23 @@
     </div>
     <div class="riga-bottoni">
       <button type="button" class="bottone secondario piccolo" id="ricarica">Ricarica</button>
-      <a class="bottone" href="nuovo.html">Aggiungi un tablet</a>
+      <!-- .solo-chi-scrive: un osservatore prenderebbe 403 dal server, e un
+           bottone che risponde di no e peggio di un bottone che non c'e. -->
+      <a class="bottone solo-chi-scrive" href="nuovo.html">Aggiungi un tablet</a>
     </div>
   </div>
 
   <!-- Gli errori della pagina: ci scrive SK.mostraErrore, e nasce nascosto. -->
   <div id="messaggio" class="nascosto" aria-live="polite"></div>
+
+  <!-- Si vede solo a chi ha un accesso in sola lettura. Senza, un
+       osservatore trova una pagina con meno bottoni e non sa se e rotta. -->
+  <div class="avviso solo-sola-lettura">
+    <h3>Il tuo accesso e in sola lettura</h3>
+    <p>Puoi guardare tutto quello che ti e stato dato, ma non cambiare
+    niente e non aggiungere tablet. Se ti serve di piu, chiedi a chi ti ha
+    fatto l'account.</p>
+  </div>
 
   <!-- Il cartello di tutta la pagina. Se su un tablet i limiti di tempo non
        stanno funzionando, qui arriva un .avviso.guasto con role="alert" e

@@ -36,6 +36,18 @@
 -->
 <defs>
 
+  <!-- Due persone, una davanti e una dietro: "utenti" al plurale si capisce
+       solo se sono due. Quella dietro e tagliata a meta dal bordo, come
+       farebbe una fotografia, invece di essere disegnata intera piu piccola:
+       a 20px due teste intere diventano due palline e non si legge niente. -->
+  <symbol id="ico-persone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <title>Utenti</title>
+    <circle cx="9.5" cy="8" r="3.6"/>
+    <path d="M3.2 20.2v-1.1a4.6 4.6 0 0 1 4.6-4.6h3.4a4.6 4.6 0 0 1 4.6 4.6v1.1"/>
+    <path d="M16.6 4.9a3.6 3.6 0 0 1 0 6.9"/>
+    <path d="M18.1 14.6h.6a4.6 4.6 0 0 1 4.6 4.6v1"/>
+  </symbol>
+
   <symbol id="ico-tablet" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <title>Tablet</title>
     <rect x="4" y="2.5" width="16" height="19" rx="2.5"/>

@@ -426,19 +426,40 @@ def sessione_scrivibile(
     return sessione
 
 
-def sessione_admin(sessione: sqlite3.Row = Depends(sessione_scrivibile)) -> sqlite3.Row:
-    """Dipendenza delle rotte che amministrano gli utenti.
-
-    403 e non 404: nascondere l'esistenza della pagina a chi e gia dentro non
-    aggiunge niente, e un 404 su una rotta che esiste e il modo di far
-    perdere un pomeriggio a chi la sta provando.
-    """
+def _esigi_admin(sessione: sqlite3.Row) -> sqlite3.Row:
+    """403 e non 404: nascondere l'esistenza della pagina a chi e gia dentro
+    non aggiunge niente, e un 404 su una rotta che esiste e il modo di far
+    perdere un pomeriggio a chi la sta provando."""
     if str(sessione["ruolo"]) != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="serve un account amministratore",
         )
     return sessione
+
+
+def sessione_admin(sessione: sqlite3.Row = Depends(sessione_attiva)) -> sqlite3.Row:
+    """Amministratore, in LETTURA. Niente CSRF.
+
+    Sono due dipendenze e non una perche il token CSRF si pretende sulle
+    scritture e basta: la web UI non lo manda sulle GET, di proposito, e una
+    GET che lo pretende risponde 403 a chi ha fatto tutto giusto. E successo:
+    la prima versione di questa dipendenza passava da sessione_scrivibile, e
+    l'elenco degli utenti rispondeva "token CSRF mancante" a un
+    amministratore appena entrato.
+
+    I test non l'avevano visto perche mettono l'intestazione CSRF come
+    predefinita sul client, quindi la mandano anche sulle letture. Il browser
+    no.
+    """
+    return _esigi_admin(sessione)
+
+
+def sessione_admin_scrivibile(
+    sessione: sqlite3.Row = Depends(sessione_scrivibile),
+) -> sqlite3.Row:
+    """Amministratore, in SCRITTURA: sessione valida, CSRF e ruolo."""
+    return _esigi_admin(sessione)
 
 
 # ---------------------------------------------------------------------------

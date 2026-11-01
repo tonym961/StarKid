@@ -1,0 +1,197 @@
+<!doctype html>
+<!--
+  utenti.html - chi puo entrare, e cosa vede.
+  ===========================================================================
+  La vede solo un amministratore: il collegamento nella barra lo aggiunge
+  app.js dopo aver chiesto al server chi sei, e le rotte /api/v1/utenti
+  rispondono 403 a tutti gli altri. Nascondere il collegamento e una
+  cortesia; la serratura e il 403.
+
+  LE DUE REGOLE che il server non lascia scavalcare, e che qui si spiegano
+  invece di limitarsi a mostrare un errore quando scattano:
+    - non ci si disattiva ne ci si cancella da soli;
+    - l'ultimo amministratore attivo resta.
+  Senza quelle due, un clic sbagliato lascia un server che nessuno puo piu
+  amministrare dal web, e si rientra solo via SSH.
+
+  QUELLO CHE IL JAVASCRIPT CERCA QUI, e che quindi non si rinomina:
+    app.js (avvia)    #esci, '.barra nav a', #chi-sono
+    pagina-utenti.js  #sottotitolo, #messaggio, #elenco, #ricarica,
+                      #modulo-nuovo e i suoi campi (#nuovo-utente,
+                      #nuova-password, #nuovo-ruolo, #nuovo-padre),
+                      #errore-nuovo, #dialogo-tablet e il suo #lista-tablet
+
+  Stessa CSP delle altre pagine, verbatim. Niente stile in linea, niente che
+  arrivi da un altro sito.
+  ===========================================================================
+-->
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex, nofollow">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; connect-src 'self'; form-action 'none'; base-uri 'none'">
+<title>Utenti - StarKid</title>
+<meta name="theme-color" content="#F3F0F9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#070B1E" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="icona.svg" type="image/svg+xml">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<!-- Foglio di icone incollato inline: <use href="icone.svg#..."> non
+     funziona in Chrome e in Safari, e un limite dei browser e non la CSP.
+     Qui solo i quattro symbol che questa pagina usa davvero. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" aria-hidden="true" focusable="false"><defs>
+  <symbol id="ico-persone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Utenti</title><circle cx="9.5" cy="8" r="3.6"/><path d="M3.2 20.2v-1.1a4.6 4.6 0 0 1 4.6-4.6h3.4a4.6 4.6 0 0 1 4.6 4.6v1.1"/><path d="M16.6 4.9a3.6 3.6 0 0 1 0 6.9"/><path d="M18.1 14.6h.6a4.6 4.6 0 0 1 4.6 4.6v1"/></symbol>
+  <symbol id="ico-tablet" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Tablet</title><rect x="4" y="2.5" width="16" height="19" rx="2.5"/><path d="M10 18.5h4"/></symbol>
+  <symbol id="ico-avviso" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Attenzione</title><path d="M10.3 4.8a2 2 0 0 1 3.4 0l7.4 12.9a2 2 0 0 1-1.7 3H4.6a2 2 0 0 1-1.7-3l7.4-12.9z"/><path d="M12 9.5v4.5"/><path d="M12 17.6h.01"/></symbol>
+  <symbol id="ico-piu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><title>Aggiungi</title><path d="M12 5v14M5 12h14"/></symbol>
+</defs></svg>
+
+<a class="salta" href="#principale">Salta al contenuto</a>
+
+<header class="barra">
+  <a class="marchio" href="tablets.html"><img src="marchio.svg" alt="StarKid" width="128" height="26"></a>
+  <nav>
+    <a href="tablets.html">Tablet</a>
+    <a href="salute.html">Servizio</a>
+  </nav>
+  <span class="chi">Sei <b id="chi-sono">&nbsp;</b></span>
+  <button type="button" id="esci" class="bottone fantasma">Esci</button>
+</header>
+
+<main id="principale">
+
+  <div class="intestazione-pagina">
+    <div>
+      <h1><svg class="icona" aria-hidden="true"><use href="#ico-persone"/></svg> Utenti</h1>
+      <p class="tenue" id="sottotitolo">Sto contando...</p>
+    </div>
+    <div class="riga-bottoni">
+      <button type="button" class="bottone secondario piccolo" id="ricarica">Ricarica</button>
+    </div>
+  </div>
+
+  <div id="messaggio" class="nascosto" aria-live="polite"></div>
+
+  <noscript>
+    <div class="avviso guasto">
+      <h3>Serve JavaScript</h3>
+      <p>Questa pagina chiede l'elenco al server e lo disegna qui mentre la
+      guardi. Senza JavaScript resta vuota. Niente arriva da altri siti.</p>
+    </div>
+  </noscript>
+
+  <!-- Chi non e amministratore vede solo questo, e il perche. -->
+  <div class="avviso solo-non-admin">
+    <h3>Questa pagina e degli amministratori</h3>
+    <p>Il tuo account non puo vedere ne cambiare gli altri. Se ti serve,
+    chiedilo a chi ti ha fatto l'account.</p>
+  </div>
+
+  <div id="elenco" class="solo-admin" aria-live="polite">
+    <p class="caricamento">Sto chiedendo al server l'elenco degli account...</p>
+  </div>
+
+  <!-- ====================== un account nuovo ====================== -->
+  <form class="carta solo-admin" id="modulo-nuovo" method="post" novalidate>
+    <h2><svg class="icona" aria-hidden="true"><use href="#ico-piu"/></svg> Un account nuovo</h2>
+
+    <div class="avviso">
+      <h3>Questa non e un'iscrizione</h3>
+      <p>Un account lo crea chi e gia dentro ed e amministratore, oppure la
+      riga di comando sul server. Da fuori, senza credenziali, non esiste
+      nessuna strada per aggiungerne uno: e la stessa promessa che fa la
+      pagina di accesso, e vale ancora.</p>
+    </div>
+
+    <div class="campo">
+      <label for="nuovo-utente">Nome utente</label>
+      <input type="text" id="nuovo-utente" name="utente" autocomplete="off"
+             autocapitalize="none" spellcheck="false" required
+             aria-describedby="aiuto-nuovo-utente errore-nuovo">
+      <span class="aiuto" id="aiuto-nuovo-utente">Senza spazi. Le maiuscole
+      non contano: <code>Nonna</code> e <code>nonna</code> sono lo stesso
+      account, e il server rifiuta il doppione.</span>
+    </div>
+
+    <div class="campo">
+      <label for="nuova-password">Password</label>
+      <input type="text" id="nuova-password" name="password" autocomplete="off"
+             spellcheck="false" required minlength="12"
+             aria-describedby="aiuto-nuova-password">
+      <span class="aiuto" id="aiuto-nuova-password">Almeno 12 caratteri. Si
+      vede mentre la scrivi, perche e una password che devi consegnare a
+      un'altra persona: nasconderla qui servirebbe solo a farti sbagliare a
+      ricopiarla. Chi la riceve se la cambia quando vuole.</span>
+    </div>
+
+    <div class="campo">
+      <label for="nuovo-ruolo">Ruolo</label>
+      <select id="nuovo-ruolo" name="ruolo" aria-describedby="aiuto-nuovo-ruolo">
+        <option value="genitore" selected>Genitore</option>
+        <option value="osservatore">Osservatore</option>
+        <option value="admin">Amministratore</option>
+      </select>
+      <span class="aiuto" id="aiuto-nuovo-ruolo">
+        <strong>Genitore</strong>: configura i tablet che gli dai, e nessun
+        altro.
+        <strong>Osservatore</strong>: li guarda e basta, non puo cambiare
+        niente - per una babysitter o un nonno che vuole sapere come va.
+        <strong>Amministratore</strong>: vede tutti i tablet e puo creare e
+        togliere account, compreso il tuo.
+      </span>
+    </div>
+
+    <div class="campo">
+      <label for="nuovo-padre">Sottoutente di</label>
+      <select id="nuovo-padre" name="id_padre" aria-describedby="aiuto-nuovo-padre">
+        <option value="" selected>Nessuno: account a se</option>
+      </select>
+      <span class="aiuto" id="aiuto-nuovo-padre">Serve a tenere insieme chi
+      dipende da chi: la babysitter di una famiglia, un secondo genitore.
+      Cancellando l'account di sopra spariscono anche i suoi.</span>
+    </div>
+
+    <div class="errore-campo nascosto" id="errore-nuovo"></div>
+
+    <button type="submit" class="bottone" id="crea">Crea l'account</button>
+  </form>
+
+  <div class="carta no-stampa solo-admin">
+    <details>
+      <summary>Cosa non si puo fare, e perche</summary>
+
+      <p><strong>Non puoi disattivare ne cancellare te stesso.</strong> Un
+      clic sbagliato sul proprio account chiude fuori chi sta amministrando, e
+      si rientra solo con una sessione SSH sul server. Se vuoi davvero
+      togliere il tuo, fallo fare a un altro amministratore.</p>
+
+      <p><strong>L'ultimo amministratore attivo resta.</strong> Il server
+      rifiuta di toglierti il ruolo, di disattivarti o di cancellarti se dopo
+      non ne resterebbe nessuno: da quel momento questa pagina sarebbe
+      irraggiungibile per tutti. Il rimedio esiste
+      (<code>python -m app.cli ruolo &lt;nome&gt; admin</code>) ma e dentro la
+      macchina, e non e una cosa che si fa dal telefono.</p>
+
+      <p><strong>Il nome di un account non si cambia.</strong> I nomi finiscono
+      nei log e accanto alle revisioni di configurazione: uno che cambia sotto
+      i piedi rende illeggibile quello che e gia successo. Si disattiva
+      l'account e se ne fa un altro.</p>
+
+      <p><strong>Cancellare un account non cancella i suoi tablet.</strong>
+      Sparisce il permesso di vederli, non il tablet: quello resta, con la sua
+      configurazione e il suo storico. Era voluto, perche un tablet che
+      sparisce dal server e un tablet a cui bisogna andare a portare un codice
+      nuovo a mano.</p>
+    </details>
+  </div>
+
+</main>
+
+<script src="app.js"></script>
+<script src="pagina-utenti.js"></script>
+</body>
+</html>

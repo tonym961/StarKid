@@ -771,9 +771,10 @@ def elimina_tablet(
 # ---------------------------------------------------------------------------
 # Utenti e ruoli
 #
-# Tutte queste rotte vogliono un amministratore (auth.sessione_admin, che a
-# sua volta passa da sessione_scrivibile e quindi pretende anche il token
-# CSRF).
+# Tutte queste rotte vogliono un amministratore. Le LETTURE usano
+# auth.sessione_admin, le SCRITTURE auth.sessione_admin_scrivibile, che in
+# piu pretende il token CSRF: una GET che lo pretendesse risponderebbe 403 a
+# chi ha fatto tutto giusto, perche la web UI non lo manda sulle letture.
 #
 # DUE REGOLE CHE NON SI POSSONO SCAVALCARE, ed e il motivo per cui stanno qui
 # e non nella web UI:
@@ -849,7 +850,7 @@ def elenco_degli_utenti(
 
 @app.post("/api/v1/utenti", status_code=status.HTTP_201_CREATED)
 def nuovo_utente(
-    dati: RichiestaNuovoUtente, sessione: sqlite3.Row = Depends(auth.sessione_admin)
+    dati: RichiestaNuovoUtente, sessione: sqlite3.Row = Depends(auth.sessione_admin_scrivibile)
 ) -> dict[str, Any]:
     if dati.id_padre is not None:
         _utente_o_404(dati.id_padre)
@@ -873,7 +874,7 @@ def nuovo_utente(
 def modifica_utente(
     dati: RichiestaModificaUtente,
     id_utente: int = Path(ge=1),
-    sessione: sqlite3.Row = Depends(auth.sessione_admin),
+    sessione: sqlite3.Row = Depends(auth.sessione_admin_scrivibile),
 ) -> dict[str, Any]:
     _utente_o_404(id_utente)
     if dati.ruolo is not None and dati.ruolo != "admin":
@@ -897,7 +898,7 @@ def modifica_utente(
 def password_utente(
     dati: RichiestaPassword,
     id_utente: int = Path(ge=1),
-    sessione: sqlite3.Row = Depends(auth.sessione_admin),
+    sessione: sqlite3.Row = Depends(auth.sessione_admin_scrivibile),
 ) -> dict[str, Any]:
     """Un amministratore rimette la password a chi l'ha persa.
 
@@ -919,7 +920,7 @@ def password_utente(
 @app.delete("/api/v1/utenti/{id_utente}")
 def elimina_utente(
     id_utente: int = Path(ge=1),
-    sessione: sqlite3.Row = Depends(auth.sessione_admin),
+    sessione: sqlite3.Row = Depends(auth.sessione_admin_scrivibile),
 ) -> dict[str, Any]:
     """Cancella un account, i suoi sottoutenti e i suoi permessi.
 
@@ -952,7 +953,7 @@ def concessioni_utente(
 def imposta_concessioni(
     dati: RichiestaConcessioni,
     id_utente: int = Path(ge=1),
-    sessione: sqlite3.Row = Depends(auth.sessione_admin),
+    sessione: sqlite3.Row = Depends(auth.sessione_admin_scrivibile),
 ) -> dict[str, Any]:
     """Quali tablet vede questo utente. L'elenco arriva intero, non a pezzi.
 
