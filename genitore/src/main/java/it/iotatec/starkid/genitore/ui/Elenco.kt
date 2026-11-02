@@ -21,6 +21,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -62,6 +64,12 @@ fun quando(secondi: Long?, adesso: Long = System.currentTimeMillis() / 1000): St
 
 @Composable
 fun Elenco(stato: Stato) {
+    val contesto = LocalContext.current
+
+    // Una volta per avvio, in silenzio: se GitHub non risponde non succede
+    // niente e non si vede niente.
+    LaunchedEffect(Unit) { stato.cercaAggiornamenti() }
+
     Column(Modifier.fillMaxSize()) {
         Testata(
             stato = stato,
@@ -83,6 +91,14 @@ fun Elenco(stato: Stato) {
         ) {
             stato.errore?.let { messaggio ->
                 item { Avviso(messaggio, Tono.GUASTO) }
+            }
+
+            // Si fa vedere solo quando c'e davvero qualcosa di nuovo: un
+            // riquadro "sei aggiornato" fisso in cima all'elenco e rumore
+            // che si impara a saltare, e il giorno che serve non lo si
+            // legge.
+            stato.novita?.let { nuova ->
+                item { Aggiornamento(nuova, stato.scaricando) { stato.aggiorna(contesto) } }
             }
 
             if (stato.tablet.isEmpty() && !stato.occupato) {
@@ -202,6 +218,49 @@ fun Testata(
         azioni()
         if (indietro == null) {
             TextButton(onClick = { stato.esci() }) { Text("Esci") }
+        }
+    }
+}
+
+/**
+ * C'e una versione nuova dell'app dei genitori.
+ *
+ * Dice la versione e quanto pesa prima di scaricarla: su una connessione a
+ * consumo undici megabyte non sono una sorpresa da fare a qualcuno. Il
+ * bottone scarica e apre l'installatore di Android; non installa da solo.
+ */
+@Composable
+private fun Aggiornamento(
+    novita: it.iotatec.starkid.genitore.net.Aggiornamenti.Novita,
+    scaricando: Boolean,
+    onAggiorna: () -> Unit,
+) {
+    Carta {
+        Text(
+            "C'e la versione ${novita.versione}",
+            style = MaterialTheme.typography.titleMedium,
+            color = Tinte.Testo,
+        )
+        Spacer(Modifier.height(6.dp))
+        Text(
+            "Questa e la ${it.iotatec.starkid.genitore.BuildConfig.VERSION_NAME}. " +
+                "Il file pesa ${novita.byte / (1024 * 1024)} MB e arriva dalle release " +
+                "di GitHub, firmato con la stessa chiave di questa app: se la firma non " +
+                "torna, non lo installo.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = Tinte.TestoTenue,
+        )
+        if (novita.note.isNotBlank()) {
+            Spacer(Modifier.height(8.dp))
+            Text(
+                novita.note,
+                style = MaterialTheme.typography.bodySmall,
+                color = Tinte.TestoTenue,
+            )
+        }
+        Spacer(Modifier.height(12.dp))
+        Button(onClick = onAggiorna, enabled = !scaricando) {
+            Text(if (scaricando) "Scarico..." else "Scarica e installa")
         }
     }
 }

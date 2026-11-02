@@ -32,8 +32,8 @@ android {
         // pena, e il launcher ha gia deciso questa soglia.
         minSdk = 26
         targetSdk = 35
-        versionCode = 2
-        versionName = "1.0.2"
+        versionCode = 3
+        versionName = "1.0.3"
     }
 
     signingConfigs {
@@ -61,7 +61,13 @@ android {
 
     kotlinOptions { jvmTarget = "17" }
 
-    buildFeatures { compose = true }
+    // buildConfig: serve a Aggiornamenti.kt, che confronta la versione in
+    // esecuzione con quella pubblicata su GitHub. Senza, VERSION_CODE
+    // andrebbe scritto a mano in un secondo posto.
+    buildFeatures {
+        compose = true
+        buildConfig = true
+    }
 }
 
 dependencies {

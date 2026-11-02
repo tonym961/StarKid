@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -114,6 +115,20 @@ private fun Modulo(stato: Stato, idTablet: String, originale: JSONObject) {
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         stato.errore?.let { item { Avviso(it, Tono.GUASTO) } }
+
+        // ---- chiudi il tablet, adesso ------------------------------------
+        // Prima di tutto il resto, e con un bottone che agisce subito invece
+        // di aspettare il "Salva" in fondo: chiudere il tablet di un figlio
+        // e la cosa che si fa di fretta, in piedi, con una mano sola.
+        // Scorrere un modulo lungo fino in fondo, in quel momento, non si fa.
+        item {
+            BloccoRemoto(
+                chiuso = bozza.optBoolean("bloccato"),
+                altroDaSalvare = cambiato,
+                occupato = stato.occupato,
+                solaLettura = stato.solaLettura,
+            ) { chiuso -> stato.cambiaBlocco(idTablet, bozza, chiuso) }
+        }
 
         // ---- le spie -----------------------------------------------------
         item {
@@ -236,30 +251,10 @@ private fun Modulo(stato: Stato, idTablet: String, originale: JSONObject) {
             }
         }
 
-        // ---- blocco a distanza -------------------------------------------
-        // In un riquadro suo e non dentro "Kiosk": il kiosk dice DOVE il
-        // bambino puo stare, questo dice che adesso non puo stare da nessuna
-        // parte. Sta in alto perche e la cosa che si cerca di fretta.
-        item {
-            Carta {
-                Titoletto("Blocco")
-                Interruttore(
-                    "Tablet bloccato",
-                    "Il tablet si ferma su una schermata che dice che lo hai chiuso tu.",
-                    bozza.optBoolean("bloccato"),
-                ) { modifica { put("bloccato", it) } }
-                if (bozza.optBoolean("bloccato")) {
-                    Spacer(Modifier.height(8.dp))
-                    Avviso(
-                        "Arriva alla prossima chiamata del tablet, entro un minuto: il " +
-                            "tablet chiama il server, il server non chiama il tablet. Se e " +
-                            "spento o senza rete, arriva quando torna. Il PIN sul tablet non " +
-                            "lo apre.",
-                        Tono.ATTESA,
-                    )
-                }
-            }
-        }
+        // Il blocco a distanza non ha un interruttore qui dentro: sta in
+        // cima, con un bottone suo che agisce subito. Due comandi per la
+        // stessa cosa, uno immediato e uno da confermare in fondo, sono il
+        // modo di non sapere piu quale ha vinto.
 
         // ---- kiosk -------------------------------------------------------
         item {
@@ -578,6 +573,97 @@ private fun AppPermesse(attuali: List<String>, onCambia: (List<String>) -> Unit)
             onClick = { onCambia(attuali + nuova); nuova = "" },
             enabled = valido.matches(nuova) && nuova !in attuali,
         ) { Text("Aggiungi") }
+    }
+}
+
+/**
+ * Chiudi o riapri il tablet, adesso.
+ *
+ * E l'unica cosa in questa schermata che non aspetta il "Salva" in fondo:
+ * un bottone, e parte. Il resto della configurazione e una cosa che si
+ * pensa; questa e una cosa che si fa, e quando la si fa e perche serve
+ * adesso.
+ *
+ * Il colore non basta mai da solo, come per le etichette di stato: lo
+ * stato e scritto a parole, grande, sopra al bottone.
+ */
+@Composable
+private fun BloccoRemoto(
+    chiuso: Boolean,
+    altroDaSalvare: Boolean,
+    occupato: Boolean,
+    solaLettura: Boolean,
+    onCambia: (Boolean) -> Unit,
+) {
+    Carta {
+        Text(
+            if (chiuso) "Questo tablet e chiuso" else "Questo tablet e aperto",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            color = if (chiuso) Tinte.Guasto else Tinte.Testo,
+        )
+        Spacer(Modifier.height(6.dp))
+        Text(
+            if (chiuso) {
+                "Il bambino vede una schermata che dice che lo hai chiuso tu, e " +
+                    "non ne esce: il PIN sul tablet non lo apre. Si riapre solo da qui."
+            } else {
+                "Il bambino puo usarlo, dentro gli orari e i limiti qui sotto."
+            },
+            style = MaterialTheme.typography.bodyMedium,
+            color = Tinte.TestoTenue,
+        )
+        Spacer(Modifier.height(12.dp))
+
+        if (solaLettura) {
+            Text(
+                "Il tuo accesso e in sola lettura: il blocco lo mette chi ha il permesso.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Tinte.TestoTenue,
+            )
+            return@Carta
+        }
+
+        Button(
+            onClick = { onCambia(!chiuso) },
+            enabled = !occupato,
+            modifier = Modifier.fillMaxWidth().height(56.dp),
+            colors = if (chiuso) {
+                ButtonDefaults.buttonColors(
+                    containerColor = Tinte.Ok,
+                    contentColor = Tinte.Notte,
+                )
+            } else {
+                ButtonDefaults.buttonColors(
+                    containerColor = Tinte.Guasto,
+                    contentColor = Tinte.Notte,
+                )
+            },
+        ) {
+            Text(
+                if (chiuso) "Riapri il tablet" else "Chiudi il tablet adesso",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+            )
+        }
+
+        Spacer(Modifier.height(8.dp))
+        Text(
+            "Parte subito, senza passare dal Salva. Arriva al tablet entro un " +
+                "minuto: e il tablet che chiama il server, non il contrario. Se e " +
+                "spento o senza rete, arriva quando torna.",
+            style = MaterialTheme.typography.bodySmall,
+            color = Tinte.TestoTenue,
+        )
+        if (altroDaSalvare) {
+            Spacer(Modifier.height(8.dp))
+            Avviso(
+                "Hai modifiche non salvate qui sotto: questo bottone pubblica anche " +
+                    "quelle. Il server vuole il documento intero, e mandarne uno " +
+                    "vecchio cancellerebbe quello che hai appena cambiato.",
+                Tono.ATTESA,
+            )
+        }
     }
 }
 

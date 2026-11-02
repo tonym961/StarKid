@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Quello che questa app puo passare ad altre app, e non un byte di piu.
+
+  Una sola cartella: dove finisce l'APK scaricato per aggiornarsi. Non la
+  cache intera, non i file dell'app, non le preferenze - li dentro ci sono
+  il cookie di sessione e l'indirizzo del server.
+-->
+<paths>
+    <cache-path name="aggiornamenti" path="aggiornamenti/" />
+</paths>

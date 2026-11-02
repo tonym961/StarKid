@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import it.iotatec.starkid.genitore.net.Aggiornamenti
 import it.iotatec.starkid.genitore.net.Api
 import it.iotatec.starkid.genitore.net.ErroreServer
 import it.iotatec.starkid.genitore.net.Tablet
@@ -121,6 +122,29 @@ class Stato(app: Application) : AndroidViewModel(app) {
         avviso = "Salvato. Il tablet la prende al prossimo collegamento."
     }
 
+    /**
+     * Chiude o riapre il tablet, subito.
+     *
+     * Non passa dal "Salva" in fondo al modulo di proposito: e la cosa che
+     * si fa di fretta, e scorrere un modulo lungo in quel momento non si fa.
+     *
+     * Manda il documento che il genitore ha davanti - bozza compresa, se ha
+     * modifiche in corso - con il solo campo "bloccato" cambiato. Il server
+     * vuole il documento intero e non accetta mezze modifiche: mandare
+     * quello vecchio cancellerebbe il lavoro in corso, e la schermata lo
+     * dice prima di farlo.
+     */
+    fun cambiaBlocco(id: String, documento: JSONObject, chiuso: Boolean) = lavora {
+        val nuovo = JSONObject(documento.toString()).put("bloccato", chiuso)
+        configurazione = api.salvaConfigurazione(id, nuovo)
+        tablet = api.elencoTablet()
+        avviso = if (chiuso) {
+            "Tablet chiuso. Il tablet lo applica alla prossima chiamata, entro un minuto."
+        } else {
+            "Tablet riaperto. Il tablet lo applica alla prossima chiamata, entro un minuto."
+        }
+    }
+
     fun creaTablet(nome: String) = lavora {
         appenaCreato = api.nuovoTablet(nome)
         tablet = api.elencoTablet()
@@ -150,6 +174,79 @@ class Stato(app: Application) : AndroidViewModel(app) {
      * 403, che vuol dire "sessione finita" e quindi riporta all accesso
      * invece di lasciare una schermata piena di dati vecchi.
      */
+    // -----------------------------------------------------------------------
+    // Aggiornamenti dell'app, da GitHub
+    // -----------------------------------------------------------------------
+
+    /** La versione nuova, se ce n'e una. */
+    var novita by mutableStateOf<Aggiornamenti.Novita?>(null)
+        private set
+
+    /** Lo scaricamento e in corso: ha un suo stato perche e lento. */
+    var scaricando by mutableStateOf(false)
+        private set
+
+    private var giaCercato = false
+
+    /**
+     * Guarda se c'e una versione nuova.
+     *
+     * In silenzio, e senza passare da [lavora]: un controllo che non riesce
+     * - telefono senza rete, GitHub che risponde male - non deve riempire di
+     * rosso una schermata che sta facendo tutt'altro. Chi lo chiede a mano
+     * invece l'esito lo vuole sapere, e allora [esplicito] e vero.
+     */
+    fun cercaAggiornamenti(esplicito: Boolean = false) {
+        if (giaCercato && !esplicito) return
+        giaCercato = true
+        viewModelScope.launch {
+            val trovata = withContext(Dispatchers.IO) {
+                runCatching { Aggiornamenti.cerca() }.getOrNull()
+            }
+            novita = trovata
+            if (esplicito) {
+                avviso = if (trovata == null) {
+                    "Questa e gia l'ultima versione."
+                } else {
+                    "C'e la ${trovata.versione}."
+                }
+            }
+        }
+    }
+
+    /**
+     * Scarica l'aggiornamento e apre l'installatore di Android.
+     *
+     * L'ultima parola e di chi guarda: questa app non installa niente da
+     * sola. Se il permesso di installare non c'e, si va a chiederlo invece
+     * di aprire un installatore che non farebbe niente.
+     */
+    fun aggiorna(context: android.content.Context) {
+        val quale = novita ?: return
+        if (!Aggiornamenti.puoInstallare(context)) {
+            avviso = "Android chiede il permesso di installare app da StarKid: " +
+                "accendilo e ripremi il bottone."
+            Aggiornamenti.chiediPermessoDiInstallare(context)
+            return
+        }
+        viewModelScope.launch {
+            scaricando = true
+            errore = null
+            try {
+                val file = withContext(Dispatchers.IO) { Aggiornamenti.scarica(context, quale) }
+                Aggiornamenti.installa(context, file)
+            } catch (e: ErroreServer) {
+                errore = e.message
+            } catch (e: IOException) {
+                errore = "Non riesco a scaricare l'aggiornamento. Controlla la connessione."
+            } catch (e: Exception) {
+                errore = "Non ho potuto aggiornare: ${e.message ?: e.javaClass.simpleName}"
+            } finally {
+                scaricando = false
+            }
+        }
+    }
+
     private fun lavora(blocco: suspend () -> Unit) {
         viewModelScope.launch {
             occupato = true
