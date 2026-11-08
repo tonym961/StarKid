@@ -645,7 +645,7 @@ fun KioskScreen(
                     }
                     Spacer(Modifier.size(14.dp))
                     SwitchRow(
-                        label = "Lascia le app recenti",
+                        label = "Lascia la barra di Android in basso",
                         checked = config.kioskRecents,
                         onCheckedChange = onRecents,
                     )

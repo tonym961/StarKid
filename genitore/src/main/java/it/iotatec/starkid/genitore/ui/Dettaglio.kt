@@ -275,7 +275,7 @@ private fun Modulo(stato: Stato, idTablet: String, originale: JSONObject) {
                     Spacer(Modifier.height(10.dp))
                     Interruttore(
                         "App recenti dentro il kiosk",
-                        "Lascia raggiungibile il tasto delle app recenti.",
+                        "Accende la barra di Android in basso, che porta con se anche il tasto per tutte le app.",
                         bozza.optBoolean("kiosk_recenti"),
                     ) { modifica { put("kiosk_recenti", it) } }
                 }
