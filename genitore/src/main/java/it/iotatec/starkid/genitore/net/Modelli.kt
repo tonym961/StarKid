@@ -3,6 +3,32 @@ package it.iotatec.starkid.genitore.net
 import org.json.JSONObject
 
 /**
+ * Una app che il tablet dice di avere installata.
+ *
+ * [icona] e il data URL che ha scritto il server dopo aver guardato i primi
+ * byte dell'immagine - non quello che ha dichiarato il tablet - oppure
+ * stringa vuota se quell'app non ne ha mandata una leggibile. Resta una
+ * stringa fin qui: a trasformarla in qualcosa da disegnare ci pensa chi
+ * disegna, cosi questo strato non sa niente di Compose.
+ */
+data class AppInstallata(
+    val pacchetto: String,
+    val nome: String,
+    val icona: String,
+) {
+    /** Come chiamarla a schermo: il nome se c'e, se no il pacchetto. */
+    val etichetta: String get() = nome.ifBlank { pacchetto }
+
+    companion object {
+        fun da(o: JSONObject): AppInstallata = AppInstallata(
+            pacchetto = o.optString("pacchetto"),
+            nome = o.optString("nome"),
+            icona = o.optString("icona"),
+        )
+    }
+}
+
+/**
  * Quello che il server dice di un tablet.
  *
  * I nomi dei campi sono quelli del server, non tradotti: se un giorno non

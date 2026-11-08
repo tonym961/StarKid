@@ -1,5 +1,6 @@
 package it.iotatec.starkid.genitore.ui
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -35,11 +36,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import it.iotatec.starkid.genitore.Pin
 import it.iotatec.starkid.genitore.Schermata
 import it.iotatec.starkid.genitore.Stato
+import it.iotatec.starkid.genitore.net.AppInstallata
 import it.iotatec.starkid.genitore.net.Spia
 import org.json.JSONArray
 import org.json.JSONObject
@@ -305,7 +308,11 @@ private fun Modulo(stato: Stato, idTablet: String, originale: JSONObject) {
 
         // ---- app ---------------------------------------------------------
         item {
-            AppPermesse(bozza.optJSONArray("app_permesse").aListaDiTesti()) { nuove ->
+            AppPermesse(
+                attuali = bozza.optJSONArray("app_permesse").aListaDiTesti(),
+                installate = stato.appDelTablet,
+                chieste = stato.appChieste,
+            ) { nuove ->
                 modifica { put("app_permesse", JSONArray(nuove)) }
             }
         }
@@ -530,49 +537,143 @@ private fun Giorni(attuali: JSONArray?, onCambia: (JSONArray) -> Unit) {
 }
 
 @Composable
-private fun AppPermesse(attuali: List<String>, onCambia: (List<String>) -> Unit) {
-    var nuova by remember { mutableStateOf("") }
+private fun AppPermesse(
+    attuali: List<String>,
+    installate: List<AppInstallata>,
+    chieste: Boolean,
+    onCambia: (List<String>) -> Unit,
+) {
+    var aMano by remember { mutableStateOf("") }
+    var mostraAMano by remember { mutableStateOf(false) }
     // Lo stesso del server (schema/config.schema.json): solo nomi di
     // pacchetto, perche un nome di pacchetto non puo essere un indirizzo,
     // un percorso o un comando.
     val valido = Regex("^[a-zA-Z][a-zA-Z0-9_]*(\\.[a-zA-Z0-9_]+)+$")
+
+    // Le permesse che il tablet non elenca: un'app disinstallata, o una
+    // scritta a mano prima di installarla. Si vedono lo stesso, se no
+    // sparirebbero dalla vista pur restando nel documento.
+    val elencate = installate.map { it.pacchetto }.toSet()
+    val fuoriElenco = attuali.filter { it !in elencate }
+
     Carta {
         Titoletto("App permesse")
         Text(
-            "Le app installate sul tablet che il bambino può aprire. Di solito si scelgono " +
-                "dall'area genitori sul tablet, dove si vedono con nome e icona: qui si " +
-                "aggiungono scrivendo il nome del pacchetto.",
+            when {
+                !chieste -> "Sto chiedendo al server quali app ha il tablet..."
+                installate.isEmpty() ->
+                    "Il tablet non ha ancora mandato l'elenco delle sue app: lo manda al " +
+                        "prossimo collegamento. Intanto si scrivono a mano qui sotto."
+                else ->
+                    "Spunta quelle che il bambino può aprire. L'elenco lo dichiara il " +
+                        "tablet: ci sono anche le app di sistema, perché sono proprio " +
+                        "quelle che vuoi poter decidere di non permettere."
+            },
             style = MaterialTheme.typography.bodyMedium,
             color = Tinte.TestoTenue,
         )
         Spacer(Modifier.height(10.dp))
-        if (attuali.isEmpty()) {
-            Text("Nessuna: il bambino vede solo StarKid e i suoi giochi.", color = Tinte.TestoTenue)
-        }
-        for (pacchetto in attuali) {
-            Row(
-                Modifier.fillMaxWidth().padding(vertical = 2.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Text(pacchetto, style = MaterialTheme.typography.bodyMedium, color = Tinte.Testo)
-                TextButton(onClick = { onCambia(attuali - pacchetto) }) { Text("Togli") }
+
+        for (app in installate) {
+            RigaApp(
+                nome = app.etichetta,
+                pacchetto = app.pacchetto,
+                icona = app.icona,
+                mancante = false,
+                permessa = app.pacchetto in attuali,
+            ) { acceso ->
+                onCambia(if (acceso) attuali + app.pacchetto else attuali - app.pacchetto)
             }
         }
-        Spacer(Modifier.height(8.dp))
-        OutlinedTextField(
-            value = nuova,
-            onValueChange = { nuova = it.trim() },
-            label = { Text("com.esempio.app") },
-            singleLine = true,
-            isError = nuova.isNotEmpty() && !valido.matches(nuova),
-            modifier = Modifier.fillMaxWidth(),
-        )
-        Spacer(Modifier.height(8.dp))
-        OutlinedButton(
-            onClick = { onCambia(attuali + nuova); nuova = "" },
-            enabled = valido.matches(nuova) && nuova !in attuali,
-        ) { Text("Aggiungi") }
+        for (pacchetto in fuoriElenco) {
+            RigaApp(
+                nome = pacchetto,
+                pacchetto = pacchetto,
+                icona = "",
+                mancante = true,
+                permessa = true,
+            ) { acceso ->
+                onCambia(if (acceso) attuali + pacchetto else attuali - pacchetto)
+            }
+        }
+
+        if (installate.isEmpty() && fuoriElenco.isEmpty() && chieste) {
+            Text(
+                "Nessuna app spuntata: al bambino restano i giochi di StarKid.",
+                color = Tinte.TestoTenue,
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        }
+
+        Spacer(Modifier.height(10.dp))
+        TextButton(onClick = { mostraAMano = !mostraAMano }) {
+            Text(if (mostraAMano) "Nascondi" else "Scrivine una a mano")
+        }
+        if (mostraAMano) {
+            OutlinedTextField(
+                value = aMano,
+                onValueChange = { aMano = it.trim() },
+                label = { Text("com.esempio.app") },
+                singleLine = true,
+                isError = aMano.isNotEmpty() && !valido.matches(aMano),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(8.dp))
+            OutlinedButton(
+                onClick = { onCambia(attuali + aMano); aMano = "" },
+                enabled = valido.matches(aMano) && aMano !in attuali,
+            ) { Text("Aggiungi") }
+        }
+    }
+}
+
+/**
+ * Una app nell'elenco: icona, nome, e sotto il pacchetto.
+ *
+ * Il nome lo scrive chi ha fatto l'app, non noi, e per questo il pacchetto
+ * sta sempre accanto: due app possono chiamarsi uguale, il pacchetto no. E
+ * l'icona e quella vera, perche in un elenco di venticinque voci e la cosa
+ * che si riconosce - "com.google.android.apps.youtube.kids" no.
+ */
+@Composable
+private fun RigaApp(
+    nome: String,
+    pacchetto: String,
+    icona: String,
+    mancante: Boolean,
+    permessa: Boolean,
+    onCambia: (Boolean) -> Unit,
+) {
+    Row(
+        Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        val disegno = iconaDa(icona)
+        if (disegno != null) {
+            Image(
+                bitmap = disegno,
+                contentDescription = null,
+                modifier = Modifier.size(40.dp).clip(RoundedCornerShape(10.dp)),
+            )
+        } else {
+            // Niente icona: un riquadro vuoto della stessa misura, se no le
+            // righe si disallineano e l'elenco sembra storto.
+            Box(
+                Modifier.size(40.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(Tinte.Campo),
+            )
+        }
+        Column(Modifier.weight(1f)) {
+            Text(nome, style = MaterialTheme.typography.bodyLarge, color = Tinte.Testo)
+            Text(
+                if (mancante) "$pacchetto · il tablet non la elenca fra le sue app" else pacchetto,
+                style = MaterialTheme.typography.bodySmall,
+                color = Tinte.TestoTenue,
+            )
+        }
+        Switch(checked = permessa, onCheckedChange = onCambia)
     }
 }
 

@@ -7,6 +7,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import it.iotatec.starkid.genitore.net.Aggiornamenti
+import it.iotatec.starkid.genitore.net.AppInstallata
 import it.iotatec.starkid.genitore.net.Api
 import it.iotatec.starkid.genitore.net.ErroreServer
 import it.iotatec.starkid.genitore.net.Tablet
@@ -109,8 +110,30 @@ class Stato(app: Application) : AndroidViewModel(app) {
         tablet = api.elencoTablet()
     }
 
+    /**
+     * Le app che il tablet dice di avere installate, per la scheda aperta.
+     *
+     * Vuota finche non si sa, e vuota anche quando il tablet non ne ha
+     * ancora mandate: la schermata deve saper dire le due cose in modo
+     * diverso, percio c'e [appChieste] a dire se la domanda e gia stata
+     * fatta.
+     */
+    var appDelTablet by mutableStateOf<List<AppInstallata>>(emptyList())
+        private set
+    var appChieste by mutableStateOf(false)
+        private set
+
     private fun caricaConfigurazione(id: String) = lavora {
         configurazione = api.configurazione(id)
+        // Dentro lo stesso giro della configurazione: sono le due cose che
+        // servono alla schermata, e chiederle separate vorrebbe dire
+        // mostrarla mezza vuota per un istante.
+        //
+        // Un elenco che non arriva non deve impedire di configurare il
+        // resto: nel peggiore dei casi si torna a scrivere i pacchetti a
+        // mano, che e quello che si faceva prima.
+        appDelTablet = runCatching { api.appInstallate(id) }.getOrDefault(emptyList())
+        appChieste = true
     }
 
     private fun caricaStorico(id: String) = lavora { storico = api.storico(id) }

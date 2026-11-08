@@ -117,6 +117,23 @@ class Api(contesto: Context) {
     fun configurazione(idTablet: String): JSONObject =
         chiama("GET", "/api/v1/tablets/$idTablet/config", null)
 
+    /**
+     * Le app che il tablet dice di avere installate, con nome e icona.
+     *
+     * Serve a far spuntare le app da un elenco invece di far scrivere
+     * "com.google.android.apps.youtube.kids" a mano, che e il modo piu
+     * sicuro di sbagliare una lettera e non capire perche quell'app non si
+     * apre. Un tablet che non ha ancora parlato risponde con un elenco
+     * vuoto, e non e un errore: e il caso di tutti i tablet appena creati.
+     */
+    fun appInstallate(idTablet: String): List<AppInstallata> {
+        val risposta = chiama("GET", "/api/v1/tablets/$idTablet/apps", null)
+        val elenco = risposta.optJSONArray("app") ?: return emptyList()
+        return (0 until elenco.length()).mapNotNull { i ->
+            elenco.optJSONObject(i)?.let(AppInstallata::da)
+        }.filter { it.pacchetto.isNotBlank() }
+    }
+
     fun salvaConfigurazione(idTablet: String, documento: JSONObject): JSONObject =
         chiama("PUT", "/api/v1/tablets/$idTablet/config", documento)
 

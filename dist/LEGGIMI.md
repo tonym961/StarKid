@@ -40,6 +40,25 @@ Qui stanno le build firmate che si installano senza compilare niente. Ci sono
 perche l'app dei genitori non passa dal Play Store: la si scarica da qui, la si
 mette sul telefono e si apre.
 
+## StarKid-Genitori-1.0.6.apk
+
+Le **app permesse si spuntano da un elenco**, con nome e icona vera, invece
+di scrivere `com.esempio.app` a mano. L'elenco lo dichiara il tablet: ci sono
+anche le app di sistema, perche sono proprio quelle che un genitore vuole
+poter decidere di non permettere. Il campo per scriverne una a mano resta,
+chiuso, per un'app non ancora installata.
+
+E i testi hanno **gli accenti**: "Questo tablet e aperto" si leggeva come una
+frase a meta.
+
+| | |
+|---|---|
+| pacchetto | `it.iotatec.starkid.genitore` |
+| versione | 1.0.6 (versionCode 6) |
+| Android minimo | 8.0 (API 26) |
+| firma | `CN=StarKid, O=iotatec, C=IT` |
+| SHA-256 | `b3567d570688342609ebcf69bdc468a99cf40b7583210b1f0a176831480a6735` |
+
 ## StarKid-Genitori-1.0.5.apk
 
 Il **blocco del tablet si fa dall'elenco**, senza aprire la scheda: un bottone
