@@ -161,6 +161,19 @@ var SK = (function () {
      davvero di funzionare: e la differenza fra un avviso e un allarme. */
   var SPIE = [
     {
+      /* Non "il kiosk e acceso": il lock task e in funzione in questo
+         momento. Sono due cose diverse, e finche questa spia non c'era la
+         differenza non si vedeva da nessuna parte: il server diceva "kiosk
+         attivo" perche il tablet aveva confermato la configurazione, e
+         intanto sul tablet la barra di sistema era li. */
+      chiave: 'kiosk_attivo',
+      nome: 'Kiosk in funzione adesso',
+      limiti: false,
+      spenta: 'Il tablet non e chiuso su StarKid in questo momento, anche se il kiosk risulta acceso. ' +
+        'Normale mentre un genitore e dentro l\'area genitori, dove StarKid si toglie di mezzo apposta.',
+      rimedio: 'Se nessuno e davanti al tablet, torna alla schermata del bambino: il kiosk rientra da solo.'
+    },
+    {
       chiave: 'default_home',
       nome: 'Launcher predefinito',
       limiti: true,

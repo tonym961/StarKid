@@ -4,20 +4,25 @@ Qui stanno le build firmate che si installano senza compilare niente. Ci sono
 perche l'app dei genitori non passa dal Play Store: la si scarica da qui, la si
 mette sul telefono e si apre.
 
-## StarKid-Genitori-1.0.4.apk
+## StarKid-Genitori-1.0.5.apk
 
 Il **blocco del tablet si fa dall'elenco**, senza aprire la scheda: un bottone
 per tablet, che dice "Chiudi il tablet adesso" o "Riapri" e parte subito.
 Nella scheda il blocco e salito in cima, sempre con un bottone che non
 aspetta il salvataggio in fondo.
 
+Fra le spie ce n'e una nuova, **"Kiosk in funzione adesso"**: dice se il
+tablet e chiuso su StarKid in questo momento, che non e la stessa cosa di
+"il kiosk risulta acceso". Finche non c'era, un tablet poteva risultare
+chiuso da qui mentre era aperto in mano al bambino.
+
 | | |
 |---|---|
 | pacchetto | `it.iotatec.starkid.genitore` |
-| versione | 1.0.4 (versionCode 4) |
+| versione | 1.0.5 (versionCode 5) |
 | Android minimo | 8.0 (API 26) |
 | firma | `CN=StarKid, O=iotatec, C=IT` |
-| SHA-256 | `173834d3ddf6c7c98032bcd0b47b06a13f1cdce37e227339022f81dbd89252f4` |
+| SHA-256 | `0de89d5a19f1f582c85c4ceb14c6177de56d1256dfb1d8a2fe549a13b47d0ca6` |
 
 Dalla 1.0.3 l'app si aggiorna da sola, quindi questa arriva senza che tu
 debba scaricare niente - **a patto di avere gia la 1.0.3 o piu**. Chi ha la

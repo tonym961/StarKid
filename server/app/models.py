@@ -694,13 +694,20 @@ class RichiestaIcone(Richiesta):
 
 
 class RichiestaSalute(Richiesta):
-    """Le spie del tablet: cinque permessi, nessun dato del bambino."""
+    """Le spie del tablet: permessi e stato, nessun dato del bambino."""
 
     device_owner: bool
     usage_access: bool
     overlay: bool
     guard_running: bool
     default_home: bool
+    # Il lock task e in funzione ADESSO, che non e "il kiosk e acceso nelle
+    # preferenze". La differenza non si vedeva da nessuna parte, e il tablet
+    # poteva risultare chiuso da qui mentre era aperto in mano al bambino.
+    #
+    # Con un valore iniziale perche i tablet che non sono ancora aggiornati
+    # non lo mandano: senza, le loro spie verrebbero rifiutate tutte.
+    kiosk_attivo: bool = False
 
 
 # ---------------------------------------------------------------------------

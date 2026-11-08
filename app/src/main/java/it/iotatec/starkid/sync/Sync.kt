@@ -187,6 +187,10 @@ object Sync {
                 overlay = Settings.canDrawOverlays(context),
                 guardRunning = GuardService.inMarcia,
                 defaultHome = laCasaEStarKid(context),
+                // Quello che sta succedendo davvero, non quello che dice la
+                // preferenza: col kiosk acceso ma il lock task caduto il
+                // tablet e aperto, e da qui non si vedeva.
+                kioskAttivo = Kiosk.inLockTask(context),
             )
 
             // L'inventario delle app, solo quando cambia. Cambia quando si

@@ -246,6 +246,26 @@ class MainActivity : ComponentActivity() {
      * gestione a distanza lo ha chiesto. Due copie di queste tre righe sono
      * due occasioni di dimenticarne una, ed e gia successo con le recenti.
      */
+    /**
+     * Accende il kiosk, da qualunque punto lo si chieda.
+     *
+     * **Non entra in lock task mentre il genitore e nella sua area**, e qui
+     * c'e la storia di un guasto che e costato a qualcuno giorni di "il
+     * kiosk non si accende".
+     *
+     * L'area genitori promette che li dentro niente ti blocca, e la
+     * mantiene riaprendo la manutenzione ogni due minuti finche ci stai:
+     * `apriManutenzione()` chiama `Kiosk.exit()`. Chi accendeva
+     * l'interruttore stando li dentro faceva entrare il lock task e se lo
+     * vedeva spegnere dal ciclo entro due minuti - dall'app stessa, senza
+     * un errore da nessuna parte. L'interruttore restava acceso, il server
+     * diceva "attivo", e il tablet era aperto.
+     *
+     * Adesso il kiosk si accende e basta: la chiusura vera scatta uscendo
+     * dall'area genitori, dove la fa [chiudiManutenzione], ed e la stessa
+     * strada che segue da sempre un kiosk gia acceso. Chi preme
+     * l'interruttore se lo sente dire dalla schermata.
+     */
     private fun accendiKiosk() {
         prefs.setKioskEnabled(true)
         prefs.segnaKioskChiesto(false)
@@ -254,7 +274,7 @@ class MainActivity : ComponentActivity() {
             allowedPackages = prefs.current.allowedPackages,
             allowRecents = prefs.current.kioskRecents,
         )
-        Kiosk.enter(this)
+        if (!inManutenzione()) Kiosk.enter(this)
     }
 
     private fun apriManutenzione() {

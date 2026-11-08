@@ -85,6 +85,11 @@ private fun JSONObject.optIntOrNull(nome: String): Int? =
 enum class Spia(val chiave: String, val titolo: String, val conseguenza: String) {
     // Le chiavi sono quelle di RichiestaSalute in server/app/models.py: sono
     // in inglese perche le manda il tablet, e non si rinominano per gusto.
+    // Non "il kiosk e acceso": il lock task e in funzione adesso. La
+    // differenza non si vedeva da nessuna parte, e il tablet poteva
+    // risultare chiuso mentre era aperto in mano al bambino.
+    KIOSK_ATTIVO("kiosk_attivo", "Kiosk in funzione adesso",
+        "Spento mentre un genitore e nella sua area, dove StarKid si toglie di mezzo apposta."),
     PREDEFINITO("default_home", "Launcher predefinito",
         "Senza, col tasto Home il bambino torna alla schermata di Android."),
     UTILIZZO("usage_access", "Accesso ai dati di utilizzo",

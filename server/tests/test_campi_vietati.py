@@ -178,3 +178,49 @@ def test_il_tablet_non_puo_inventarsi_un_campo_rifiutato(
         },
     )
     assert muto.status_code == 200, muto.text
+
+
+def test_il_tablet_puo_tacere_sul_kiosk_in_funzione(
+    genitore: TestClient, dispositivo: dict[str, Any]
+) -> None:
+    """La spia "kiosk in funzione" e arrivata dopo, e i tablet non ancora
+    aggiornati non la mandano: senza un valore iniziale le loro spie
+    verrebbero rifiutate tutte, e dal server quei tablet diventerebbero muti
+    proprio mentre si cerca di capire cosa non va."""
+    risposta = genitore.post(
+        "/api/v1/device/health",
+        headers=dispositivo["intestazioni"],
+        json={
+            "device_owner": True,
+            "usage_access": True,
+            "overlay": True,
+            "guard_running": True,
+            "default_home": True,
+        },
+    )
+    assert risposta.status_code == 200, risposta.text
+    voce = genitore.get("/api/v1/tablets").json()["tablets"][0]
+    assert voce["salute_dichiarata"]["kiosk_attivo"] is False
+
+
+def test_il_kiosk_in_funzione_arriva_fino_alla_pagina(
+    genitore: TestClient, dispositivo: dict[str, Any]
+) -> None:
+    """Distingue "il kiosk e acceso nelle preferenze" da "il lock task e in
+    funzione adesso". Finche non c'era, un tablet poteva risultare chiuso
+    da qui mentre era aperto in mano al bambino."""
+    risposta = genitore.post(
+        "/api/v1/device/health",
+        headers=dispositivo["intestazioni"],
+        json={
+            "device_owner": True,
+            "usage_access": True,
+            "overlay": True,
+            "guard_running": True,
+            "default_home": True,
+            "kiosk_attivo": True,
+        },
+    )
+    assert risposta.status_code == 200, risposta.text
+    voce = genitore.get("/api/v1/tablets").json()["tablets"][0]
+    assert voce["salute_dichiarata"]["kiosk_attivo"] is True

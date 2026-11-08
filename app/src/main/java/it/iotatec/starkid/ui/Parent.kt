@@ -612,6 +612,22 @@ fun KioskScreen(
                         },
                         style = MaterialTheme.typography.bodyLarge,
                     )
+                    // Acceso non vuol dire attivo adesso, e qui dentro non lo
+                    // e mai: l'area genitori promette che niente ti blocca, e
+                    // la mantiene uscendo dal lock task finche ci stai. Senza
+                    // questa riga chi accendeva l'interruttore vedeva la barra
+                    // di sistema restare dov'era e pensava che il kiosk fosse
+                    // rotto - e non lo era, stava solo aspettando che uscisse.
+                    if (config.kioskEnabled) {
+                        Spacer(Modifier.size(12.dp))
+                        Text(
+                            text = "Adesso non e in funzione, e qui dentro non lo sara mai: " +
+                                "nell'area genitori StarKid si toglie di mezzo apposta. " +
+                                "Si chiude sul serio quando torni alla schermata del bambino.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                     if (status.kioskFailures.isNotEmpty()) {
                         Spacer(Modifier.size(12.dp))
                         Text(

@@ -53,6 +53,7 @@ class Server(private val indirizzo: String, private val token: String) {
         overlay: Boolean,
         guardRunning: Boolean,
         defaultHome: Boolean,
+        kioskAttivo: Boolean,
     ): JSONObject = chiama(
         "POST",
         "/api/v1/device/health",
@@ -61,7 +62,12 @@ class Server(private val indirizzo: String, private val token: String) {
             .put("usage_access", usageAccess)
             .put("overlay", overlay)
             .put("guard_running", guardRunning)
-            .put("default_home", defaultHome),
+            .put("default_home", defaultHome)
+            // Non "il kiosk e acceso nelle preferenze": il lock task e in
+            // funzione adesso. Sono due cose diverse, e la differenza fra
+            // le due era invisibile da fuori - dal server il tablet
+            // risultava chiuso mentre era aperto.
+            .put("kiosk_attivo", kioskAttivo),
     )
 
     /**
