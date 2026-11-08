@@ -1,5 +1,41 @@
 # APK pronte all'uso
 
+## Tenerla aggiornata con Obtainium
+
+Obtainium guarda le **release** di GitHub, non i file di questa cartella.
+Nel repository ci sono due app diverse - il launcher del tablet e l'app dei
+genitori - quindi ognuna ha le sue release, con il tag che dice quale:
+`genitori-1.0.5` e `launcher-1.0.11`. Una release sola per tutte e due
+avrebbe un numero di versione solo, e sarebbe sbagliato per una delle due.
+
+In Obtainium, "Aggiungi app":
+
+| campo | valore |
+|---|---|
+| URL | `https://github.com/tonym961/StarKid` |
+| Filtro per nome dell'APK (regex) | `StarKid-Genitori-.*\.apk` |
+| Filtro per titolo della release (regex) | `^StarKid Genitori` |
+
+I due filtri servono tutti e due: senza il primo, Obtainium scaricherebbe
+l'APK del launcher, che e un'altra app; senza il secondo, prenderebbe come
+"ultima versione" una release del launcher e crederebbe di essere indietro.
+
+Il repository e pubblico, quindi non serve nessun token in Obtainium.
+
+**Come si pubblica una release**, dalla radice del progetto:
+
+    GITHUB_TOKEN=... ./strumenti/pubblica-release.sh genitori 1.0.5
+
+Il token serve a GitHub per creare la release e si passa nell'ambiente: non
+sta nello script e non va scritto in nessun file del repository. Lo script
+rifiuta di sovrascrivere una release che esiste gia - chi l'ha scaricata ha
+quella, e non si cambia sotto i piedi a nessuno.
+
+L'aggiornamento dentro l'app (dalla 1.0.3) guarda sia le release sia questa
+cartella, quindi funziona in tutti e due i casi. Obtainium, che sta fuori,
+vede solo le release: se ne pubblichi una, aggiornala anche qui.
+
+
 Qui stanno le build firmate che si installano senza compilare niente. Ci sono
 perche l'app dei genitori non passa dal Play Store: la si scarica da qui, la si
 mette sul telefono e si apre.
