@@ -81,81 +81,49 @@
        guarda com'e adesso. -->
   <div id="cartello"></div>
 
-  <div class="avviso">
-    <h3>Si pubblica una revisione alla volta</h3>
-    <p>Quello che cambi qui non arriva subito sul tablet. Quando salvi, il
-    server pubblica una revisione nuova: il tablet se la prende al prossimo
-    collegamento e poi dice lui se l'ha applicata o se ha rifiutato qualcosa.
-    La strada e una sola, da qui al tablet, e nessuna revisione si cancella:
-    in fondo alla pagina c'e tutto lo storico.</p>
-  </div>
+  <!-- Quello che vale adesso, detto in italiano e in cima a tutto.
+       La domanda che porta qualcuno su questa pagina e sempre la stessa -
+       "cosa puo fare adesso mio figlio?" - e prima si rispondeva solo
+       leggendo nove riquadri e mettendoli insieme a mente. Lo riscrive il JS
+       a ogni modifica, quindi mentre si cambia qualcosa e anche l'anteprima
+       di quello che si sta per mandare. -->
+  <section class="carta riassunto nascosto" id="riassunto" aria-live="polite">
+    <h2 id="riassunto-titolo">&nbsp;</h2>
+    <ul class="riassunto-elenco" id="riassunto-righe"></ul>
+    <p class="piccolo tenue" id="riassunto-nota">&nbsp;</p>
+  </section>
 
   <form id="modulo" class="nascosto" method="post" novalidate>
 
+
+    <!-- Il blocco a distanza sta in un riquadro suo e non dentro "Kiosk",
+         perche sono due cose diverse: il kiosk dice DOVE il bambino puo
+         stare, questo dice che adesso non puo stare da nessuna parte. -->
     <fieldset class="carta">
-      <legend>Aspetto</legend>
-      <h2><svg class="icona" aria-hidden="true"><use href="#ico-occhio"/></svg> Come si vede il tablet</h2>
-      <p class="piccolo tenue">Sono le prime cose che il bambino incontra
-      quando accende: che tinte ha davanti, che sfondo, come sono messe le app
-      e come sta il tablet in mano.</p>
+      <legend>Chiuso adesso</legend>
+      <h2><svg class="icona" aria-hidden="true"><use href="#ico-avviso"/></svg> Chiudi il tablet adesso</h2>
+      <p class="piccolo tenue">Il tablet si ferma su una schermata che dice
+      che lo hanno chiuso i genitori. Non e un limite di tempo e non scade da
+      solo: si riapre solo da qui.</p>
 
-      <div class="campo">
-        <!-- label senza for, usata come intestazione del gruppo: e lo stesso
-             modo in cui sono etichettati gli sfondi e i giorni. I due
-             provini li costruisce pagina-tablet.js dentro #temi. -->
-        <label id="etichetta-tema">Tema</label>
-        <div id="temi" role="radiogroup" aria-labelledby="etichetta-tema"></div>
-        <span class="aiuto">Cambiare tema cambia anche gli sfondi: ogni tema
-        ha i suoi e non si mescolano.</span>
+      <div class="avviso" id="nota-bloccato">
+        <h3>Non e immediato, ed e giusto cosi</h3>
+        <p>Il tablet chiama il server, il server non chiama il tablet: non c'e
+        nessuna porta aperta verso casa tua. Il blocco arriva alla prossima
+        chiamata, entro <strong>un minuto</strong>. Se il tablet e spento o
+        senza rete, arriva quando torna.</p>
       </div>
 
-      <div class="campo">
-        <label id="etichetta-sfondo">Sfondo</label>
-        <div class="sfondi" id="sfondi" role="radiogroup" aria-labelledby="etichetta-sfondo"
-             aria-describedby="aiuto-sfondo errore-sfondo"></div>
-        <span class="aiuto" id="aiuto-sfondo">Solo le tinte del tema scelto. La foto di sfondo
-        si mette sul tablet: la fotografia di un bambino non deve passare da
-        un server.</span>
-        <div class="errore-campo nascosto" id="errore-sfondo"></div>
-      </div>
-
-      <div class="due-colonne">
-        <div class="campo">
-          <label for="schermata">Schermata</label>
-          <select id="schermata"></select>
-          <!-- Il testo lo scrive il JS, uno per ogni schermata. -->
-          <span class="aiuto" id="aiuto-schermata"></span>
-        </div>
-        <div class="campo">
-          <label for="orientamento">Orientamento</label>
-          <select id="orientamento"></select>
-          <span class="aiuto">Come sta il tablet in mano al bambino. Con
-          Automatico decide lui girandolo.</span>
-        </div>
-      </div>
+      <label class="interruttore" for="bloccato">
+        <input type="checkbox" id="bloccato">
+        <span>Tablet bloccato
+          <span class="aiuto">Il PIN sul tablet non lo apre: altrimenti non sarebbe un blocco a distanza.</span>
+        </span>
+      </label>
     </fieldset>
 
     <fieldset class="carta">
-      <legend>Tempo</legend>
-      <h2><svg class="icona" aria-hidden="true"><use href="#ico-orologio"/></svg> Quanto puo stare sul tablet</h2>
-      <p class="piccolo tenue">Questi sono i minuti. Le ore in cui il tablet
-      si accende sono il riquadro qui sotto, e le due cose valgono insieme:
-      dentro la fascia, e per i minuti che restano.</p>
-
-      <div class="campo">
-        <label for="limite">Limite giornaliero (minuti)</label>
-        <input type="number" id="limite" min="0" max="1440" step="5" inputmode="numeric"
-               aria-describedby="aiuto-limite errore-limite_giornaliero">
-        <!-- Il JS riscrive questo testo per intero aggiungendo davanti la
-             durata in parole: il seguito deve restare uguale a quello che
-             scrive aggiornaAiutoLimite(). -->
-        <span class="aiuto" id="aiuto-limite">0 significa nessun limite. Il tempo dei giochi di StarKid conta come quello delle altre app.</span>
-        <div class="errore-campo nascosto" id="errore-limite_giornaliero"></div>
-      </div>
-    </fieldset>
-
-    <fieldset class="carta">
-      <legend>Orario</legend>
+      <legend>In che ore</legend>
       <h2><svg class="icona" aria-hidden="true"><use href="#ico-luna"/></svg> In quali ore, e in quali giorni</h2>
       <p class="piccolo tenue">Senza fascia il tablet si accende a qualunque
       ora, fino a quando i minuti non finiscono. Con la fascia, anche l'ora
@@ -207,143 +175,22 @@
     </fieldset>
 
     <fieldset class="carta">
-      <legend>Kiosk</legend>
-      <h2><svg class="icona" aria-hidden="true"><use href="#ico-tablet"/></svg> Il tablet chiuso su StarKid</h2>
-      <p class="piccolo tenue">Col kiosk il tablet diventa StarKid e
-      nient'altro. Senza kiosk i limiti di tempo funzionano comunque, ma il
-      bambino puo uscire dal launcher.</p>
+      <legend>Quanto tempo</legend>
+      <h2><svg class="icona" aria-hidden="true"><use href="#ico-orologio"/></svg> Quanto puo stare sul tablet</h2>
+      <p class="piccolo tenue">Questi sono i minuti. Le ore in cui il tablet
+      si accende sono il riquadro qui sotto, e le due cose valgono insieme:
+      dentro la fascia, e per i minuti che restano.</p>
 
-      <div class="avviso" id="nota-kiosk">
-        <h3>Il kiosk non e simmetrico</h3>
-        <p>Spegnerlo e immediato: il tablet lo spegne appena riceve la
-        configurazione. Accenderlo e una <strong>richiesta</strong>: il tablet
-        lo accende solo se StarKid e Device Owner, altrimenti risponde che
-        l'ha rifiutato. Se fra le spie del tablet Device Owner risulta spento,
-        succedera esattamente questo.</p>
-      </div>
-
-      <label class="interruttore" for="kiosk">
-        <input type="checkbox" id="kiosk">
-        <span>Blocca il tablet su StarKid
-          <span class="aiuto">Niente barra di sistema, niente altre app, niente disinstallazione.</span>
-        </span>
-      </label>
-
-      <label class="interruttore" for="kiosk_recenti">
-        <input type="checkbox" id="kiosk_recenti">
-        <span>Lascia il tasto delle app recenti
-          <span class="aiuto">Vale solo col kiosk acceso: serve ai bambini piu grandi che passano fra due app permesse.</span>
-        </span>
-      </label>
-
-      <div class="avviso" id="nota-recenti">
-        <h3>Sui tablet le recenti portano con se la barra</h3>
-        <p>Da Android 12 i tablet hanno la <strong>taskbar</strong> in basso, e
-        fa parte delle recenti: accendendo questa voce compare la barra, e con
-        la barra il tasto che apre il cassetto con <strong>tutte</strong> le app
-        del tablet. Le app non permesse non si aprono lo stesso - le ferma il
-        kiosk - ma il bambino le vede e le puo provare. Spenta, la barra non
-        c'e: resta il gesto per tornare a StarKid, e basta.</p>
-      </div>
-    </fieldset>
-
-    <!-- Il blocco a distanza sta in un riquadro suo e non dentro "Kiosk",
-         perche sono due cose diverse: il kiosk dice DOVE il bambino puo
-         stare, questo dice che adesso non puo stare da nessuna parte. -->
-    <fieldset class="carta">
-      <legend>Blocco</legend>
-      <h2><svg class="icona" aria-hidden="true"><use href="#ico-avviso"/></svg> Chiudi il tablet adesso</h2>
-      <p class="piccolo tenue">Il tablet si ferma su una schermata che dice
-      che lo hanno chiuso i genitori. Non e un limite di tempo e non scade da
-      solo: si riapre solo da qui.</p>
-
-      <div class="avviso" id="nota-bloccato">
-        <h3>Non e immediato, ed e giusto cosi</h3>
-        <p>Il tablet chiama il server, il server non chiama il tablet: non c'e
-        nessuna porta aperta verso casa tua. Il blocco arriva alla prossima
-        chiamata, entro <strong>un minuto</strong>. Se il tablet e spento o
-        senza rete, arriva quando torna.</p>
-      </div>
-
-      <label class="interruttore" for="bloccato">
-        <input type="checkbox" id="bloccato">
-        <span>Tablet bloccato
-          <span class="aiuto">Il PIN sul tablet non lo apre: altrimenti non sarebbe un blocco a distanza.</span>
-        </span>
-      </label>
-    </fieldset>
-
-    <fieldset class="carta">
-      <legend>PIN</legend>
-      <h2><svg class="icona" aria-hidden="true"><use href="#ico-chiave"/></svg> Il PIN dell'area genitori</h2>
-      <p class="piccolo tenue">Da qui si cambia il PIN che apre l'area
-      genitori sul tablet. Serve soprattutto quando lo si e dimenticato: non
-      chiede quello vecchio, e non lo puo chiedere, se no non servirebbe a
-      niente.</p>
-
-      <p class="piccolo tenue" id="pin-stato">&nbsp;</p>
-
-      <div class="avviso">
-        <h3>Il PIN non arriva al server</h3>
-        <p>Le cifre restano in questa pagina: il browser ne calcola
-        un'<strong>impronta</strong> e manda solo quella. Il server non sa qual
-        e il PIN e non puo saperlo. Detto onestamente, pero: quattro cifre
-        dietro a un'impronta si ritrovano provandole tutte, quindi questo
-        serve a non far girare il PIN in chiaro - non a renderlo un segreto
-        per chi avesse il database. Se la cosa ti pesa, usane sei o otto.</p>
-      </div>
-
-      <div class="due-colonne">
-        <div class="campo">
-          <label for="pin">PIN nuovo</label>
-          <input type="password" id="pin" inputmode="numeric" autocomplete="new-password"
-                 minlength="4" maxlength="8" placeholder="da 4 a 8 cifre"
-                 aria-describedby="errore-impronta_pin">
-          <div class="errore-campo nascosto" id="errore-impronta_pin"></div>
-        </div>
-        <div class="campo">
-          <label for="pin-ripeti">Ripetilo</label>
-          <input type="password" id="pin-ripeti" inputmode="numeric" autocomplete="new-password"
-                 minlength="4" maxlength="8" placeholder="le stesse cifre"
-                 aria-describedby="errore-pin-ripeti">
-          <div class="errore-campo nascosto" id="errore-pin-ripeti"></div>
-        </div>
-      </div>
-      <p class="piccolo tenue">Lascia vuoto per non cambiarlo. Il PIN nuovo
-      parte col salvataggio e vale dal momento in cui il tablet lo riceve: chi
-      ha il tablet in mano e non lo sa, resta fuori.</p>
-
-      <label class="interruttore" for="pin-togli">
-        <input type="checkbox" id="pin-togli">
-        <span>Smetti di mandare il PIN da qui
-          <span class="aiuto">Il tablet tiene quello che ha. Non e "togli il PIN": un PIN che si cancella da lontano sarebbe un modo per aprire l'area genitori da fuori.</span>
-        </span>
-      </label>
-    </fieldset>
-
-    <fieldset class="carta">
-      <legend>Giochi</legend>
-      <h2 id="etichetta-giochi"><svg class="icona" aria-hidden="true"><use href="#ico-stella"/></svg> I giochi di StarKid</h2>
-      <p class="piccolo tenue">Sono gli undici giochi che StarKid ha dentro di
-      se. Togli la spunta per spegnerne uno: spento non compare nella griglia
-      del bambino.</p>
-
-      <!-- Il .campo tiene #errore-giochi_spenti e le caselle dentro lo stesso
-           genitore: pagina-tablet.js parte dal .errore-campo e cerca il primo
-           controllo nel parentNode per segnarlo. Senza il .campo arriverebbe
-           a #suoni, che non c'entra. -->
       <div class="campo">
-        <div class="lista-caselle" id="giochi" role="group" aria-labelledby="etichetta-giochi"
-             aria-describedby="errore-giochi_spenti"></div>
-        <div class="errore-campo nascosto" id="errore-giochi_spenti"></div>
+        <label for="limite">Limite giornaliero (minuti)</label>
+        <input type="number" id="limite" min="0" max="1440" step="5" inputmode="numeric"
+               aria-describedby="aiuto-limite errore-limite_giornaliero">
+        <!-- Il JS riscrive questo testo per intero aggiungendo davanti la
+             durata in parole: il seguito deve restare uguale a quello che
+             scrive aggiornaAiutoLimite(). -->
+        <span class="aiuto" id="aiuto-limite">0 significa nessun limite. Il tempo dei giochi di StarKid conta come quello delle altre app.</span>
+        <div class="errore-campo nascosto" id="errore-limite_giornaliero"></div>
       </div>
-
-      <label class="interruttore" for="suoni">
-        <input type="checkbox" id="suoni">
-        <span>Suoni accesi
-          <span class="aiuto">I suoni dei giochi, sintetizzati sul tablet.</span>
-        </span>
-      </label>
     </fieldset>
 
     <fieldset class="carta">
@@ -394,6 +241,162 @@
       <div class="errore-campo nascosto" id="errore-regole_app"></div>
     </fieldset>
 
+    <fieldset class="carta">
+      <legend>Giochi</legend>
+      <h2 id="etichetta-giochi"><svg class="icona" aria-hidden="true"><use href="#ico-stella"/></svg> I giochi di StarKid</h2>
+      <p class="piccolo tenue">Sono gli undici giochi che StarKid ha dentro di
+      se. Togli la spunta per spegnerne uno: spento non compare nella griglia
+      del bambino.</p>
+
+      <!-- Il .campo tiene #errore-giochi_spenti e le caselle dentro lo stesso
+           genitore: pagina-tablet.js parte dal .errore-campo e cerca il primo
+           controllo nel parentNode per segnarlo. Senza il .campo arriverebbe
+           a #suoni, che non c'entra. -->
+      <div class="campo">
+        <div class="lista-caselle" id="giochi" role="group" aria-labelledby="etichetta-giochi"
+             aria-describedby="errore-giochi_spenti"></div>
+        <div class="errore-campo nascosto" id="errore-giochi_spenti"></div>
+      </div>
+
+      <label class="interruttore" for="suoni">
+        <input type="checkbox" id="suoni">
+        <span>Suoni accesi
+          <span class="aiuto">I suoni dei giochi, sintetizzati sul tablet.</span>
+        </span>
+      </label>
+    </fieldset>
+
+    <fieldset class="carta">
+      <legend>Solo StarKid</legend>
+      <h2><svg class="icona" aria-hidden="true"><use href="#ico-tablet"/></svg> Il tablet chiuso su StarKid</h2>
+      <p class="piccolo tenue">Col kiosk il tablet diventa StarKid e
+      nient'altro. Senza kiosk i limiti di tempo funzionano comunque, ma il
+      bambino puo uscire dal launcher.</p>
+
+      <div class="avviso" id="nota-kiosk">
+        <h3>Il kiosk non e simmetrico</h3>
+        <p>Spegnerlo e immediato: il tablet lo spegne appena riceve la
+        configurazione. Accenderlo e una <strong>richiesta</strong>: il tablet
+        lo accende solo se StarKid e Device Owner, altrimenti risponde che
+        l'ha rifiutato. Se fra le spie del tablet Device Owner risulta spento,
+        succedera esattamente questo.</p>
+      </div>
+
+      <label class="interruttore" for="kiosk">
+        <input type="checkbox" id="kiosk">
+        <span>Blocca il tablet su StarKid
+          <span class="aiuto">Niente barra di sistema, niente altre app, niente disinstallazione.</span>
+        </span>
+      </label>
+
+      <label class="interruttore" for="kiosk_recenti">
+        <input type="checkbox" id="kiosk_recenti">
+        <span>Lascia il tasto delle app recenti
+          <span class="aiuto">Vale solo col kiosk acceso: serve ai bambini piu grandi che passano fra due app permesse.</span>
+        </span>
+      </label>
+
+      <div class="avviso" id="nota-recenti">
+        <h3>Sui tablet le recenti portano con se la barra</h3>
+        <p>Da Android 12 i tablet hanno la <strong>taskbar</strong> in basso, e
+        fa parte delle recenti: accendendo questa voce compare la barra, e con
+        la barra il tasto che apre il cassetto con <strong>tutte</strong> le app
+        del tablet. Le app non permesse non si aprono lo stesso - le ferma il
+        kiosk - ma il bambino le vede e le puo provare. Spenta, la barra non
+        c'e: resta il gesto per tornare a StarKid, e basta.</p>
+      </div>
+    </fieldset>
+
+    <fieldset class="carta">
+      <legend>PIN</legend>
+      <h2><svg class="icona" aria-hidden="true"><use href="#ico-chiave"/></svg> Il PIN dell'area genitori</h2>
+      <p class="piccolo tenue">Da qui si cambia il PIN che apre l'area
+      genitori sul tablet. Serve soprattutto quando lo si e dimenticato: non
+      chiede quello vecchio, e non lo puo chiedere, se no non servirebbe a
+      niente.</p>
+
+      <p class="piccolo tenue" id="pin-stato">&nbsp;</p>
+
+      <div class="avviso">
+        <h3>Il PIN non arriva al server</h3>
+        <p>Le cifre restano in questa pagina: il browser ne calcola
+        un'<strong>impronta</strong> e manda solo quella. Il server non sa qual
+        e il PIN e non puo saperlo. Detto onestamente, pero: quattro cifre
+        dietro a un'impronta si ritrovano provandole tutte, quindi questo
+        serve a non far girare il PIN in chiaro - non a renderlo un segreto
+        per chi avesse il database. Se la cosa ti pesa, usane sei o otto.</p>
+      </div>
+
+      <div class="due-colonne">
+        <div class="campo">
+          <label for="pin">PIN nuovo</label>
+          <input type="password" id="pin" inputmode="numeric" autocomplete="new-password"
+                 minlength="4" maxlength="8" placeholder="da 4 a 8 cifre"
+                 aria-describedby="errore-impronta_pin">
+          <div class="errore-campo nascosto" id="errore-impronta_pin"></div>
+        </div>
+        <div class="campo">
+          <label for="pin-ripeti">Ripetilo</label>
+          <input type="password" id="pin-ripeti" inputmode="numeric" autocomplete="new-password"
+                 minlength="4" maxlength="8" placeholder="le stesse cifre"
+                 aria-describedby="errore-pin-ripeti">
+          <div class="errore-campo nascosto" id="errore-pin-ripeti"></div>
+        </div>
+      </div>
+      <p class="piccolo tenue">Lascia vuoto per non cambiarlo. Il PIN nuovo
+      parte col salvataggio e vale dal momento in cui il tablet lo riceve: chi
+      ha il tablet in mano e non lo sa, resta fuori.</p>
+
+      <label class="interruttore" for="pin-togli">
+        <input type="checkbox" id="pin-togli">
+        <span>Smetti di mandare il PIN da qui
+          <span class="aiuto">Il tablet tiene quello che ha. Non e "togli il PIN": un PIN che si cancella da lontano sarebbe un modo per aprire l'area genitori da fuori.</span>
+        </span>
+      </label>
+    </fieldset>
+    <fieldset class="carta">
+      <legend>Aspetto</legend>
+      <h2><svg class="icona" aria-hidden="true"><use href="#ico-occhio"/></svg> Come si vede il tablet</h2>
+      <p class="piccolo tenue">Sono le prime cose che il bambino incontra
+      quando accende: che tinte ha davanti, che sfondo, come sono messe le app
+      e come sta il tablet in mano.</p>
+
+      <div class="campo">
+        <!-- label senza for, usata come intestazione del gruppo: e lo stesso
+             modo in cui sono etichettati gli sfondi e i giorni. I due
+             provini li costruisce pagina-tablet.js dentro #temi. -->
+        <label id="etichetta-tema">Tema</label>
+        <div id="temi" role="radiogroup" aria-labelledby="etichetta-tema"></div>
+        <span class="aiuto">Cambiare tema cambia anche gli sfondi: ogni tema
+        ha i suoi e non si mescolano.</span>
+      </div>
+
+      <div class="campo">
+        <label id="etichetta-sfondo">Sfondo</label>
+        <div class="sfondi" id="sfondi" role="radiogroup" aria-labelledby="etichetta-sfondo"
+             aria-describedby="aiuto-sfondo errore-sfondo"></div>
+        <span class="aiuto" id="aiuto-sfondo">Solo le tinte del tema scelto. La foto di sfondo
+        si mette sul tablet: la fotografia di un bambino non deve passare da
+        un server.</span>
+        <div class="errore-campo nascosto" id="errore-sfondo"></div>
+      </div>
+
+      <div class="due-colonne">
+        <div class="campo">
+          <label for="schermata">Schermata</label>
+          <select id="schermata"></select>
+          <!-- Il testo lo scrive il JS, uno per ogni schermata. -->
+          <span class="aiuto" id="aiuto-schermata"></span>
+        </div>
+        <div class="campo">
+          <label for="orientamento">Orientamento</label>
+          <select id="orientamento"></select>
+          <span class="aiuto">Come sta il tablet in mano al bambino. Con
+          Automatico decide lui girandolo.</span>
+        </div>
+      </div>
+    </fieldset>
+
     <!-- Carta e riga insieme, come prima: in app.css .riga-bottoni viene
          dopo .carta e vince su display, quindi questa resta una carta che
          dispone i bottoni in fila.
@@ -404,20 +407,31 @@
          e un figlio <svg> verrebbe cancellato per sempre al primo
          salvataggio. -->
     <div class="carta riga-bottoni barra-salva solo-chi-scrive">
-      <button type="submit" class="bottone" id="salva">Salva: pubblica una nuova revisione</button>
-      <button type="button" class="bottone secondario" id="scarica">Scarica configurazione (JSON)</button>
-      <button type="button" class="bottone fantasma" id="annulla">Annulla le modifiche</button>
+      <button type="submit" class="bottone" id="salva">Salva e manda al tablet</button>
+      <button type="button" class="bottone fantasma" id="annulla">Annulla</button>
     </div>
   </form>
 
   <section class="carta" id="sezione-storico">
-    <h2><svg class="icona" aria-hidden="true"><use href="#ico-matita"/></svg> Storico delle revisioni</h2>
-    <p class="piccolo tenue">Le ultime dieci. "Torna a questa" non cancella
-    niente: pubblica una revisione nuova con lo stesso contenuto di quella, e
-    il tablet se la prende al prossimo collegamento. La storia non si
-    riscrive.</p>
-    <div id="storico"><p class="caricamento">Carico lo storico...</p></div>
+    <h2><svg class="icona" aria-hidden="true"><use href="#ico-matita"/></svg> Com'era prima</h2>
+    <p class="piccolo tenue">Gli ultimi dieci cambiamenti. "Rimetti com'era"
+    non cancella niente: rimanda al tablet quello che c'era quel giorno, e si
+    puo sempre tornare indietro di nuovo.</p>
+    <div id="storico"><p class="caricamento">Guardo cos'e cambiato...</p></div>
   </section>
+
+  <!-- Il file e lo storico tecnico stanno qui sotto, chiusi: servono una
+       volta all'anno, e fino a ieri il bottone del file stava accanto a
+       Salva, scritto "Scarica configurazione (JSON)". Chi non sa cos'e un
+       JSON non deve incontrarlo mentre configura il tablet di suo figlio. -->
+  <details class="carta" id="roba-tecnica">
+    <summary>Copia di sicurezza</summary>
+    <p class="piccolo tenue">Un file con dentro tutte le impostazioni di
+    questo tablet, da tenere da parte. Non serve per l'uso di tutti i giorni:
+    quello che salvi qui resta sul server e si puo sempre rimettere com'era
+    dal riquadro qui sopra.</p>
+    <button type="button" class="bottone secondario" id="scarica">Scarica una copia</button>
+  </details>
 
   <noscript>
     <div class="avviso guasto">

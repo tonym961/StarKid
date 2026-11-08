@@ -202,10 +202,18 @@ object Sync {
                 // applicata ma mai segnata come riuscita, e da capo ogni
                 // minuto. Il tablet puo essere piu nuovo del suo server.
                 runCatching {
-                    server.appInstallate(inventario)
+                    val risposta = server.appInstallate(inventario)
                     prefs.segnaAppMandate(firmaApp)
                     Log.i(TAG, "mandato l'elenco delle app: ${inventario.size}")
+                    mandaIcone(context, server, risposta)
                 }.onFailure { Log.w(TAG, "elenco delle app non mandato: ${it.message}") }
+            } else {
+                // L'elenco e gia la, ma le icone possono mancare: un giro
+                // andato male a meta, o un'app installata quando il tablet
+                // era senza rete. Si chiede al server cosa gli manca invece
+                // di tenerne il conto qui.
+                runCatching { mandaIcone(context, server, null) }
+                    .onFailure { Log.w(TAG, "icone non mandate: ${it.message}") }
             }
 
             prefs.segnaSincronizzato(revisione)
@@ -252,6 +260,17 @@ object Sync {
             Esito.Fallita(e.message ?: e.javaClass.simpleName)
         }
     }
+
+    /**
+     * Quanto puo pesare un gruppo di icone, in caratteri base64.
+     *
+     * Il corpo di una richiesta sta in 64 KB, nginx compreso: quaranta
+     * lasciano aria al resto del JSON e a un'icona piu grande del previsto.
+     */
+    private const val BYTE_PER_GRUPPO = 40_000
+
+    /** Quanti gruppi al massimo per giro di sincronizzazione. */
+    private const val GRUPPI_PER_GIRO = 3
 
     /** Quanti campi del documento questo tablet sa applicare. */
     private const val CAMPI_APPLICABILI = 14
@@ -357,6 +376,16 @@ object Sync {
                 }
             }
         }
+        // La richiesta si scrive anche qui, non solo nella risposta al
+        // server. Prima non la vedeva nessuno: il tablet rispondeva
+        // "serve_conferma_pin" e sul tablet non compariva niente, quindi il
+        // genitore accendeva l'interruttore nella pagina web e aspettava un
+        // kiosk che non si sarebbe acceso mai. Adesso l'area genitori lo
+        // dice, con un bottone che lo accende.
+        //
+        // Si rilegge lo stato dopo il when: nel ramo di sopra il kiosk e
+        // appena stato spento, e allora da chiedere non c'e piu niente.
+        prefs.segnaKioskChiesto(kioskChiesto && !prefs.current.kioskEnabled)
         prefs.setKioskRecents(d.optBoolean("kiosk_recenti", prima.kioskRecents))
 
         // Le politiche del kiosk non stanno nelle preferenze: le tiene
@@ -430,6 +459,56 @@ object Sync {
         listOf(revisione.toString(), esito) +
             rifiutati.sortedBy { it.first }.map { "${it.first}=${it.second}" }
         ).joinToString("|")
+
+    /**
+     * Manda le icone delle app che al server mancano, a gruppi.
+     *
+     * Chi ne ha bisogno lo dice il server, nel campo "senza_icona" della sua
+     * risposta: il tablet non tiene nessun conto suo, e cosi non esiste il
+     * caso "io credevo di averle mandate". [risposta] e quella appena
+     * ricevuta mandando l'elenco; se non c'e, gliele si chiede con un
+     * gruppo vuoto.
+     *
+     * I gruppi si riempiono a byte e non a numero: il corpo di una
+     * richiesta sta in 64 KB, e un'icona grande pesa come otto piccole.
+     * E si manda [GRUPPI_PER_GIRO] gruppi al massimo per giro, perche
+     * questo sta in mezzo alla sincronizzazione e non deve diventare lui la
+     * cosa lenta: un tablet con tante app finisce di mandarle in qualche
+     * minuto, e intanto nella pagina le icone compaiono un po' per volta.
+     */
+    private fun mandaIcone(context: Context, server: Server, risposta: JSONObject?) {
+        var mancanti = daMandare(risposta ?: server.iconeDelleApp(emptyList()))
+        var gruppi = 0
+        while (mancanti.isNotEmpty() && gruppi < GRUPPI_PER_GIRO) {
+            val gruppo = mutableListOf<Pair<String, String>>()
+            var byte = 0
+            for (pacchetto in mancanti) {
+                val icona = InstalledApps.iconaDi(context, pacchetto)
+                // Un'app senza icona leggibile non deve far ripartire il
+                // gruppo ogni volta: si salta, e il server continuera a
+                // elencarla fra le mancanti senza che costi niente.
+                if (icona.isEmpty()) continue
+                if (byte + icona.length > BYTE_PER_GRUPPO && gruppo.isNotEmpty()) break
+                gruppo += pacchetto to icona
+                byte += icona.length
+            }
+            if (gruppo.isEmpty()) return
+            val esito = server.iconeDelleApp(gruppo)
+            gruppi++
+            val rimaste = daMandare(esito)
+            // Se il server non ne ha attaccata nessuna, insistere e inutile:
+            // meglio fermarsi che girare a vuoto dentro la sincronizzazione.
+            if (rimaste.size >= mancanti.size) return
+            mancanti = rimaste
+        }
+    }
+
+    private fun daMandare(risposta: JSONObject): List<String> {
+        val elenco = risposta.optJSONArray("senza_icona") ?: return emptyList()
+        return (0 until elenco.length()).mapNotNull { i ->
+            elenco.optString(i).takeIf { it.isNotBlank() }
+        }
+    }
 
     /**
      * Un riassunto dell'inventario, per sapere se e cambiato.

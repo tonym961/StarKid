@@ -25,6 +25,9 @@ data class Tablet(
     val campiRifiutati: List<String>,
     val allineato: Boolean,
     val kiosk: String,
+    /** Il tablet e chiuso dal genitore. Lo dice il documento pubblicato, non
+     *  il tablet: "bloccato" a true vuol dire che il server lo ha deciso. */
+    val bloccato: Boolean,
     val configurazioneLeggibile: Boolean,
     /**
      * Le cinque spie, cosi come le DICHIARA il tablet. Il server non ha modo
@@ -56,6 +59,7 @@ data class Tablet(
                 },
                 allineato = o.optBoolean("allineato"),
                 kiosk = o.optString("kiosk", "sconosciuto"),
+                bloccato = o.optBoolean("bloccato", false),
                 configurazioneLeggibile = o.optBoolean("configurazione_leggibile", true),
                 saluteDichiarata = buildMap {
                     if (salute != null) for (chiave in salute.keys()) put(chiave, salute.optBoolean(chiave))

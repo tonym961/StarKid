@@ -15,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -121,7 +122,12 @@ fun Elenco(stato: Stato) {
             }
 
             items(stato.tablet, key = { it.id }) { t ->
-                SchedaTablet(t) { stato.vaiA(Schermata.Dettaglio(t.id)) }
+                SchedaTablet(
+                    t = t,
+                    solaLettura = stato.solaLettura,
+                    occupato = stato.occupato,
+                    onBlocco = { chiuso -> stato.cambiaBloccoDaElenco(t.id, chiuso) },
+                ) { stato.vaiA(Schermata.Dettaglio(t.id)) }
             }
 
             item {
@@ -148,7 +154,13 @@ fun Elenco(stato: Stato) {
 }
 
 @Composable
-private fun SchedaTablet(t: Tablet, onClick: () -> Unit) {
+private fun SchedaTablet(
+    t: Tablet,
+    solaLettura: Boolean,
+    occupato: Boolean,
+    onBlocco: (Boolean) -> Unit,
+    onClick: () -> Unit,
+) {
     val (testo, tono) = statoDi(t)
     Carta(modifier = Modifier.clickable(onClick = onClick)) {
         Row(
@@ -166,10 +178,27 @@ private fun SchedaTablet(t: Tablet, onClick: () -> Unit) {
         }
         Spacer(Modifier.height(8.dp))
         Text(
-            rigaConfigurazione(t),
+            if (t.bloccato) "Chiuso dal genitore. " + rigaConfigurazione(t) else rigaConfigurazione(t),
             style = MaterialTheme.typography.bodyMedium,
-            color = Tinte.TestoTenue,
+            color = if (t.bloccato) Tinte.Guasto else Tinte.TestoTenue,
         )
+
+        // Chiudere il tablet si fa da qui, senza aprire la scheda: questa e
+        // la pagina su cui si arriva, e quando serve serve adesso.
+        if (!solaLettura) {
+            Spacer(Modifier.height(12.dp))
+            Button(
+                onClick = { onBlocco(!t.bloccato) },
+                enabled = !occupato,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (t.bloccato) Tinte.Ok else Tinte.Guasto,
+                    contentColor = Tinte.Notte,
+                ),
+            ) {
+                Text(if (t.bloccato) "Riapri il tablet" else "Chiudi il tablet adesso")
+            }
+        }
     }
 }
 

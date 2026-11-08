@@ -4,6 +4,25 @@ Qui stanno le build firmate che si installano senza compilare niente. Ci sono
 perche l'app dei genitori non passa dal Play Store: la si scarica da qui, la si
 mette sul telefono e si apre.
 
+## StarKid-Genitori-1.0.4.apk
+
+Il **blocco del tablet si fa dall'elenco**, senza aprire la scheda: un bottone
+per tablet, che dice "Chiudi il tablet adesso" o "Riapri" e parte subito.
+Nella scheda il blocco e salito in cima, sempre con un bottone che non
+aspetta il salvataggio in fondo.
+
+| | |
+|---|---|
+| pacchetto | `it.iotatec.starkid.genitore` |
+| versione | 1.0.4 (versionCode 4) |
+| Android minimo | 8.0 (API 26) |
+| firma | `CN=StarKid, O=iotatec, C=IT` |
+| SHA-256 | `173834d3ddf6c7c98032bcd0b47b06a13f1cdce37e227339022f81dbd89252f4` |
+
+Dalla 1.0.3 l'app si aggiorna da sola, quindi questa arriva senza che tu
+debba scaricare niente - **a patto di avere gia la 1.0.3 o piu**. Chi ha la
+1.0.2 o meno deve installarla a mano un'ultima volta.
+
 ## StarKid-Genitori-1.0.3.apk
 
 Dalla 1.0.3 l'app **si aggiorna da sola**: guarda in questa cartella e nelle

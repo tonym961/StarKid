@@ -110,6 +110,23 @@
     }
 
     var azioni = SK.el('div', { classe: 'riga-bottoni' });
+
+    /* Chiudere il tablet di un figlio e la cosa che si fa di fretta, e
+       questa e la pagina su cui si arriva: farla passare da "Configura",
+       scorrere il modulo e premere Salva erano tre passaggi di troppo.
+       Il bottone sta per primo e dice cosa fara, non come si chiama il
+       campo. */
+    var chiuso = tablet.bloccato === true;
+    var blocco = SK.el('button', {
+      type: 'button',
+      classe: 'bottone ' + (chiuso ? 'secondario' : 'pericolo') + ' piccolo solo-chi-scrive',
+      testo: chiuso ? 'Riapri' : 'Chiudi adesso'
+    });
+    blocco.addEventListener('click', function () {
+      cambiaBlocco(tablet, !chiuso, blocco, elenco);
+    });
+    azioni.appendChild(blocco);
+
     azioni.appendChild(SK.el('a', {
       classe: 'bottone secondario piccolo',
       href: 'tablet.html?id=' + encodeURIComponent(tablet.id),
@@ -121,6 +138,41 @@
     scheda.appendChild(azioni);
 
     return scheda;
+  }
+
+  /**
+   * Chiude o riapre il tablet da questa pagina.
+   *
+   * Il server vuole il documento intero e non accetta mezze modifiche:
+   * quindi si rilegge quello corrente, si cambia il solo campo e si
+   * rimanda. Due chiamate invece di una, ma nessun rischio di rimandare
+   * indietro una configurazione vecchia letta chissa quando.
+   */
+  function cambiaBlocco(tablet, chiudere, bottone, elenco) {
+    SK.occupato(bottone, true, chiudere ? 'Chiudo...' : 'Riapro...');
+    var indirizzo = '/api/v1/tablets/' + encodeURIComponent(tablet.id) + '/config';
+    SK.apiSessione('GET', indirizzo)
+      .then(function (documento) {
+        var nuovo = SK.soloChiaviConfig(documento);
+        nuovo.revisione = documento.revisione;
+        nuovo.bloccato = chiudere;
+        return SK.apiSessione('PUT', indirizzo, nuovo);
+      })
+      .then(function () {
+        /* Prima si ricarica - carica() pulisce i messaggi - e solo dopo si
+           scrive l'esito: al contrario sparirebbe appena scritto. */
+        return carica().then(function () {
+          SK.mostraMessaggio(SK.$('#messaggio'), 'ok',
+            chiudere ? 'Tablet chiuso' : 'Tablet riaperto',
+            '"' + tablet.nome + '". Il tablet lo applica alla prossima chiamata, ' +
+            'entro un minuto da quando e acceso e in rete.');
+        });
+      })
+      .catch(function (errore) {
+        SK.occupato(bottone, false);
+        SK.mostraErrore(SK.$('#messaggio'), errore,
+          chiudere ? 'Non ho potuto chiudere il tablet' : 'Non ho potuto riaprirlo');
+      });
   }
 
   function cancellaTablet(tablet, bottone, elenco) {
@@ -191,9 +243,12 @@
     elenco.appendChild(griglia);
   }
 
+  /* Torna la promessa: chi ricarica dopo aver fatto qualcosa deve poter
+     scrivere l'esito DOPO, perche la prima riga qui sotto pulisce i
+     messaggi e altrimenti la conferma sparirebbe subito. */
   function carica() {
     SK.pulisci(SK.$('#messaggio'));
-    SK.apiSessione('GET', '/api/v1/tablets')
+    return SK.apiSessione('GET', '/api/v1/tablets')
       .then(function (dati) {
         var grezzi = Array.isArray(dati) ? dati : (dati.tablets || dati.dispositivi || []);
         var tablets = grezzi.map(SK.normalizzaTablet);

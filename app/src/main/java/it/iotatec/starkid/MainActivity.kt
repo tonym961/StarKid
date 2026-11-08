@@ -238,6 +238,25 @@ class MainActivity : ComponentActivity() {
      * Si chiude da sola allo scadere, e si chiude PRIMA se il genitore torna
      * alla schermata del bambino: quello e il gesto che dice "ho finito".
      */
+    /**
+     * Accende il kiosk, da qualunque punto lo si chieda.
+     *
+     * Sta in un posto solo perche si accende da due: la sua schermata e il
+     * riquadro in cima all'area genitori, quello che compare quando la
+     * gestione a distanza lo ha chiesto. Due copie di queste tre righe sono
+     * due occasioni di dimenticarne una, ed e gia successo con le recenti.
+     */
+    private fun accendiKiosk() {
+        prefs.setKioskEnabled(true)
+        prefs.segnaKioskChiesto(false)
+        Kiosk.applyPolicies(
+            context = this,
+            allowedPackages = prefs.current.allowedPackages,
+            allowRecents = prefs.current.kioskRecents,
+        )
+        Kiosk.enter(this)
+    }
+
     private fun apriManutenzione() {
         prefs.pauseGuard(MINUTI_MANUTENZIONE)
         Kiosk.exit(this)
@@ -634,11 +653,7 @@ class MainActivity : ComponentActivity() {
                 config = config,
                 status = status,
                 provisioningCommand = Kiosk.provisioningCommand(this@MainActivity),
-                onEnable = {
-                    prefs.setKioskEnabled(true)
-                    Kiosk.applyPolicies(this@MainActivity, prefs.current.allowedPackages)
-                    Kiosk.enter(this@MainActivity)
-                },
+                onEnable = { accendiKiosk() },
                 onDisable = {
                     prefs.setKioskEnabled(false)
                     Kiosk.exit(this@MainActivity)
@@ -677,6 +692,7 @@ class MainActivity : ComponentActivity() {
         openAppLimits = { onNavigate(Screen.APP_LIMITS) },
         openSchedule = { onNavigate(Screen.SCHEDULE) },
         openKiosk = { onNavigate(Screen.KIOSK) },
+        enableKiosk = { accendiKiosk() },
         openLook = { onNavigate(Screen.LOOK) },
         openGames = { onNavigate(Screen.GAMES) },
         openRecommended = { onNavigate(Screen.RECOMMENDED) },

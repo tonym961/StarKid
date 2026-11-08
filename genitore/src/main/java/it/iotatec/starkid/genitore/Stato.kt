@@ -145,6 +145,25 @@ class Stato(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /**
+     * Chiude o riapre dall'elenco, dove il documento non ce l'abbiamo in
+     * mano: si rilegge, si cambia il solo campo e si rimanda.
+     *
+     * Due chiamate invece di una, ma nessun rischio di rimandare indietro
+     * una configurazione letta chissa quando: il server vuole il documento
+     * intero e sovrascriverebbe quello che c'e.
+     */
+    fun cambiaBloccoDaElenco(id: String, chiuso: Boolean) = lavora {
+        val documento = api.configurazione(id)
+        api.salvaConfigurazione(id, JSONObject(documento.toString()).put("bloccato", chiuso))
+        tablet = api.elencoTablet()
+        avviso = if (chiuso) {
+            "Tablet chiuso. Lo applica alla prossima chiamata, entro un minuto."
+        } else {
+            "Tablet riaperto. Lo applica alla prossima chiamata, entro un minuto."
+        }
+    }
+
     fun creaTablet(nome: String) = lavora {
         appenaCreato = api.nuovoTablet(nome)
         tablet = api.elencoTablet()

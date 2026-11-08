@@ -40,6 +40,7 @@ from .models import (
     RichiestaAppInstallate,
     RichiestaArruolamento,
     RichiestaConcessioni,
+    RichiestaIcone,
     RichiestaLogin,
     RichiestaModificaUtente,
     RichiestaNuovoTablet,
@@ -490,7 +491,62 @@ def app_del_dispositivo(
         "UPDATE tablet SET app_installate = ?, app_installate_il = ? WHERE id = ?",
         (json.dumps(elenco, ensure_ascii=False), db.adesso(), tablet["id"]),
     )
-    return {"esito": "registrato", "quante": len(elenco)}
+    return {
+        "esito": "registrato",
+        "quante": len(elenco),
+        "senza_icona": [v["pacchetto"] for v in elenco if not v.get("icona")],
+    }
+
+
+def _inventario_di(tablet: sqlite3.Row) -> list[dict[str, Any]]:
+    grezzo = tablet["app_installate"]
+    if not grezzo:
+        return []
+    try:
+        letto = json.loads(grezzo)
+    except (ValueError, TypeError):
+        return []
+    if not isinstance(letto, list):
+        return []
+    return [v for v in letto if isinstance(v, dict) and v.get("pacchetto")]
+
+
+@app.post("/api/v1/device/apps/icons")
+def icone_del_dispositivo(
+    dati: RichiestaIcone, tablet: sqlite3.Row = Depends(auth.dispositivo)
+) -> dict[str, Any]:
+    """Le icone delle app, a gruppi, dopo l'inventario.
+
+    Non viaggiano insieme all'elenco perche non ci starebbero: il corpo di
+    una richiesta sta in 64 KB e venticinque icone ne fanno un centinaio.
+
+    Si attaccano solo a quello che c'e gia: questa rotta non aggiunge app.
+    Se l'elenco e cambiato nel frattempo, le icone di app che non ci sono
+    piu si lasciano cadere invece di far fallire tutto - al giro dopo il
+    tablet manda quelle giuste.
+
+    La risposta dice quali app sono ancora senza icona: e cosi che il tablet
+    sa se deve mandarne altre, senza tenere il conto per conto suo.
+    """
+    elenco = _inventario_di(tablet)
+    per_pacchetto = {v["pacchetto"]: v for v in elenco}
+    attaccate = 0
+    for voce in dati.icone:
+        dentro = per_pacchetto.get(voce.pacchetto)
+        if dentro is None or not voce.icona:
+            continue
+        dentro["icona"] = voce.icona
+        attaccate += 1
+    if attaccate:
+        db.esegui(
+            "UPDATE tablet SET app_installate = ? WHERE id = ?",
+            (json.dumps(elenco, ensure_ascii=False), tablet["id"]),
+        )
+    return {
+        "esito": "registrato",
+        "attaccate": attaccate,
+        "senza_icona": [v["pacchetto"] for v in elenco if not v.get("icona")],
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -763,16 +819,7 @@ def app_installate(
     come fa web/pagina-tablet.js.
     """
     tablet = _tablet(id_tablet, sessione)
-    grezzo = tablet["app_installate"]
-    elenco: list[dict[str, Any]] = []
-    if grezzo:
-        try:
-            letto = json.loads(grezzo)
-        except (ValueError, TypeError):
-            letto = []
-        if isinstance(letto, list):
-            elenco = [v for v in letto if isinstance(v, dict) and v.get("pacchetto")]
-    return {"app": elenco, "aggiornato_il": tablet["app_installate_il"]}
+    return {"app": _inventario_di(tablet), "aggiornato_il": tablet["app_installate_il"]}
 
 
 @app.get("/api/v1/tablets/{id_tablet}/history")

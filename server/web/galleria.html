@@ -388,13 +388,15 @@ org.esempio.disegno</textarea>
     <div class="campo">
       <label id="g-et-giorni">Giorni</label>
       <div class="giorni" id="giorni" role="group" aria-labelledby="g-et-giorni">
-        <label for="giorno-1" title="lunedi"><input type="checkbox" id="giorno-1" checked>Lun</label>
-        <label for="giorno-2" title="martedi"><input type="checkbox" id="giorno-2" checked>Mar</label>
-        <label for="giorno-3" title="mercoledi"><input type="checkbox" id="giorno-3" checked>Mer</label>
-        <label for="giorno-4" title="giovedi"><input type="checkbox" id="giorno-4" checked>Gio</label>
-        <label for="giorno-5" title="venerdi"><input type="checkbox" id="giorno-5" checked>Ven</label>
-        <label for="giorno-6" title="sabato"><input type="checkbox" id="giorno-6">Sab</label>
-        <label for="giorno-7" title="domenica"><input type="checkbox" id="giorno-7">Dom</label>
+        <!-- I numeri sono quelli di Calendar.DAY_OF_WEEK (1 = domenica), come
+             in app.js: l'ordine e quello in cui si mostrano, da lunedi. -->
+        <label for="giorno-2" title="lunedi"><input type="checkbox" id="giorno-2" checked>Lun</label>
+        <label for="giorno-3" title="martedi"><input type="checkbox" id="giorno-3" checked>Mar</label>
+        <label for="giorno-4" title="mercoledi"><input type="checkbox" id="giorno-4" checked>Mer</label>
+        <label for="giorno-5" title="giovedi"><input type="checkbox" id="giorno-5" checked>Gio</label>
+        <label for="giorno-6" title="venerdi"><input type="checkbox" id="giorno-6" checked>Ven</label>
+        <label for="giorno-7" title="sabato"><input type="checkbox" id="giorno-7">Sab</label>
+        <label for="giorno-1" title="domenica"><input type="checkbox" id="giorno-1">Dom</label>
       </div>
     </div>
   </section>

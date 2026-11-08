@@ -2,12 +2,16 @@ package it.iotatec.starkid.data
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
+import android.os.Build
+import android.util.Base64
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.core.graphics.drawable.toBitmap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.io.ByteArrayOutputStream
 
 /** Una app avviabile, con icona gia pronta per Compose. */
 data class AppEntry(
@@ -28,6 +32,9 @@ object InstalledApps {
     // Le tessere mostrano l'icona a 96 dp: su un tablet a densita 2x servono
     // quasi 200 px, sotto i quali l'icona si vede sgranata.
     private const val ICON_PX = 224
+
+    /** La misura delle icone che vanno al server: si vedono a 40 px. */
+    private const val ICONA_INVENTARIO_PX = 96
     private const val PACKAGE_CACHE_MILLIS = 60_000L
 
     @Volatile
@@ -83,6 +90,36 @@ object InstalledApps {
      * StarKid non si elenca da sola: non e una app che il genitore debba
      * permettere, e gia tutto il resto.
      */
+    /**
+     * L'icona di una app, piccola, pronta da mandare al server.
+     *
+     * Sta FUORI da [inventario] di proposito. L'inventario si ricalcola a
+     * ogni giro di sincronizzazione - un giro al minuto - solo per vedere se
+     * e cambiato: disegnare venticinque icone ogni minuto per poi buttarle
+     * sarebbe mezzo secondo di lavoro al minuto, per sempre. Le icone si
+     * fanno solo quando l'elenco parte davvero.
+     *
+     * [ICONA_INVENTARIO_PX] e la misura da cui si parte: nella pagina si
+     * vedono a 40 px, e il doppio basta per uno schermo fitto.
+     */
+    fun iconaDi(context: Context, pacchetto: String): String = runCatching {
+        val pm = context.packageManager
+        val disegno = pm.getApplicationIcon(pacchetto)
+        val bitmap = disegno.toBitmap(ICONA_INVENTARIO_PX, ICONA_INVENTARIO_PX)
+        val fuori = ByteArrayOutputStream()
+        // WebP con perdita sta in un paio di kilobyte contro i sei o sette
+        // del PNG, e su venticinque app la differenza si sente. Sotto
+        // Android 11 il formato con perdita non si chiede per nome: li si
+        // usa il PNG, che c'e sempre.
+        val formato = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            Bitmap.CompressFormat.WEBP_LOSSY
+        } else {
+            Bitmap.CompressFormat.PNG
+        }
+        bitmap.compress(formato, 80, fuori)
+        Base64.encodeToString(fuori.toByteArray(), Base64.NO_WRAP)
+    }.getOrDefault("")
+
     @Suppress("DEPRECATION") // queryIntentActivities(Intent, Int) va bene fino a SDK 35
     fun inventario(context: Context): List<Pair<String, String>> {
         val pm = context.packageManager

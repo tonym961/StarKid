@@ -76,6 +76,25 @@ class Server(private val indirizzo: String, private val token: String) {
         return chiama("POST", "/api/v1/device/apps", JSONObject().put("app", elenco))
     }
 
+    /**
+     * Un gruppo di icone, per app gia mandate con [appInstallate].
+     *
+     * A gruppi e non tutte insieme perche il corpo di una richiesta sta in
+     * 64 KB: venticinque icone ne fanno un centinaio, e arriverebbe un 413
+     * invece delle icone. Quanto grande sia il gruppo lo decide chi chiama,
+     * guardando i byte.
+     *
+     * L'icona e base64 e basta: che immagine sia lo decide il server
+     * guardandone i primi byte, non il tablet dicendolo.
+     */
+    fun iconeDelleApp(icone: List<Pair<String, String>>): JSONObject {
+        val elenco = JSONArray()
+        for ((pacchetto, icona) in icone) {
+            elenco.put(JSONObject().put("pacchetto", pacchetto).put("icona", icona))
+        }
+        return chiama("POST", "/api/v1/device/apps/icons", JSONObject().put("icone", elenco))
+    }
+
     // -----------------------------------------------------------------------
 
     private fun chiama(

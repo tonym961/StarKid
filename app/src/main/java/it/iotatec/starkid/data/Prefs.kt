@@ -152,6 +152,17 @@ data class KidsConfig(
     val orientation: String = ORIENT_LANDSCAPE,
     /** Col kiosk acceso, lascia o no il tasto delle app recenti. */
     val kioskRecents: Boolean = false,
+    /**
+     * La gestione a distanza ha chiesto il kiosk e qui e ancora spento.
+     *
+     * Accendere il kiosk da lontano e solo una richiesta, di proposito: un
+     * server rubato non deve diventare un modo per chiudere un bambino
+     * dentro un dispositivo. Ma la richiesta, fino a ieri, non la vedeva
+     * nessuno: il tablet rispondeva "serve_conferma_pin" al server e sul
+     * tablet non compariva niente. Chi guardava vedeva solo un interruttore
+     * acceso nella pagina web e un kiosk che non si accendeva.
+     */
+    val kioskChiestoDaRemoto: Boolean = false,
 )
 
 /**
@@ -212,6 +223,7 @@ class Prefs private constructor(context: Context) {
         firmaApp = sp.getString(KEY_APP_FIRMA, "") ?: "",
         orientation = sp.getString(KEY_ORIENTATION, ORIENT_LANDSCAPE) ?: ORIENT_LANDSCAPE,
         kioskRecents = sp.getBoolean(KEY_KIOSK_RECENTS, false),
+        kioskChiestoDaRemoto = sp.getBoolean(KEY_KIOSK_CHIESTO, false),
     )
 
     private fun edit(block: SharedPreferences.Editor.() -> Unit) {
@@ -304,6 +316,9 @@ class Prefs private constructor(context: Context) {
     fun setOrientation(value: String) = edit { putString(KEY_ORIENTATION, value) }
 
     fun setKioskRecents(allow: Boolean) = edit { putBoolean(KEY_KIOSK_RECENTS, allow) }
+
+    /** La gestione chiede il kiosk, e qui e spento. Lo scrive la sincronizzazione. */
+    fun segnaKioskChiesto(chiesto: Boolean) = edit { putBoolean(KEY_KIOSK_CHIESTO, chiesto) }
 
     fun setServer(url: String, token: String) = edit {
         putString(KEY_SERVER_URL, url.trim())
@@ -507,6 +522,7 @@ class Prefs private constructor(context: Context) {
         private const val KEY_APP_FIRMA = "server_app_firma"
         private const val KEY_ORIENTATION = "orientation"
         private const val KEY_KIOSK_RECENTS = "kiosk_recents"
+        private const val KEY_KIOSK_CHIESTO = "kiosk_chiesto_da_remoto"
 
         @Volatile
         private var instance: Prefs? = null

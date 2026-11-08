@@ -147,6 +147,119 @@
     }).filter(function (riga) { return riga.length > 0; });
   }
 
+  /* --------------------------------------------- cosa vale adesso */
+
+  /* La pagina aveva nove riquadri e cinque modi diversi di fermare un
+     bambino - chiuso adesso, fascia, minuti, app permesse, kiosk - ognuno
+     col suo riquadro e le sue parole. Per sapere cosa poteva fare il figlio
+     bisognava leggerli tutti e tenerli a mente insieme.
+
+     Questo li legge e ne fa quattro righe in italiano. Si rifa a ogni
+     modifica del modulo, quindi mentre si cambia qualcosa e anche
+     l'anteprima di quello che si sta per mandare. */
+
+  function nomiGiorni(giorni) {
+    if (!Array.isArray(giorni) || giorni.length === 0) return 'mai';
+    if (giorni.length === 7) return 'tutti i giorni';
+    var ordinati = giorni.slice().sort(function (a, b) { return a - b; });
+    return ordinati.map(function (n) {
+      var g = SK.GIORNI.filter(function (v) { return v.n === n; })[0];
+      return g ? g.breve || g.nome : n;
+    }).join(', ');
+  }
+
+  function rigaRiassunto(testo, tono) {
+    var riga = SK.el('li', { classe: 'riassunto-riga' + (tono ? ' ' + tono : '') });
+    riga.appendChild(document.createTextNode(testo));
+    return riga;
+  }
+
+  function disegnaRiassunto() {
+    var sezione = SK.$('#riassunto');
+    if (!base) return;
+    var cfg = SK.soloChiaviConfig(raccogli());
+    var titolo = SK.$('#riassunto-titolo');
+    var righe = SK.svuota(SK.$('#riassunto-righe'));
+    sezione.classList.remove('nascosto');
+
+    /* 1. La domanda piu urgente: si puo usare, adesso? */
+    sezione.classList.toggle('chiuso', !!cfg.bloccato);
+    titolo.textContent = cfg.bloccato
+      ? 'Adesso il tablet e chiuso'
+      : 'Adesso il tablet si puo usare';
+
+    if (cfg.bloccato) {
+      righe.appendChild(rigaRiassunto(
+        'Il bambino vede una schermata che dice che lo hai chiuso tu, e non ne ' +
+        'esce: il PIN sul tablet non la apre. Tutto il resto qui sotto vale ' +
+        'quando lo riapri.', 'forte'));
+    }
+
+    /* 2. Quando. */
+    var fascia = cfg.fascia || {};
+    if (fascia.attiva) {
+      righe.appendChild(rigaRiassunto(
+        'Si accende dalle ' + SK.minutiInOra(fascia.inizio) + ' alle ' +
+        SK.minutiInOra(fascia.fine) + ', ' + nomiGiorni(fascia.giorni) +
+        '. Fuori da quelle ore si ferma da solo.'));
+    } else {
+      righe.appendChild(rigaRiassunto('A qualunque ora del giorno e della notte.'));
+    }
+
+    /* 3. Quanto. */
+    var minuti = cfg.limite_giornaliero;
+    righe.appendChild(rigaRiassunto(
+      (Number.isInteger(minuti) && minuti > 0)
+        ? 'Al massimo ' + SK.durata(minuti) + ' al giorno, giochi di StarKid compresi.'
+        : 'Senza limite di minuti: dentro gli orari puo stare quanto vuole.'));
+
+    /* 4. Cosa puo aprire. */
+    var app = Array.isArray(cfg.app_permesse) ? cfg.app_permesse.length : 0;
+    var regole = Array.isArray(cfg.regole_app) ? cfg.regole_app.length : 0;
+    var cosa = app === 0
+      ? 'Non puo aprire nessuna app del tablet: gli restano i giochi di StarKid.'
+      : 'Puo aprire ' + app + (app === 1 ? ' app' : ' app') + ' del tablet, piu i giochi di StarKid.';
+    if (regole > 0) {
+      cosa += ' Di quelle, ' + regole + (regole === 1 ? ' ha' : ' hanno') + ' orari o minuti suoi.';
+    }
+    righe.appendChild(rigaRiassunto(cosa));
+
+    /* 5. Dove puo stare. */
+    if (cfg.kiosk) {
+      righe.appendChild(rigaRiassunto(
+        cfg.kiosk_recenti
+          ? 'Non puo uscire da StarKid, ma la barra in basso resta: da li vede ' +
+            'il cassetto con tutte le app del tablet, anche quelle che non si aprono.'
+          : 'Non puo uscire da StarKid: niente barra di sistema, niente altre app.'));
+    } else {
+      righe.appendChild(rigaRiassunto(
+        'Puo uscire da StarKid e girare nel tablet: i limiti di tempo valgono ' +
+        'lo stesso, ma le altre app le vede.'));
+    }
+
+    SK.$('#riassunto-nota').textContent = notaRiassunto();
+  }
+
+  /* Da dove viene quello che si sta leggendo: il server, il tablet, o le
+     modifiche non ancora mandate. Senza, un riassunto che cambia mentre si
+     tocca il modulo sembrerebbe gia in vigore. */
+  function notaRiassunto() {
+    if (sporco) {
+      return 'Stai guardando le modifiche che non hai ancora salvato. ' +
+        'Sul tablet vale ancora quello di prima.';
+    }
+    if (tablet && tablet.allineato) {
+      return 'Questo e quello che c\'e sul tablet: l\'ha confermato lui.';
+    }
+    if (tablet && tablet.revisione_applicata !== null &&
+        tablet.revisione_applicata !== undefined && base &&
+        tablet.revisione_applicata !== base.revisione) {
+      return 'Salvato, ma il tablet non l\'ha ancora preso: lo fa al prossimo ' +
+        'collegamento, entro un minuto da quando e acceso e in rete.';
+    }
+    return 'Salvato sul server.';
+  }
+
   /* ------------------------------------------------- le app del tablet */
 
   /* Quello che il tablet ha dichiarato di avere installato: null finche non
@@ -189,7 +302,7 @@
     disegnaRegole();
   }
 
-  function rigaApp(pacchetto, nome, permessa, mancante) {
+  function rigaApp(pacchetto, nome, permessa, mancante, icona) {
     var id = 'app-' + pacchetto.replace(/[^a-zA-Z0-9]/g, '_');
     var etichetta = SK.el('label', { classe: 'interruttore' });
     etichetta.setAttribute('for', id);
@@ -198,6 +311,18 @@
     casella.checked = permessa;
     casella.addEventListener('change', function () { spunta(pacchetto, this.checked); });
     etichetta.appendChild(casella);
+
+    /* L'icona, quando il tablet l'ha mandata. In un elenco di venticinque
+       voci e la cosa che si riconosce: "com.google.android.apps.youtube.kids"
+       no. L'indirizzo e un data URL scritto dal server, che ha guardato i
+       primi byte dell'immagine: qui non si indovina niente. */
+    if (icona) {
+      var figura = SK.el('img', { classe: 'icona-app', src: icona, alt: '' });
+      figura.width = 40;
+      figura.height = 40;
+      figura.loading = 'lazy';
+      etichetta.appendChild(figura);
+    }
 
     var testo = SK.el('span', {});
     /* Il nome lo scrive l'app, non noi: textContent, e sempre col nome del
@@ -242,8 +367,8 @@
     inventario.forEach(function (voce) {
       if (!voce || !voce.pacchetto) return;
       elencate.push(voce.pacchetto);
-      contenitore.appendChild(
-        rigaApp(voce.pacchetto, voce.nome, permesse.indexOf(voce.pacchetto) >= 0, false));
+      contenitore.appendChild(rigaApp(
+        voce.pacchetto, voce.nome, permesse.indexOf(voce.pacchetto) >= 0, false, voce.icona));
     });
 
     /* Permesse ma non installate: un'app tolta dal tablet, o scritta a mano
@@ -251,7 +376,7 @@
        vista pur restando nel documento. */
     permesse.forEach(function (pacchetto) {
       if (elencate.indexOf(pacchetto) >= 0) return;
-      contenitore.appendChild(rigaApp(pacchetto, '', true, true));
+      contenitore.appendChild(rigaApp(pacchetto, "", true, true, ""));
     });
 
     if (contenitore.childNodes.length === 0) {
@@ -442,6 +567,7 @@
 
     segnaErrori([]);
     sporco = false;
+    disegnaRiassunto();
   }
 
   function raccogli() {
@@ -792,8 +918,11 @@
     costruisciSfondi('pulito', 'lilla');
 
     SK.$('#modulo').addEventListener('submit', salva);
-    SK.$('#modulo').addEventListener('input', function () { sporco = true; });
-    SK.$('#modulo').addEventListener('change', function () { sporco = true; });
+    /* Il riassunto in cima segue il modulo: mentre si cambia qualcosa dice
+       cosa si sta per mandare, e la nota sotto dice che non e ancora
+       salvato. */
+    SK.$("#modulo").addEventListener("input", function () { sporco = true; disegnaRiassunto(); });
+    SK.$("#modulo").addEventListener("change", function () { sporco = true; disegnaRiassunto(); });
     SK.$('#limite').addEventListener('input', aggiornaAiutoLimite);
     SK.$('#fascia-attiva').addEventListener('change', aggiornaFascia);
     /* L'elenco delle regole segue quello delle app: si ridisegna appena si

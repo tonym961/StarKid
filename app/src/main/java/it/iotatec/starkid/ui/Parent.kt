@@ -85,6 +85,8 @@ class ParentActions(
     val openAppLimits: () -> Unit,
     val openSchedule: () -> Unit,
     val openKiosk: () -> Unit,
+    /** Accende il kiosk da qui, senza passare dalla sua schermata. */
+    val enableKiosk: () -> Unit,
     val openLook: () -> Unit,
     val openGames: () -> Unit,
     val openRecommended: () -> Unit,
@@ -113,6 +115,28 @@ fun ParentHome(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             ScreenHeader("Area genitori", actions.back)
+
+            // Prima di tutto il resto: la gestione a distanza sta chiedendo
+            // il kiosk e qui e spento. Accenderlo da lontano e solo una
+            // richiesta - un server rubato non deve poter chiudere un
+            // bambino dentro un tablet - ma la richiesta va fatta vedere a
+            // qualcuno, se no resta li per sempre e dalla pagina web sembra
+            // che il kiosk non funzioni.
+            if (config.kioskChiestoDaRemoto && !config.kioskEnabled) {
+                SectionCard("La gestione chiede il kiosk") {
+                    Text(
+                        text = "Dalla pagina web hanno chiesto di chiudere questo tablet su " +
+                            "StarKid. Da lontano non si puo accendere da soli: serve qualcuno " +
+                            "davanti al tablet, ed e il motivo per cui stai leggendo questo " +
+                            "dietro al PIN.",
+                        style = MaterialTheme.typography.bodyLarge,
+                    )
+                    Spacer(Modifier.size(12.dp))
+                    Button(onClick = actions.enableKiosk) { Text("Accendi il kiosk adesso") }
+                    Spacer(Modifier.size(8.dp))
+                    TextButton(onClick = actions.openKiosk) { Text("Prima fammi vedere cos'e") }
+                }
+            }
 
             SetupSection(status, actions)
 

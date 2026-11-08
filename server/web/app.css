@@ -1757,3 +1757,73 @@ pre {
   font-size: 0.92rem;
 }
 #app-mano[open] > summary { margin-bottom: 10px; }
+
+/* ------------------------------------------------------------------ 14 */
+/* IL RIASSUNTO IN CIMA ALLA SCHEDA DEL TABLET
+   La pagina ha cinque modi diversi di fermare un bambino, ognuno nel suo
+   riquadro. Questo li dice tutti insieme, in italiano, e sta sopra a tutto:
+   e la risposta alla domanda che porta qui, "cosa puo fare adesso mio
+   figlio?". Il colore non basta mai da solo - come per le etichette di
+   stato - quindi "chiuso" e scritto nel titolo, non solo nel bordo. */
+.riassunto {
+  border-left: 4px solid var(--ok, #2e7d52);
+}
+.riassunto.chiuso {
+  border-left-color: var(--guasto, #b3261e);
+}
+.riassunto h2 {
+  margin: 0 0 12px;
+}
+.riassunto-elenco {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.riassunto-riga {
+  position: relative;
+  padding-left: 22px;
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+/* Il pallino e decorativo: quello che conta e scritto. */
+.riassunto-riga::before {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 0.62em;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--bordo-forte, #8a8fb0);
+}
+.riassunto-riga.forte {
+  font-weight: 600;
+}
+.riassunto-elenco + p {
+  margin-bottom: 0;
+}
+
+/* "Copia di sicurezza" e lo storico tecnico: chiusi, in fondo, e che non
+   sembrino un errore della pagina quando sono chiusi. */
+#roba-tecnica > summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+#roba-tecnica[open] > summary {
+  margin-bottom: 10px;
+}
+
+/* L'icona dell'app nell'elenco di quelle permesse. Misura fissa: le icone
+   di Android arrivano in formati diversi e una sola fuori riga fa sembrare
+   storto tutto l'elenco. */
+.icona-app {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  border-radius: 9px;
+  object-fit: contain;
+  background: var(--campo, #f3f3f8);
+}
+.interruttore .icona-app {
+  margin-right: 10px;
+}

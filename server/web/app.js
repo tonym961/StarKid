@@ -110,14 +110,28 @@ var SK = (function () {
     { id: 'disegna', nome: 'Disegna nello spazio' }
   ];
 
+  /* I numeri sono quelli di java.util.Calendar.DAY_OF_WEEK, che e la
+     numerazione del tablet e quella scritta nello schema: **1 = domenica**,
+     2 = lunedi, fino a 7 = sabato. L'ordine di questo elenco e invece
+     l'ordine in cui si mostrano, cioe la settimana all'italiana che comincia
+     di lunedi: qui si decide come appaiono, non come si chiamano.
+
+     Era sbagliato, e in silenzio. Questo elenco diceva 1 = lunedi, mentre
+     schema, server, tablet e app dei genitori dicevano 1 = domenica: chi
+     spuntava "Lun" in questa pagina mandava al tablet la domenica, e tutta
+     la settimana arrivava spostata di un giorno. Nessun errore da nessuna
+     parte - i numeri erano validi - solo un tablet aperto di domenica e
+     chiuso di venerdi. Chi tocca questo elenco controlla anche
+     ui/Parent.kt (val week) e genitore/ui/Dettaglio.kt (private val
+     GIORNI), che sono le altre due copie. */
   var GIORNI = [
-    { n: 1, breve: 'Lun', nome: 'lunedi' },
-    { n: 2, breve: 'Mar', nome: 'martedi' },
-    { n: 3, breve: 'Mer', nome: 'mercoledi' },
-    { n: 4, breve: 'Gio', nome: 'giovedi' },
-    { n: 5, breve: 'Ven', nome: 'venerdi' },
-    { n: 6, breve: 'Sab', nome: 'sabato' },
-    { n: 7, breve: 'Dom', nome: 'domenica' }
+    { n: 2, breve: 'Lun', nome: 'lunedi' },
+    { n: 3, breve: 'Mar', nome: 'martedi' },
+    { n: 4, breve: 'Mer', nome: 'mercoledi' },
+    { n: 5, breve: 'Gio', nome: 'giovedi' },
+    { n: 6, breve: 'Ven', nome: 'venerdi' },
+    { n: 7, breve: 'Sab', nome: 'sabato' },
+    { n: 1, breve: 'Dom', nome: 'domenica' }
   ];
 
   /* I motivi per cui un tablet puo aver rifiutato un campo. Il tablet manda
@@ -676,7 +690,7 @@ var SK = (function () {
       if (!Array.isArray(fascia.giorni) || fascia.giorni.length === 0) {
         no('fascia.giorni', 'scegli almeno un giorno, oppure spegni la fascia');
       } else if (!fascia.giorni.every(function (g) { return Number.isInteger(g) && g >= 1 && g <= 7; })) {
-        no('fascia.giorni', 'i giorni vanno da 1 (lunedi) a 7 (domenica)');
+        no('fascia.giorni', 'i giorni vanno da 1 (domenica) a 7 (sabato), come sul tablet');
       }
     }
 

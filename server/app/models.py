@@ -16,6 +16,8 @@ file manca o e incoerente il server non parte: meglio fermo che permissivo.
 
 from __future__ import annotations
 
+import base64
+import binascii
 import copy
 import json
 import re
@@ -68,6 +70,20 @@ GIRI_MASSIMI: int = int(_IMPRONTA["giri"]["maximum"])
 # server, e serve solo a far scegliere il genitore da un elenco.
 MASSIMO_INVENTARIO = 400
 LUNGHEZZA_ETICHETTA = 60
+
+# Le icone delle app, perche in un elenco di venticinque voci l'icona si
+# riconosce e "com.google.android.apps.youtube.kids" no.
+#
+# Il tipo di immagine lo decide il server guardando i primi byte, non il
+# tablet dicendolo: un dispositivo non deve poter scrivere "image/svg+xml"
+# davanti a qualunque cosa e farsela aprire dal browser del genitore. SVG non
+# e nell'elenco apposta - dentro un SVG ci sta del codice.
+ICONA_BASE64_MASSIMA = 24_000          # ~18 KB di immagine
+ICONE_BASE64_TOTALI = 3_000_000        # il tetto della riga intera
+FIRME_IMMAGINE: tuple[tuple[bytes, str], ...] = (
+    (b"\x89PNG\r\n\x1a\n", "png"),
+    (b"RIFF", "webp"),                 # piu il marchio WEBP al byte 8
+)
 
 # I nomi dei campi, per i "campi_rifiutati" che manda il tablet: anche quelli
 # sono vocabolario chiuso, un dispositivo non deve poter scrivere una stringa
@@ -158,6 +174,61 @@ CAMPI_VIETATI: dict[str, str] = {
 }
 
 _CONTROLLO = re.compile(r"[\x00-\x1f\x7f]")
+
+
+def _pacchetto_valido(valore: str) -> str:
+    """Lo stesso filtro di app_permesse, per la stessa ragione.
+
+    Funzione a parte e non un validatore ereditato: in pydantic 2 copiare un
+    @field_validator da un modello all'altro non lo registra, e il campo
+    resta senza controllo. Era successo qui: le icone che passavano dalla
+    rotta a gruppi non venivano mai guardate, e si salvava quello che
+    arrivava. Un test l'ha preso.
+    """
+    nome = valore.strip()
+    if len(nome) > LUNGHEZZA_PACCHETTO or not PACCHETTO.fullmatch(nome):
+        raise ValueError("%r non e un nome di pacchetto Android" % valore)
+    return nome
+
+
+def _icona_valida(valore: str) -> str:
+    """Base64 in entrata, data URL scritto da noi in uscita. "" se non va.
+
+    Un'icona storta si butta e basta: altrove il vocabolario chiuso rifiuta
+    tutto il documento, ed e giusto, ma li si parla di regole. Qui si parla
+    di un dettaglio estetico, e rifiutare l'elenco intero perche una app su
+    venticinque ha un'icona illeggibile vorrebbe dire restare senza elenco,
+    cioe tornare a scrivere i nomi dei pacchetti a mano.
+    """
+    grezzo = valore.strip()
+    if not grezzo or len(grezzo) > ICONA_BASE64_MASSIMA:
+        return ""
+    try:
+        byte = base64.b64decode(grezzo, validate=True)
+    except (ValueError, binascii.Error):
+        return ""
+    tipo = _tipo_immagine(byte)
+    if tipo is None:
+        return ""
+    # Ricodificata da noi: quello che finisce nella pagina del genitore e una
+    # stringa che abbiamo scritto noi, non una che e arrivata.
+    return "data:image/%s;base64,%s" % (tipo, base64.b64encode(byte).decode("ascii"))
+
+
+def _tipo_immagine(byte: bytes) -> str | None:
+    """Che immagine e, guardando i primi byte. None = nessuna che accettiamo.
+
+    Si guardano i byte e non quello che dichiara chi manda: e la differenza
+    fra "il tablet dice che e un PNG" e "e un PNG".
+    """
+    for firma, tipo in FIRME_IMMAGINE:
+        if not byte.startswith(firma):
+            continue
+        if tipo == "webp" and byte[8:12] != b"WEBP":
+            # RIFF da solo e anche un WAV, un AVI e altre cose.
+            continue
+        return tipo
+    return None
 
 
 def _senza_controlli(testo: str, campo: str) -> str:
@@ -524,14 +595,20 @@ class AppInstallata(Richiesta):
 
     pacchetto: str
     nome: str = ""
+    # In entrata: base64 e basta. In uscita da questo validatore: un data URL
+    # gia fatto, col tipo che ha deciso il server. Cosi la pagina del
+    # genitore non deve ne fidarsi ne indovinare.
+    icona: str = ""
 
     @field_validator("pacchetto")
     @classmethod
     def _pacchetto(cls, valore: str) -> str:
-        nome = valore.strip()
-        if len(nome) > LUNGHEZZA_PACCHETTO or not PACCHETTO.fullmatch(nome):
-            raise ValueError("%r non e un nome di pacchetto Android" % valore)
-        return nome
+        return _pacchetto_valido(valore)
+
+    @field_validator("icona")
+    @classmethod
+    def _icona(cls, valore: str) -> str:
+        return _icona_valida(valore)
 
     @field_validator("nome")
     @classmethod
@@ -556,6 +633,10 @@ class RichiestaAppInstallate(Richiesta):
     def _app(cls, valore: list[AppInstallata]) -> list[AppInstallata]:
         if len(valore) > MASSIMO_INVENTARIO:
             raise ValueError("troppe app, al massimo %d" % MASSIMO_INVENTARIO)
+        # Il tetto delle icone e sulla somma, non sulla singola: quattrocento
+        # icone da diciotto kilobyte sarebbero sette megabyte in una riga.
+        if sum(len(voce.icona) for voce in valore) > ICONE_BASE64_TOTALI:
+            raise ValueError("le icone pesano troppo tutte insieme")
         visti: set[str] = set()
         pulite: list[AppInstallata] = []
         for voce in valore:
@@ -566,6 +647,50 @@ class RichiestaAppInstallate(Richiesta):
             visti.add(voce.pacchetto)
             pulite.append(voce)
         return sorted(pulite, key=lambda voce: (voce.nome.lower(), voce.pacchetto))
+
+
+class IconaApp(Richiesta):
+    """L'icona di una app gia nell'inventario."""
+
+    pacchetto: str
+    icona: str = ""
+
+    # Scritti per esteso, non ereditati da AppInstallata: vedi la nota su
+    # _pacchetto_valido. Un validatore copiato da un altro modello non viene
+    # registrato, e il campo resta senza controllo - era successo proprio
+    # qui, e si salvava quello che arrivava.
+    @field_validator("pacchetto")
+    @classmethod
+    def _pacchetto(cls, valore: str) -> str:
+        return _pacchetto_valido(valore)
+
+    @field_validator("icona")
+    @classmethod
+    def _icona(cls, valore: str) -> str:
+        return _icona_valida(valore)
+
+
+class RichiestaIcone(Richiesta):
+    """Un pacchetto di icone, non tutte insieme.
+
+    Le icone non viaggiano dentro l'inventario perche non ci starebbero: il
+    corpo di una richiesta e limitato a 64 KB - l'API scambia JSON piccoli, e
+    quel limite protegge tutto il resto - e venticinque icone ne fanno un
+    centinaio. Quindi l'elenco arriva senza, e le icone dopo, a gruppi che
+    stanno nel limite. Il tablet decide quanti alla volta guardando i byte,
+    non il numero: un'icona grande e otto icone piccole pesano uguale.
+
+    Arrivano solo per app gia nell'inventario: questa rotta non ne aggiunge.
+    """
+
+    icone: list[IconaApp] = Field(default_factory=list)
+
+    @field_validator("icone")
+    @classmethod
+    def _icone(cls, valore: list[IconaApp]) -> list[IconaApp]:
+        if len(valore) > MASSIMO_INVENTARIO:
+            raise ValueError("troppe icone in una volta")
+        return valore
 
 
 class RichiestaSalute(Richiesta):
