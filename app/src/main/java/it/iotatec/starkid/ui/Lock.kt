@@ -66,7 +66,7 @@ fun LockScreen(
                 )
                 Spacer(Modifier.size(36.dp))
                 Text(
-                    text = "Un genitore puo sbloccare tenendo premuto il titolo.",
+                    text = "Un genitore può sbloccare tenendo premuto il titolo.",
                     style = MaterialTheme.typography.bodyMedium,
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -142,9 +142,9 @@ private fun titleFor(reason: BlockReason): String = when (reason) {
     BlockReason.OUTSIDE_SCHEDULE -> "Adesso si riposa"
     BlockReason.DAILY_LIMIT -> "Tempo finito!"
     BlockReason.APP_LIMIT -> "Basta con questa app"
-    BlockReason.APP_NOT_ALLOWED -> "Questa app non si puo aprire"
-    BlockReason.APP_OUTSIDE_WINDOW -> "Non e l'ora di questa app"
-    BlockReason.LOCKED_BY_PARENT -> "Il tablet e chiuso"
+    BlockReason.APP_NOT_ALLOWED -> "Questa app non si può aprire"
+    BlockReason.APP_OUTSIDE_WINDOW -> "Non è l'ora di questa app"
+    BlockReason.LOCKED_BY_PARENT -> "Il tablet è chiuso"
     BlockReason.NONE -> "Tutto a posto"
 }
 
@@ -152,9 +152,9 @@ private fun messageFor(reason: BlockReason, childName: String): String {
     val body = when (reason) {
         BlockReason.OUTSIDE_SCHEDULE ->
             "il tablet si riaccende nella fascia oraria decisa dai tuoi genitori."
-        BlockReason.DAILY_LIMIT -> "per oggi il tempo e finito. Si riprende domani!"
+        BlockReason.DAILY_LIMIT -> "per oggi il tempo è finito. Si riprende domani!"
         BlockReason.APP_LIMIT -> "questa app ha finito i suoi minuti. Puoi usarne un'altra."
-        BlockReason.APP_NOT_ALLOWED -> "questa app non e tra quelle scelte per te."
+        BlockReason.APP_NOT_ALLOWED -> "questa app non è tra quelle scelte per te."
         // Si dice subito che le altre si aprono: se no suona come il tablet
         // chiuso, e il bambino lo posa invece di fare altro.
         BlockReason.APP_OUTSIDE_WINDOW ->

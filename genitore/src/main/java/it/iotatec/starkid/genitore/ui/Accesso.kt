@@ -122,8 +122,8 @@ fun Accesso(stato: Stato) {
                 }
             }
             Text(
-                "Dopo qualche tentativo sbagliato il server fa aspettare sempre un po' di piu: " +
-                    "non e un guasto, e cosi che tiene fuori chi prova le password a macchina.",
+                "Dopo qualche tentativo sbagliato il server fa aspettare sempre un po' di più: " +
+                    "non è un guasto, è così che tiene fuori chi prova le password a macchina.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = Tinte.TestoTenue,
                 modifier = Modifier.padding(top = 12.dp),

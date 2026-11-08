@@ -56,7 +56,7 @@ private val ORIENTAMENTI = listOf(
 private val GIOCHI = listOf(
     "memory" to "Memory", "conta" to "Conta", "acchiappa" to "Acchiappa", "sequenza" to "Sequenza",
     "intruso" to "Intruso", "disegna" to "Disegna", "macchinine" to "Macchinine", "xilofono" to "Xilofono",
-    "puzzle" to "Puzzle", "confronto" to "Confronto", "serie" to "Serie", "citta" to "Le citta del mondo",
+    "puzzle" to "Puzzle", "confronto" to "Confronto", "serie" to "Serie", "citta" to "Le città del mondo",
 )
 // 1 = domenica, come java.util.Calendar.DAY_OF_WEEK, che e la numerazione che
 // usa il tablet. Qui si mostra la settimana che comincia di lunedi, come la
@@ -238,7 +238,7 @@ private fun Modulo(stato: Stato, idTablet: String, originale: JSONObject) {
                     if (fascia.optInt("fine", 1200) < fascia.optInt("inizio", 480)) {
                         Spacer(Modifier.height(8.dp))
                         Text(
-                            "Questa fascia scavalca la mezzanotte. Va bene: il tablet la legge cosi.",
+                            "Questa fascia scavalca la mezzanotte. Va bene: il tablet la legge così.",
                             style = MaterialTheme.typography.bodyMedium,
                             color = Tinte.TestoTenue,
                         )
@@ -261,21 +261,21 @@ private fun Modulo(stato: Stato, idTablet: String, originale: JSONObject) {
             Carta {
                 Titoletto("Kiosk")
                 Interruttore(
-                    "Modalita kiosk",
+                    "Modalità kiosk",
                     "Il tablet resta dentro StarKid e alle app che hai permesso.",
                     bozza.optBoolean("kiosk"),
                 ) { modifica { put("kiosk", it) } }
                 if (bozza.optBoolean("kiosk")) {
                     Spacer(Modifier.height(8.dp))
                     Avviso(
-                        "Accenderlo da qui e solo una richiesta: sul tablet va confermata col PIN. " +
-                            "Finche non la confermi, qui resta \"in attesa\". Spegnerlo invece vale subito.",
+                        "Accenderlo da qui è solo una richiesta: sul tablet va confermata col PIN. " +
+                            "Finché non la confermi, qui resta \"in attesa\". Spegnerlo invece vale subito.",
                         Tono.ATTESA,
                     )
                     Spacer(Modifier.height(10.dp))
                     Interruttore(
                         "App recenti dentro il kiosk",
-                        "Accende la barra di Android in basso, che porta con se anche il tasto per tutte le app.",
+                        "Accende la barra di Android in basso, che porta con sé anche il tasto per tutte le app.",
                         bozza.optBoolean("kiosk_recenti"),
                     ) { modifica { put("kiosk_recenti", it) } }
                 }
@@ -539,7 +539,7 @@ private fun AppPermesse(attuali: List<String>, onCambia: (List<String>) -> Unit)
     Carta {
         Titoletto("App permesse")
         Text(
-            "Le app installate sul tablet che il bambino puo aprire. Di solito si scelgono " +
+            "Le app installate sul tablet che il bambino può aprire. Di solito si scelgono " +
                 "dall'area genitori sul tablet, dove si vedono con nome e icona: qui si " +
                 "aggiungono scrivendo il nome del pacchetto.",
             style = MaterialTheme.typography.bodyMedium,
@@ -597,7 +597,7 @@ private fun BloccoRemoto(
 ) {
     Carta {
         Text(
-            if (chiuso) "Questo tablet e chiuso" else "Questo tablet e aperto",
+            if (chiuso) "Questo tablet è chiuso" else "Questo tablet è aperto",
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
             color = if (chiuso) Tinte.Guasto else Tinte.Testo,
@@ -608,7 +608,7 @@ private fun BloccoRemoto(
                 "Il bambino vede una schermata che dice che lo hai chiuso tu, e " +
                     "non ne esce: il PIN sul tablet non lo apre. Si riapre solo da qui."
             } else {
-                "Il bambino puo usarlo, dentro gli orari e i limiti qui sotto."
+                "Il bambino può usarlo, dentro gli orari e i limiti qui sotto."
             },
             style = MaterialTheme.typography.bodyMedium,
             color = Tinte.TestoTenue,
@@ -617,7 +617,7 @@ private fun BloccoRemoto(
 
         if (solaLettura) {
             Text(
-                "Il tuo accesso e in sola lettura: il blocco lo mette chi ha il permesso.",
+                "Il tuo accesso è in sola lettura: il blocco lo mette chi ha il permesso.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = Tinte.TestoTenue,
             )
@@ -650,7 +650,7 @@ private fun BloccoRemoto(
         Spacer(Modifier.height(8.dp))
         Text(
             "Parte subito, senza passare dal Salva. Arriva al tablet entro un " +
-                "minuto: e il tablet che chiama il server, non il contrario. Se e " +
+                "minuto: è il tablet che chiama il server, non il contrario. Se è " +
                 "spento o senza rete, arriva quando torna.",
             style = MaterialTheme.typography.bodySmall,
             color = Tinte.TestoTenue,
@@ -685,11 +685,11 @@ private fun PinDaQui(corrente: Any?, onCambia: (JSONObject?) -> Unit) {
         Titoletto("PIN dell'area genitori")
         Text(
             if (cEGia) {
-                "Un PIN mandato dalla gestione c'e gia. Qual e non si puo rileggere: " +
-                    "qui c'e solo la sua impronta, e nemmeno il server sa a che cifre " +
+                "Un PIN mandato dalla gestione c'è già. Qual è non si può rileggere: " +
+                    "qui c'è solo la sua impronta, e nemmeno il server sa a che cifre " +
                     "corrisponda. Per cambiarlo, scrivine uno nuovo."
             } else {
-                "Da qui non e mai stato mandato un PIN: sul tablet vale quello scelto " +
+                "Da qui non è mai stato mandato un PIN: sul tablet vale quello scelto " +
                     "stando davanti al tablet."
             },
             style = MaterialTheme.typography.bodyMedium,
@@ -723,7 +723,7 @@ private fun PinDaQui(corrente: Any?, onCambia: (JSONObject?) -> Unit) {
         Text(
             "Il PIN non arriva al server: parte l'impronta, calcolata qui. " +
                 "\"Smetti di mandarlo\" non toglie il PIN dal tablet - quello da " +
-                "lontano non si puo fare - lascia al tablet quello che ha.",
+                "lontano non si può fare - lascia al tablet quello che ha.",
             style = MaterialTheme.typography.bodySmall,
             color = Tinte.TestoTenue,
         )

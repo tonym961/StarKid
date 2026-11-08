@@ -551,7 +551,7 @@ class MainActivity : ComponentActivity() {
                 // anche che da li puo tornare a cambiare.
                 nota = if (config.pinDalServer) {
                     "Adesso vale il PIN mandato dalla gestione a distanza. " +
-                        "Quello che scegli qui vale finche da li non ne mandano un altro."
+                        "Quello che scegli qui vale finché da lì non ne mandano un altro."
                 } else {
                     null
                 },
@@ -849,7 +849,7 @@ private fun WelcomeScreen(onStart: () -> Unit) {
             )
             Spacer(Modifier.size(16.dp))
             Text(
-                text = "Per cominciare serve un PIN: e la porta dell'area genitori, " +
+                text = "Per cominciare serve un PIN: è la porta dell'area genitori, " +
                     "da cui si scelgono le app, i limiti di tempo e gli orari.",
                 style = MaterialTheme.typography.bodyLarge,
                 textAlign = TextAlign.Center,
@@ -875,13 +875,13 @@ private fun raccontaEsito(esito: Sync.Esito): String = when (esito) {
         "Fatto. Revisione ${esito.revisione} applicata tutta."
     } else {
         "Revisione ${esito.revisione} applicata, ma ${esito.rifiutati} " +
-            (if (esito.rifiutati == 1) "cosa non si e potuta" else "cose non si sono potute") +
-            " applicare: sul server si vede quali e perche."
+            (if (esito.rifiutati == 1) "cosa non si è potuta" else "cose non si sono potute") +
+            " applicare: sul server si vede quali e perché."
     }
     is Sync.Esito.Fallita -> "Non ha funzionato: ${esito.perche}"
     is Sync.Esito.NonRiconosciuto ->
-        "Il server non riconosce questo tablet. Il codice NON e stato buttato: se e un guasto " +
-            "passeggero torna a funzionare da solo. Se invece il tablet e stato cancellato dal " +
-            "server, qui c'e \"Scollega dal server\" e poi ci si ricollega con un codice nuovo."
-    Sync.Esito.NonConfigurato -> "Non c'e nessun server configurato."
+        "Il server non riconosce questo tablet. Il codice NON è stato buttato: se è un guasto " +
+            "passeggero torna a funzionare da solo. Se invece il tablet è stato cancellato dal " +
+            "server, qui c'è \"Scollega dal server\" e poi ci si ricollega con un codice nuovo."
+    Sync.Esito.NonConfigurato -> "Non c'è nessun server configurato."
 }

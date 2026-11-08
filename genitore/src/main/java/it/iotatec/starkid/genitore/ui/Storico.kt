@@ -84,7 +84,7 @@ fun Storico(stato: Stato, idTablet: String) {
                     )
                     if (!voce.optBoolean("leggibile", true)) {
                         Spacer(Modifier.height(8.dp))
-                        Avviso("Questa revisione sul server non si rilegge: non si puo rimettere.", Tono.GUASTO)
+                        Avviso("Questa revisione sul server non si rilegge: non si può rimettere.", Tono.GUASTO)
                     } else if (!attuale) {
                         Spacer(Modifier.height(10.dp))
                         OutlinedButton(onClick = { daRimettere = numero }) { Text("Rimetti questa") }
@@ -100,8 +100,8 @@ fun Storico(stato: Stato, idTablet: String) {
             title = { Text("Rimettere la revisione $numero?") },
             text = {
                 Text(
-                    "Verra scritta come revisione nuova, e il tablet la prendera al prossimo " +
-                        "collegamento. Quello che c'e adesso resta nello storico."
+                    "Verrà scritta come revisione nuova, e il tablet la prenderà al prossimo " +
+                        "collegamento. Quello che c'è adesso resta nello storico."
                 )
             },
             confirmButton = {

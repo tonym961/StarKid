@@ -26,7 +26,7 @@
   var SPIEGA = {
     admin: 'Vede tutti i tablet e gestisce gli account.',
     genitore: 'Configura i tablet che gli hai dato.',
-    osservatore: 'Guarda e basta: non puo cambiare niente.'
+    osservatore: 'Guarda e basta: non può cambiare niente.'
   };
 
   var io = null;        /* chi sono: lo chiede app.js, qui serve l'id */
@@ -61,7 +61,7 @@
     dati.appendChild(SK.el('dt', { testo: 'Tablet che vede' }));
     dati.appendChild(SK.el('dd', {
       testo: u.ruolo === 'admin'
-        ? 'Tutti, perche e amministratore'
+        ? 'Tutti, perché è amministratore'
         : (u.quanti_tablet === 0 ? 'Nessuno' : u.quanti_tablet + ' su ' + tablet.length)
     }));
     if (u.id_padre) {
@@ -104,7 +104,7 @@
       scelta.disabled = true;
       scelta.title = suo
         ? 'Non puoi cambiare il ruolo al tuo account'
-        : 'E l\'ultimo amministratore attivo';
+        : 'È l\'ultimo amministratore attivo';
     }
     scelta.addEventListener('change', function () {
       modifica(u, { ruolo: scelta.value }, 'Ruolo di ' + u.utente + ' cambiato.');
@@ -158,7 +158,7 @@
     SK.api('DELETE', '/api/v1/utenti/' + encodeURIComponent(u.id))
       .then(function () {
         SK.mostraMessaggio(SK.$('#messaggio'), 'ok', 'Cancellato',
-          'L\'account "' + u.utente + '" non c\'e piu. I suoi tablet restano.');
+          'L\'account "' + u.utente + '" non c\'è più. I suoi tablet restano.');
         carica();
       })
       .catch(function (errore) {
@@ -200,7 +200,7 @@
     var caselle = [];
     var lista = SK.el('div', { id: 'lista-tablet' });
     if (!tablet.length) {
-      lista.appendChild(SK.el('p', { classe: 'tenue', testo: 'Non c\'e ancora nessun tablet.' }));
+      lista.appendChild(SK.el('p', { classe: 'tenue', testo: 'Non c\'è ancora nessun tablet.' }));
     }
     tablet.forEach(function (t) {
       var casella = SK.el('input', { type: 'checkbox', id: 'vede-' + t.id, value: t.id });
@@ -271,7 +271,7 @@
     SK.api('POST', '/api/v1/utenti', corpo)
       .then(function (nuovo) {
         SK.mostraMessaggio(SK.$('#messaggio'), 'ok', 'Account creato',
-          'Consegna a "' + nuovo.utente + '" la password che hai scritto: da qui non si rilegge piu.');
+          'Consegna a "' + nuovo.utente + '" la password che hai scritto: da qui non si rilegge più.');
         SK.$('#modulo-nuovo').reset();
         carica();
       })
@@ -291,7 +291,7 @@
     var scelta = SK.$('#nuovo-padre');
     var prima = scelta.value;
     SK.svuota(scelta);
-    scelta.appendChild(SK.el('option', { value: '', testo: 'Nessuno: account a se' }));
+    scelta.appendChild(SK.el('option', { value: '', testo: 'Nessuno: account a sé' }));
     utenti.forEach(function (u) {
       /* Un sottoutente di un sottoutente complica senza servire: si offrono
          come padri solo gli account che non lo sono gia. */

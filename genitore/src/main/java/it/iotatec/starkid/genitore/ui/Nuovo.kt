@@ -54,7 +54,7 @@ fun Nuovo(stato: Stato) {
             if (creato == null) {
                 Carta {
                     Text(
-                        "Come si chiama questo tablet? E un nome per te, per riconoscerlo " +
+                        "Come si chiama questo tablet? È un nome per te, per riconoscerlo " +
                             "nell'elenco: non lo vede il bambino.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = Tinte.TestoTenue,

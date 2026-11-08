@@ -185,8 +185,8 @@
     /* 1. La domanda piu urgente: si puo usare, adesso? */
     sezione.classList.toggle('chiuso', !!cfg.bloccato);
     titolo.textContent = cfg.bloccato
-      ? 'Adesso il tablet e chiuso'
-      : 'Adesso il tablet si puo usare';
+      ? 'Adesso il tablet è chiuso'
+      : 'Adesso il tablet si può usare';
 
     if (cfg.bloccato) {
       righe.appendChild(rigaRiassunto(
@@ -211,14 +211,14 @@
     righe.appendChild(rigaRiassunto(
       (Number.isInteger(minuti) && minuti > 0)
         ? 'Al massimo ' + SK.durata(minuti) + ' al giorno, giochi di StarKid compresi.'
-        : 'Senza limite di minuti: dentro gli orari puo stare quanto vuole.'));
+        : 'Senza limite di minuti: dentro gli orari può stare quanto vuole.'));
 
     /* 4. Cosa puo aprire. */
     var app = Array.isArray(cfg.app_permesse) ? cfg.app_permesse.length : 0;
     var regole = Array.isArray(cfg.regole_app) ? cfg.regole_app.length : 0;
     var cosa = app === 0
-      ? 'Non puo aprire nessuna app del tablet: gli restano i giochi di StarKid.'
-      : 'Puo aprire ' + app + (app === 1 ? ' app' : ' app') + ' del tablet, piu i giochi di StarKid.';
+      ? 'Non può aprire nessuna app del tablet: gli restano i giochi di StarKid.'
+      : 'Può aprire ' + app + (app === 1 ? ' app' : ' app') + ' del tablet, più i giochi di StarKid.';
     if (regole > 0) {
       cosa += ' Di quelle, ' + regole + (regole === 1 ? ' ha' : ' hanno') + ' orari o minuti suoi.';
     }
@@ -228,12 +228,12 @@
     if (cfg.kiosk) {
       righe.appendChild(rigaRiassunto(
         cfg.kiosk_recenti
-          ? 'Non puo uscire da StarKid, ma la barra in basso resta: da li vede ' +
+          ? 'Non può uscire da StarKid, ma la barra in basso resta: da lì vede ' +
             'il cassetto con tutte le app del tablet, anche quelle che non si aprono.'
-          : 'Non puo uscire da StarKid: niente barra di sistema, niente altre app.'));
+          : 'Non può uscire da StarKid: niente barra di sistema, niente altre app.'));
     } else {
       righe.appendChild(rigaRiassunto(
-        'Puo uscire da StarKid e girare nel tablet: i limiti di tempo valgono ' +
+        'Può uscire da StarKid e girare nel tablet: i limiti di tempo valgono ' +
         'lo stesso, ma le altre app le vede.'));
     }
 
@@ -249,13 +249,13 @@
         'Sul tablet vale ancora quello di prima.';
     }
     if (tablet && tablet.allineato) {
-      return 'Questo e quello che c\'e sul tablet: l\'ha confermato lui.';
+      return 'Questo è quello che c\'è sul tablet: l\'ha confermato lui.';
     }
     if (tablet && tablet.revisione_applicata !== null &&
         tablet.revisione_applicata !== undefined && base &&
         tablet.revisione_applicata !== base.revisione) {
       return 'Salvato, ma il tablet non l\'ha ancora preso: lo fa al prossimo ' +
-        'collegamento, entro un minuto da quando e acceso e in rete.';
+        'collegamento, entro un minuto da quando è acceso e in rete.';
     }
     return 'Salvato sul server.';
   }
@@ -360,7 +360,7 @@
       quando.textContent = 'Elenco dichiarato dal tablet' +
         (inventarioIl ? ' ' + SK.quando(inventarioIl) : '') +
         ': ' + inventario.length + (inventario.length === 1 ? ' app.' : ' app.') +
-        ' Spunta quelle che il bambino puo aprire.';
+        ' Spunta quelle che il bambino può aprire.';
     }
 
     var elencate = [];
@@ -393,7 +393,7 @@
     if (elenco.length === 0) {
       contenitore.appendChild(SK.el('p', {
         classe: 'piccolo tenue',
-        testo: 'Nessuna app nell’elenco qui sopra: non c’e niente da stringere.'
+        testo: 'Nessuna app nell’elenco qui sopra: non c’è niente da stringere.'
       }));
       return;
     }
@@ -632,10 +632,10 @@
   function raccontaPin(cfg) {
     var stato = SK.$('#pin-stato');
     if (cfg && cfg.impronta_pin) {
-      stato.textContent = 'Un PIN mandato da qui c\'e gia. Qual e non si puo ' +
+      stato.textContent = 'Un PIN mandato da qui c\'è già. Qual è non si può ' +
         'rileggere, nemmeno da questa pagina: scrivine uno nuovo per cambiarlo.';
     } else {
-      stato.textContent = 'Da qui non e mai stato mandato un PIN: sul tablet ' +
+      stato.textContent = 'Da qui non è mai stato mandato un PIN: sul tablet ' +
         'vale quello scelto davanti al tablet.';
     }
     SK.$('#pin').value = '';
@@ -737,7 +737,7 @@
     if (documento.kiosk && base && !base.kiosk && tablet && tablet.salute && tablet.salute.device_owner === false) {
       var avanti = window.confirm(
         'Questo tablet ha detto di non essere Device Owner.\n\n' +
-        'Il kiosk gli verra chiesto, ma lo rifiutera: te lo ritroverai scritto fra i campi rifiutati.\n' +
+        'Il kiosk gli verrà chiesto, ma lo rifiuterà: te lo ritroverai scritto fra i campi rifiutati.\n' +
         'Il Device Owner si ottiene solo riportando il tablet alle condizioni di fabbrica e rifacendo l\'arruolamento col QR.\n\n' +
         'Salvo comunque il resto?'
       );
@@ -760,11 +760,11 @@
         var testo = 'Pubblicata la revisione ' + base.revisione +
           '. Il tablet la prende al prossimo collegamento e poi dice se l\'ha applicata.';
         if (documento.kiosk) {
-          testo += ' Il kiosk e stato CHIESTO: lo accende solo se e Device Owner.';
+          testo += ' Il kiosk è stato CHIESTO: lo accende solo se è Device Owner.';
         }
         if (impronta && (!precedente || precedente.impronta !== impronta.impronta)) {
           testo += ' Il PIN nuovo vale da quando il tablet riceve questa revisione: ' +
-            'da li in poi quello vecchio non apre piu.';
+            'da lì in poi quello vecchio non apre più.';
         }
         SK.mostraMessaggio(SK.$('#messaggio'), 'ok', 'Salvato', testo);
         caricaStorico();
@@ -794,7 +794,7 @@
         var voci = Array.isArray(dati) ? dati : (dati.revisioni || dati.storico || []);
         SK.svuota(contenitore);
         if (!voci.length) {
-          contenitore.appendChild(SK.el('p', { classe: 'tenue', testo: 'Nessuna revisione precedente: questa e la prima.' }));
+          contenitore.appendChild(SK.el('p', { classe: 'tenue', testo: 'Nessuna revisione precedente: questa è la prima.' }));
           return;
         }
         var lista = SK.el('ul', { classe: 'storico' });
@@ -862,7 +862,7 @@
     if (base) pezzi.push('revisione ' + base.revisione);
     if (tablet) {
       if (tablet.revisione_applicata !== null && tablet.revisione_applicata !== undefined) {
-        pezzi.push('sul tablet c\'e la ' + tablet.revisione_applicata);
+        pezzi.push('sul tablet c\'è la ' + tablet.revisione_applicata);
       }
       pezzi.push('visto ' + SK.quando(tablet.ultimo_contatto));
     }
@@ -906,7 +906,7 @@
     }).catch(function (errore) {
       SK.$('#sottotitolo').textContent = 'Configurazione non disponibile.';
       SK.mostraErrore(SK.$('#messaggio'), errore,
-        errore.stato === 404 ? 'Questo tablet non c\'e piu' : 'Non ho potuto leggere la configurazione');
+        errore.stato === 404 ? 'Questo tablet non c\'è più' : 'Non ho potuto leggere la configurazione');
     });
   }
 
@@ -937,7 +937,7 @@
       if (!base) return;
       applica(base);
       SK.mostraMessaggio(SK.$('#messaggio'), '', 'Modifiche annullate',
-        'Il modulo e tornato alla revisione ' + base.revisione + ', quella che c\'e sul server.');
+        'Il modulo è tornato alla revisione ' + base.revisione + ', quella che c\'è sul server.');
     });
 
     window.addEventListener('beforeunload', function (evento) {

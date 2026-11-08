@@ -102,7 +102,7 @@ var SK = (function () {
     { id: 'puzzle', nome: 'Puzzle scorrevole' },
     { id: 'xilofono', nome: 'Xilofono' },
     { id: 'conta', nome: 'Conta le stelle' },
-    { id: 'confronto', nome: "Dove ce n'e di piu" },
+    { id: 'confronto', nome: "Dove ce n'è di più" },
     { id: 'serie', nome: 'Completa la serie' },
     { id: 'acchiappa', nome: 'Acchiappa la stella' },
     { id: 'sequenza', nome: 'Sequenza luminosa' },
@@ -125,11 +125,11 @@ var SK = (function () {
      ui/Parent.kt (val week) e genitore/ui/Dettaglio.kt (private val
      GIORNI), che sono le altre due copie. */
   var GIORNI = [
-    { n: 2, breve: 'Lun', nome: 'lunedi' },
-    { n: 3, breve: 'Mar', nome: 'martedi' },
-    { n: 4, breve: 'Mer', nome: 'mercoledi' },
-    { n: 5, breve: 'Gio', nome: 'giovedi' },
-    { n: 6, breve: 'Ven', nome: 'venerdi' },
+    { n: 2, breve: 'Lun', nome: 'lunedì' },
+    { n: 3, breve: 'Mar', nome: 'martedì' },
+    { n: 4, breve: 'Mer', nome: 'mercoledì' },
+    { n: 5, breve: 'Gio', nome: 'giovedì' },
+    { n: 6, breve: 'Ven', nome: 'venerdì' },
     { n: 7, breve: 'Sab', nome: 'sabato' },
     { n: 1, breve: 'Dom', nome: 'domenica' }
   ];
@@ -140,15 +140,15 @@ var SK = (function () {
      commento di quell'elenco: con il testo libero, chi avesse il token di un
      tablet scriveva quello che voleva nella pagina del genitore. */
   var MOTIVI = {
-    serve_device_owner: 'Serve che StarKid sia device owner del tablet, e non lo e.',
+    serve_device_owner: 'Serve che StarKid sia device owner del tablet, e non lo è.',
     serve_profile_owner: 'Serve che StarKid gestisca il profilo, e non lo gestisce.',
     permesso_mancante: 'Manca un permesso da concedere sul tablet.',
     non_supportato: 'Questa versione di Android non ha questa funzione.',
-    app_non_installata: 'Una delle app dell’elenco non e installata sul tablet.',
-    valore_non_applicabile: 'Il valore e valido, ma su questo tablet non ha effetto.',
+    app_non_installata: 'Una delle app dell’elenco non è installata sul tablet.',
+    valore_non_applicabile: 'Il valore è valido, ma su questo tablet non ha effetto.',
     errore_di_sistema: 'Il tablet ha avuto un errore di sistema applicandolo.',
-    serve_conferma_pin: 'Il kiosk va confermato col PIN sul tablet: finche nessuno lo conferma resta spento.',
-    sconosciuto: 'Il tablet non ha detto perche.'
+    serve_conferma_pin: 'Il kiosk va confermato col PIN sul tablet: finché nessuno lo conferma resta spento.',
+    sconosciuto: 'Il tablet non ha detto perché.'
   };
 
   function testoMotivo(codice) {
@@ -169,9 +169,9 @@ var SK = (function () {
       chiave: 'kiosk_attivo',
       nome: 'Kiosk in funzione adesso',
       limiti: false,
-      spenta: 'Il tablet non e chiuso su StarKid in questo momento, anche se il kiosk risulta acceso. ' +
-        'Normale mentre un genitore e dentro l\'area genitori, dove StarKid si toglie di mezzo apposta.',
-      rimedio: 'Se nessuno e davanti al tablet, torna alla schermata del bambino: il kiosk rientra da solo.'
+      spenta: 'Il tablet non è chiuso su StarKid in questo momento, anche se il kiosk risulta acceso. ' +
+        'Normale mentre un genitore è dentro l\'area genitori, dove StarKid si toglie di mezzo apposta.',
+      rimedio: 'Se nessuno è davanti al tablet, torna alla schermata del bambino: il kiosk rientra da solo.'
     },
     {
       chiave: 'default_home',
@@ -184,14 +184,14 @@ var SK = (function () {
       chiave: 'usage_access',
       nome: "Accesso ai dati di utilizzo",
       limiti: true,
-      spenta: 'Senza questo StarKid non sa quanto tempo e stato usato il tablet.',
+      spenta: 'Senza questo StarKid non sa quanto tempo è stato usato il tablet.',
       rimedio: 'Sul tablet: Impostazioni > App > Accesso speciale > Accesso ai dati di utilizzo > StarKid.'
     },
     {
       chiave: 'overlay',
       nome: 'Mostra sopra le altre app',
       limiti: true,
-      spenta: 'Il blocco non riesce a comparire se il bambino e dentro un gioco.',
+      spenta: 'Il blocco non riesce a comparire se il bambino è dentro un gioco.',
       rimedio: 'Sul tablet: Impostazioni > App > Accesso speciale > Mostra sopra le altre app > StarKid.'
     },
     {
@@ -205,7 +205,7 @@ var SK = (function () {
       chiave: 'device_owner',
       nome: 'Controllo del tablet (Device Owner)',
       limiti: false,
-      spenta: 'Senza Device Owner il kiosk non si puo accendere e StarKid si puo disinstallare.',
+      spenta: 'Senza Device Owner il kiosk non si può accendere e StarKid si può disinstallare.',
       rimedio: 'Si ottiene solo riportando il tablet alle condizioni di fabbrica e rifacendo il QR di arruolamento.'
     }
   ];
@@ -280,17 +280,17 @@ var SK = (function () {
     if (typeof dalServer === 'string' && dalServer) return dalServer;
     switch (stato) {
       case 0:
-        return 'Il server non risponde. Controlla la connessione, poi ricarica la pagina. Se continua, il servizio sul server e fermo.';
+        return 'Il server non risponde. Controlla la connessione, poi ricarica la pagina. Se continua, il servizio sul server è fermo.';
       case 400:
         return 'La richiesta non va bene al server. Ricarica la pagina e riprova.';
       case 401:
         return 'Sessione scaduta: devi rientrare.';
       case 403:
-        return 'Questa operazione non e permessa in questa sessione. Esci e rientra.';
+        return 'Questa operazione non è permessa in questa sessione. Esci e rientra.';
       case 404:
-        return 'Non trovato. Forse e stato cancellato: torna all\'elenco dei tablet.';
+        return 'Non trovato. Forse è stato cancellato: torna all\'elenco dei tablet.';
       case 409:
-        return 'Nel frattempo qualcuno ha salvato una revisione piu recente. Ricarica la pagina, guarda com\'e adesso e rifai la modifica.';
+        return 'Nel frattempo qualcuno ha salvato una revisione più recente. Ricarica la pagina, guarda com\'è adesso e rifai la modifica.';
       case 413:
         return 'Hai mandato troppi dati. Accorcia l\'elenco delle app e riprova.';
       case 422:
@@ -299,7 +299,7 @@ var SK = (function () {
         return 'Troppi tentativi di fila: il server ti sta rallentando per sicurezza. Aspetta un minuto e riprova.';
       case 502:
       case 503:
-        return 'Il servizio StarKid non risponde (nginx c\'e, il programma dietro no). Riprova fra un minuto; se insiste va riavviato sul server.';
+        return 'Il servizio StarKid non risponde (nginx c\'è, il programma dietro no). Riprova fra un minuto; se insiste va riavviato sul server.';
       default:
         if (stato >= 500) return 'Il server ha avuto un problema (' + stato + '). Riprova; se succede ancora, sul server: journalctl -u starkid -n 50.';
         return 'Richiesta non riuscita (' + stato + ').';
@@ -629,7 +629,7 @@ var SK = (function () {
     if (!window.crypto || !window.crypto.subtle) {
       return Promise.reject(new Error(
         'Questo browser non sa calcolare l\'impronta del PIN (serve una pagina in https). ' +
-        'Il PIN si puo sempre cambiare stando davanti al tablet.'));
+        'Il PIN si può sempre cambiare stando davanti al tablet.'));
     }
     if (!pinValido(pin)) {
       return Promise.reject(new Error(
@@ -657,7 +657,7 @@ var SK = (function () {
     function no(campo, motivo) { problemi.push({ campo: campo, motivo: motivo }); }
 
     Object.keys(cfg).forEach(function (chiave) {
-      if (CHIAVI_CONFIG.indexOf(chiave) < 0) no(chiave, 'campo non previsto: lo schema e chiuso, il server lo rifiuta');
+      if (CHIAVI_CONFIG.indexOf(chiave) < 0) no(chiave, 'campo non previsto: lo schema è chiuso, il server lo rifiuta');
     });
 
     if (!TEMI.some(function (t) { return t.id === cfg.tema; })) no('tema', 'scegli "pulito" o "spaziale"');
@@ -698,7 +698,7 @@ var SK = (function () {
       if (!Number.isInteger(fascia.inizio) || fascia.inizio < 0 || fascia.inizio > 1440) no('fascia.inizio', 'orario non valido');
       if (!Number.isInteger(fascia.fine) || fascia.fine < 0 || fascia.fine > 1440) no('fascia.fine', 'orario non valido');
       if (Number.isInteger(fascia.inizio) && Number.isInteger(fascia.fine) && fascia.fine <= fascia.inizio) {
-        no('fascia.fine', 'la fine deve venire dopo l\'inizio (per adesso la fascia non puo passare la mezzanotte)');
+        no('fascia.fine', 'la fine deve venire dopo l\'inizio (per adesso la fascia non può passare la mezzanotte)');
       }
       if (!Array.isArray(fascia.giorni) || fascia.giorni.length === 0) {
         no('fascia.giorni', 'scegli almeno un giorno, oppure spegni la fascia');
@@ -712,7 +712,7 @@ var SK = (function () {
     } else {
       cfg.app_permesse.forEach(function (p) {
         if (!/^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z0-9_]+)+$/.test(String(p))) {
-          no('app_permesse', '"' + p + '" non e un nome di pacchetto Android (esempio: com.esempio.gioco)');
+          no('app_permesse', '"' + p + '" non è un nome di pacchetto Android (esempio: com.esempio.gioco)');
         }
       });
       if (cfg.app_permesse.length > 200) no('app_permesse', 'troppe app: al massimo 200');
@@ -732,7 +732,7 @@ var SK = (function () {
           if (CHIAVI_REGOLA.indexOf(chiave) < 0) no('regole_app', 'campo non previsto dentro una regola: ' + chiave);
         });
         if (!/^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z0-9_]+)+$/.test(String(regola.pacchetto))) {
-          no('regole_app', '"' + regola.pacchetto + '" non e un nome di pacchetto Android');
+          no('regole_app', '"' + regola.pacchetto + '" non è un nome di pacchetto Android');
           return;
         }
         if (visti.indexOf(regola.pacchetto) >= 0) {
@@ -769,7 +769,7 @@ var SK = (function () {
       no('giochi_spenti', 'elenco non valido');
     } else {
       cfg.giochi_spenti.forEach(function (g) {
-        if (!GIOCHI.some(function (gi) { return gi.id === g; })) no('giochi_spenti', '"' + g + '" non e un gioco di StarKid');
+        if (!GIOCHI.some(function (gi) { return gi.id === g; })) no('giochi_spenti', '"' + g + '" non è un gioco di StarKid');
       });
     }
     return problemi;

@@ -86,8 +86,8 @@
 
   <!-- Chi non e amministratore vede solo questo, e il perche. -->
   <div class="avviso solo-non-admin">
-    <h3>Questa pagina e degli amministratori</h3>
-    <p>Il tuo account non puo vedere ne cambiare gli altri. Se ti serve,
+    <h3>Questa pagina è degli amministratori</h3>
+    <p>Il tuo account non può vedere né cambiare gli altri. Se ti serve,
     chiedilo a chi ti ha fatto l'account.</p>
   </div>
 
@@ -100,10 +100,10 @@
     <h2><svg class="icona" aria-hidden="true"><use href="#ico-piu"/></svg> Un account nuovo</h2>
 
     <div class="avviso">
-      <h3>Questa non e un'iscrizione</h3>
-      <p>Un account lo crea chi e gia dentro ed e amministratore, oppure la
+      <h3>Questa non è un'iscrizione</h3>
+      <p>Un account lo crea chi è già dentro ed è amministratore, oppure la
       riga di comando sul server. Da fuori, senza credenziali, non esiste
-      nessuna strada per aggiungerne uno: e la stessa promessa che fa la
+      nessuna strada per aggiungerne uno: è la stessa promessa che fa la
       pagina di accesso, e vale ancora.</p>
     </div>
 
@@ -123,7 +123,7 @@
              spellcheck="false" required minlength="12"
              aria-describedby="aiuto-nuova-password">
       <span class="aiuto" id="aiuto-nuova-password">Almeno 12 caratteri. Si
-      vede mentre la scrivi, perche e una password che devi consegnare a
+      vede mentre la scrivi, perché è una password che devi consegnare a
       un'altra persona: nasconderla qui servirebbe solo a farti sbagliare a
       ricopiarla. Chi la riceve se la cambia quando vuole.</span>
     </div>
@@ -138,9 +138,9 @@
       <span class="aiuto" id="aiuto-nuovo-ruolo">
         <strong>Genitore</strong>: configura i tablet che gli dai, e nessun
         altro.
-        <strong>Osservatore</strong>: li guarda e basta, non puo cambiare
+        <strong>Osservatore</strong>: li guarda e basta, non può cambiare
         niente - per una babysitter o un nonno che vuole sapere come va.
-        <strong>Amministratore</strong>: vede tutti i tablet e puo creare e
+        <strong>Amministratore</strong>: vede tutti i tablet e può creare e
         togliere account, compreso il tuo.
       </span>
     </div>
@@ -148,7 +148,7 @@
     <div class="campo">
       <label for="nuovo-padre">Sottoutente di</label>
       <select id="nuovo-padre" name="id_padre" aria-describedby="aiuto-nuovo-padre">
-        <option value="" selected>Nessuno: account a se</option>
+        <option value="" selected>Nessuno: account a sé</option>
       </select>
       <span class="aiuto" id="aiuto-nuovo-padre">Serve a tenere insieme chi
       dipende da chi: la babysitter di una famiglia, un secondo genitore.
@@ -162,9 +162,9 @@
 
   <div class="carta no-stampa solo-admin">
     <details>
-      <summary>Cosa non si puo fare, e perche</summary>
+      <summary>Cosa non si può fare, e perché</summary>
 
-      <p><strong>Non puoi disattivare ne cancellare te stesso.</strong> Un
+      <p><strong>Non puoi disattivare né cancellare te stesso.</strong> Un
       clic sbagliato sul proprio account chiude fuori chi sta amministrando, e
       si rientra solo con una sessione SSH sul server. Se vuoi davvero
       togliere il tuo, fallo fare a un altro amministratore.</p>
@@ -173,18 +173,18 @@
       rifiuta di toglierti il ruolo, di disattivarti o di cancellarti se dopo
       non ne resterebbe nessuno: da quel momento questa pagina sarebbe
       irraggiungibile per tutti. Il rimedio esiste
-      (<code>python -m app.cli ruolo &lt;nome&gt; admin</code>) ma e dentro la
-      macchina, e non e una cosa che si fa dal telefono.</p>
+      (<code>python -m app.cli ruolo &lt;nome&gt; admin</code>) ma è dentro la
+      macchina, e non è una cosa che si fa dal telefono.</p>
 
       <p><strong>Il nome di un account non si cambia.</strong> I nomi finiscono
       nei log e accanto alle revisioni di configurazione: uno che cambia sotto
-      i piedi rende illeggibile quello che e gia successo. Si disattiva
+      i piedi rende illeggibile quello che è già successo. Si disattiva
       l'account e se ne fa un altro.</p>
 
       <p><strong>Cancellare un account non cancella i suoi tablet.</strong>
       Sparisce il permesso di vederli, non il tablet: quello resta, con la sua
-      configurazione e il suo storico. Era voluto, perche un tablet che
-      sparisce dal server e un tablet a cui bisogna andare a portare un codice
+      configurazione e il suo storico. Era voluto, perché un tablet che
+      sparisce dal server è un tablet a cui bisogna andare a portare un codice
       nuovo a mano.</p>
     </details>
   </div>

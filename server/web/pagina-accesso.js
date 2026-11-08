@@ -10,8 +10,8 @@
 
   var MOTIVI = {
     scaduta: ['attesa', 'Sessione scaduta', 'Per sicurezza la sessione dura poco. Rientra e ti riporto dov\'eri.'],
-    uscito: ['ok', 'Sei uscito', 'La sessione e chiusa. Su un computer non tuo chiudi anche la finestra del browser.'],
-    richiesta: ['attesa', 'Serve l\'accesso', 'Questa pagina e solo per chi e entrato.']
+    uscito: ['ok', 'Sei uscito', 'La sessione è chiusa. Su un computer non tuo chiudi anche la finestra del browser.'],
+    richiesta: ['attesa', 'Serve l\'accesso', 'Questa pagina è solo per chi è entrato.']
   };
 
   function avvia() {
@@ -67,8 +67,8 @@
           if (errore.stato === 401 || errore.stato === 403) {
             SK.mostraMessaggio(messaggio, 'guasto', 'Utente o password sbagliati',
               'Controlla le maiuscole e che non sia rimasto uno spazio alla fine. ' +
-              'Se la password non c\'e piu, si rifa sul server da riga di comando: ' +
-              'questa pagina non la puo cambiare.');
+              'Se la password non c\'è più, si rifà sul server da riga di comando: ' +
+              'questa pagina non la può cambiare.');
           } else if (errore.stato === 429) {
             SK.mostraMessaggio(messaggio, 'guasto', 'Troppi tentativi',
               'Il server ha rallentato gli accessi per sicurezza. Aspetta un minuto e riprova.');

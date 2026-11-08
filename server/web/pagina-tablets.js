@@ -35,8 +35,8 @@
     }
     if (Number(applicata) < Number(pubblicata)) {
       return {
-        testo: 'Il tablet ha la revisione ' + applicata + ', sul server c\'e la ' + pubblicata +
-          ': la prendera al prossimo collegamento',
+        testo: 'Il tablet ha la revisione ' + applicata + ', sul server c\'è la ' + pubblicata +
+          ': la prenderà al prossimo collegamento',
         classe: 'attesa'
       };
     }
@@ -165,7 +165,7 @@
           SK.mostraMessaggio(SK.$('#messaggio'), 'ok',
             chiudere ? 'Tablet chiuso' : 'Tablet riaperto',
             '"' + tablet.nome + '". Il tablet lo applica alla prossima chiamata, ' +
-            'entro un minuto da quando e acceso e in rete.');
+            'entro un minuto da quando è acceso e in rete.');
         });
       })
       .catch(function (errore) {
@@ -179,8 +179,8 @@
     var conferma = window.confirm(
       'Cancellare "' + tablet.nome + '" dal server?\n\n' +
       'Il tablet smette di ricevere configurazioni e sparisce da questo elenco.\n' +
-      'Quello che e gia sul tablet resta com\'e: per rimetterlo a posto serve il tablet in mano.\n' +
-      'Per rimetterlo qui dentro servira un nuovo arruolamento con un nuovo QR.'
+      'Quello che è già sul tablet resta com\'è: per rimetterlo a posto serve il tablet in mano.\n' +
+      'Per rimetterlo qui dentro servirà un nuovo arruolamento con un nuovo QR.'
     );
     if (!conferma) return;
     SK.occupato(bottone, true, 'Cancello...');
@@ -209,7 +209,7 @@
     avviso.appendChild(elenco);
     avviso.appendChild(SK.el('p', {
       classe: 'piccolo',
-      testo: 'Si sistema sul tablet, nelle impostazioni di Android: il dettaglio di cosa toccare e sotto, su ogni scheda.'
+      testo: 'Si sistema sul tablet, nelle impostazioni di Android: il dettaglio di cosa toccare è sotto, su ogni scheda.'
     }));
     contenitore.appendChild(avviso);
   }
@@ -221,8 +221,8 @@
     if (tablets.length === 0) {
       sottotitolo.textContent = 'Nessun tablet, per ora.';
       var vuoto = SK.el('div', { classe: 'carta centrato' }, [
-        SK.el('h2', { testo: 'Qui non c\'e ancora niente' }),
-        SK.el('p', { testo: 'Aggiungi il primo tablet: il server ti da un codice di arruolamento e la pagina ti disegna il QR da inquadrare col tablet appena riportato alle condizioni di fabbrica.' }),
+        SK.el('h2', { testo: 'Qui non c\'è ancora niente' }),
+        SK.el('p', { testo: 'Aggiungi il primo tablet: il server ti dà un codice di arruolamento e la pagina ti disegna il QR da inquadrare col tablet appena riportato alle condizioni di fabbrica.' }),
         /* .solo-chi-scrive anche qui: questo bottone lo disegna il
            JavaScript, quindi la classe messa nell'HTML non lo copre, e a un
            osservatore resterebbe davanti l'unico bottone della pagina

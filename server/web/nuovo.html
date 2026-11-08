@@ -71,9 +71,9 @@
   <noscript>
     <div class="avviso guasto">
       <h3>Serve JavaScript</h3>
-      <p>Il QR viene disegnato qui dentro, nel browser: e il motivo per cui il
+      <p>Il QR viene disegnato qui dentro, nel browser: è il motivo per cui il
       nome del bambino e la password del Wi-Fi non arrivano al server. Senza
-      JavaScript questa pagina non puo fare il suo lavoro.</p>
+      JavaScript questa pagina non può fare il suo lavoro.</p>
     </div>
   </noscript>
 
@@ -85,7 +85,7 @@
     Al server serve solo un nome.</p>
 
     <h2><svg class="icona" aria-hidden="true"><use href="#ico-tablet"/></svg> Il tablet sul server</h2>
-    <p>Il server deve sapere che questo tablet esiste: e cosi che ti da il
+    <p>Il server deve sapere che questo tablet esiste: è così che ti dà il
     codice di arruolamento da mettere dentro il QR. Tutto il resto - nome del
     bambino, rete, tema, limite - lo scrivi al passo 2 e non esce da questa
     pagina.</p>
@@ -115,12 +115,12 @@
 
     <div class="carta">
       <p class="piccolo tenue no-stampa"><span class="etichetta">Passo 2 di 2</span>
-      Il disegno si rifa da solo mentre cambi le cose qui sotto.</p>
+      Il disegno si rifà da solo mentre cambi le cose qui sotto.</p>
 
       <h2><svg class="icona" aria-hidden="true"><use href="#ico-qr"/></svg> Il QR di arruolamento</h2>
 
       <div class="avviso ok">
-        <h3><svg class="icona" aria-hidden="true"><use href="#ico-spunta"/></svg> Il tablet e nell'elenco</h3>
+        <h3><svg class="icona" aria-hidden="true"><use href="#ico-spunta"/></svg> Il tablet è nell'elenco</h3>
         <p id="riga-creato">&nbsp;</p>
       </div>
 
@@ -131,15 +131,15 @@
           <button type="button" class="bottone secondario piccolo no-stampa" id="copia-token">Copia</button>
         </div>
         <span class="aiuto" id="aiuto-token">Vale una volta sola, al primo
-        arruolamento, ed e gia dentro il QR. Sta scritto anche qui perche a
+        arruolamento, ed è già dentro il QR. Sta scritto anche qui perché a
         volte conviene batterlo a mano sul tablet invece di inquadrare.</span>
       </div>
 
       <div class="avviso attesa avviso-grosso no-stampa">
-        <h3><svg class="icona" aria-hidden="true"><use href="#ico-avviso"/></svg> Questo QR e un segreto</h3>
+        <h3><svg class="icona" aria-hidden="true"><use href="#ico-avviso"/></svg> Questo QR è un segreto</h3>
         <p>Dentro ci sono il codice di arruolamento, il nome del bambino e - se
         le scrivi - la password del Wi-Fi e il PIN dell'area genitori.
-        <strong>Non e passato dal server</strong>: il disegno lo fa questa
+        <strong>Non è passato dal server</strong>: il disegno lo fa questa
         pagina, nel tuo browser. Per questo non va mandato in chat e non va
         fotografato per tenerlo: stampalo, usalo, buttalo.</p>
       </div>
@@ -156,8 +156,8 @@
             <p class="piccolo" id="misura-testo">&nbsp;</p>
             <div class="barra-misura"><div class="riempimento" id="misura-riempimento"></div></div>
           </div>
-          <p class="piccolo tenue no-stampa">Quanto e pieno il QR. Piu cose ci
-          metti, piu i quadratini diventano piccoli e piu il tablet fa fatica a
+          <p class="piccolo tenue no-stampa">Quanto è pieno il QR. Più cose ci
+          metti, più i quadratini diventano piccoli e più il tablet fa fatica a
           leggerli: se la barra va sul giallo o sul rosso, togli il Wi-Fi dal QR
           oppure installa l'app con adb.</p>
 
@@ -175,10 +175,10 @@
       </div>
 
       <p class="piccolo tenue no-stampa">Tutto quello che finisce dentro il QR
-      si cambia qui sotto, e il disegno si rifa mentre scrivi.</p>
+      si cambia qui sotto, e il disegno si rifà mentre scrivi.</p>
 
       <details class="no-stampa">
-        <summary class="piccolo">Cosa c'e scritto dentro il QR</summary>
+        <summary class="piccolo">Cosa c'è scritto dentro il QR</summary>
         <pre id="json"></pre>
       </details>
     </div>
@@ -190,7 +190,7 @@
     <form id="modulo-qr" class="no-stampa" method="post" novalidate>
 
       <fieldset>
-        <legend>Cosa sapra il tablet appena acceso</legend>
+        <legend>Cosa saprà il tablet appena acceso</legend>
         <p class="piccolo tenue">Il tablet legge questi valori dal QR al primo
         avvio. Dopo si cambiano quando vuoi, dalla sua scheda.</p>
 
@@ -198,8 +198,8 @@
           <label for="server">Indirizzo di questo server</label>
           <input type="url" id="server" inputmode="url" autocapitalize="none" spellcheck="false"
                  aria-describedby="aiuto-server">
-          <span class="aiuto" id="aiuto-server">E qui che il tablet chiedera la
-          sua configurazione. L'ho riempito con l'indirizzo da cui e arrivata
+          <span class="aiuto" id="aiuto-server">È qui che il tablet chiederà la
+          sua configurazione. L'ho riempito con l'indirizzo da cui è arrivata
           questa pagina: cambialo solo se il tablet raggiunge il server con un
           altro nome.</span>
         </div>
@@ -208,7 +208,7 @@
           <label for="bambino">Nome del bambino</label>
           <input type="text" id="bambino" maxlength="30" autocapitalize="words"
                  aria-describedby="aiuto-bambino">
-          <span class="aiuto" id="aiuto-bambino">Va nel QR e da li in cima alla
+          <span class="aiuto" id="aiuto-bambino">Va nel QR e da lì in cima alla
           schermata del tablet. Al server non arriva, e il server non ha nessun
           campo per tenerlo. Puoi anche lasciarlo vuoto e scriverlo poi sul
           tablet.</span>
@@ -231,8 +231,8 @@
                  placeholder="da 4 a 8 cifre" aria-describedby="aiuto-pin-iniziale">
           <span class="aiuto" id="aiuto-pin-iniziale">Va nel QR in chiaro, come
           la password del Wi-Fi, e per lo stesso motivo: il QR passa da questo
-          schermo alla fotocamera del tablet e non tocca il server. Cosi il
-          tablet e gia pronto e nessuno deve inventarsi un PIN al primo avvio.
+          schermo alla fotocamera del tablet e non tocca il server. Così il
+          tablet è già pronto e nessuno deve inventarsi un PIN al primo avvio.
           Lasciandolo vuoto, lo chiede il tablet la prima volta che si apre
           l'area genitori.</span>
         </div>
@@ -241,7 +241,7 @@
           <input type="checkbox" id="kiosk-iniziale">
           <span>Chiedi il kiosk subito
             <span class="aiuto">Arruolando col QR il tablet diventa Device
-            Owner, quindi stavolta il kiosk lo puo accendere davvero.</span>
+            Owner, quindi stavolta il kiosk lo può accendere davvero.</span>
           </span>
         </label>
       </fieldset>
@@ -249,8 +249,8 @@
       <fieldset>
         <legend>Wi-Fi (facoltativo)</legend>
         <p class="piccolo tenue">Se lo metti, il tablet si collega da solo
-        durante la preparazione. Se lo lasci vuoto, la rete si scegliera a mano
-        sul tablet: il QR resta piu corto e senza password dentro.</p>
+        durante la preparazione. Se lo lasci vuoto, la rete si sceglierà a mano
+        sul tablet: il QR resta più corto e senza password dentro.</p>
 
         <div class="due-colonne">
           <div class="campo">
@@ -283,7 +283,7 @@
         <legend>Da dove si scarica StarKid</legend>
         <p class="piccolo tenue">Durante la preparazione il tablet non ha
         ancora l'app: la scarica da qui. Se preferisci installarla con
-        <span class="mono">adb</span>, lascia vuoto e il QR diventa molto piu
+        <span class="mono">adb</span>, lascia vuoto e il QR diventa molto più
         corto.</p>
 
         <div class="campo">
@@ -291,7 +291,7 @@
           <input type="url" id="apk" inputmode="url" autocapitalize="none" spellcheck="false"
                  aria-describedby="aiuto-apk">
           <span class="aiuto" id="aiuto-apk">Deve essere raggiungibile dal
-          tablet mentre si prepara, cioe prima che StarKid esista.</span>
+          tablet mentre si prepara, cioè prima che StarKid esista.</span>
         </div>
 
         <div class="campo">
@@ -299,7 +299,7 @@
           <input type="text" id="checksum" class="mono" autocapitalize="none" spellcheck="false"
                  aria-describedby="aiuto-checksum">
           <span class="aiuto" id="aiuto-checksum">L'impronta SHA-256 del
-          certificato di firma, in base64 per URL: nel JSON e
+          certificato di firma, in base64 per URL: nel JSON è
           <span class="mono">SIGNATURE_CHECKSUM</span>. Senza questa Android
           rifiuta l'installazione.</span>
         </div>
@@ -316,7 +316,7 @@
         <label class="interruttore" for="salta-cifratura">
           <input type="checkbox" id="salta-cifratura">
           <span>Salta la cifratura del tablet
-            <span class="aiuto">Piu rapido sui tablet vecchi e lenti. Su un
+            <span class="aiuto">Più rapido sui tablet vecchi e lenti. Su un
             tablet di un bambino la cifratura serve a poco, ma lasciala accesa
             se il tablet esce di casa.</span>
           </span>
@@ -330,7 +330,7 @@
         <li><strong>Prima di tutto, prova a inquadrarlo</strong> con la
         fotocamera di un telefono qualsiasi: devi vedere comparire del testo
         che comincia con <span class="mono">{"android.app.extra...</span>. Se
-        il telefono non lo legge, non lo leggera nemmeno il tablet: accorcia il
+        il telefono non lo legge, non lo leggerà nemmeno il tablet: accorcia il
         contenuto (togli il Wi-Fi) e riprova.</li>
         <li>Riporta il tablet <strong>alle condizioni di fabbrica</strong>. Il
         QR funziona solo sul primo avvio, su un tablet senza nessun account
@@ -340,13 +340,13 @@
         QR.</li>
         <li>Inquadra questo QR e lascia fare: il tablet scarica StarKid, la
         installa come Device Owner e si arruola da solo.</li>
-        <li>Torna nell'elenco: il tablet comparira come attivo appena si fa
+        <li>Torna nell'elenco: il tablet comparirà come attivo appena si fa
         vivo.</li>
       </ol>
-      <p class="piccolo tenue no-stampa">Se il tablet non e nuovo e non vuoi
+      <p class="piccolo tenue no-stampa">Se il tablet non è nuovo e non vuoi
       riportarlo alle condizioni di fabbrica, il QR non serve: arruolalo a mano
-      col codice qui sopra, dall'area genitori di StarKid. In quel caso pero
-      non diventa Device Owner, quindi il kiosk restera spento.</p>
+      col codice qui sopra, dall'area genitori di StarKid. In quel caso però
+      non diventa Device Owner, quindi il kiosk resterà spento.</p>
     </section>
 
     <div class="carta riga-bottoni no-stampa">

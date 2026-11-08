@@ -78,10 +78,10 @@ fun ServerScreen(
                     )
                     Spacer(Modifier.size(8.dp))
                     Text(
-                        text = "Il codice non e stato buttato, e il tablet continua a chiedere. " +
-                            "Spesso e passeggero: il server ripristinato da una copia vecchia, un " +
-                            "aggiornamento a meta. In quei casi torna a funzionare da solo.\n\n" +
-                            "Se invece il tablet e stato cancellato dal server, non tornera: " +
+                        text = "Il codice non è stato buttato, e il tablet continua a chiedere. " +
+                            "Spesso è passeggero: il server ripristinato da una copia vecchia, un " +
+                            "aggiornamento a metà. In quei casi torna a funzionare da solo.\n\n" +
+                            "Se invece il tablet è stato cancellato dal server, non tornerà: " +
                             "scollegalo qui sotto e ricollegalo con un codice nuovo.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -95,7 +95,7 @@ fun ServerScreen(
                     Spacer(Modifier.size(8.dp))
                     Text(
                         text = if (config.lastSync == 0L) {
-                            "Non si e ancora collegato nemmeno una volta."
+                            "Non si è ancora collegato nemmeno una volta."
                         } else {
                             "Ultimo contatto: ${quando(config.lastSync)}. " +
                                 "Revisione applicata: ${config.syncedRevision}."
@@ -106,7 +106,7 @@ fun ServerScreen(
                     Spacer(Modifier.size(8.dp))
                     Text(
                         text = "Il tablet chiama il server ogni minuto. Il server non " +
-                            "chiama il tablet: non c'e nessuna porta aperta verso qui, e per " +
+                            "chiama il tablet: non c'è nessuna porta aperta verso qui, e per " +
                             "questo una modifica fatta da lontano arriva al giro dopo e non " +
                             "subito.",
                         style = MaterialTheme.typography.bodyMedium,
@@ -124,7 +124,7 @@ fun ServerScreen(
                     Text(
                         text = "Scollegando, il tablet continua a funzionare esattamente come " +
                             "adesso: tiene l'ultima configurazione ricevuta e smette di " +
-                            "chiedere. Dal server risultera zitto.",
+                            "chiedere. Dal server risulterà zitto.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -141,9 +141,9 @@ fun ServerScreen(
 
             SectionCard("Cosa esce da questo tablet") {
                 Text(
-                    text = "Solo due cose: quale configurazione e stata applicata, e le cinque " +
+                    text = "Solo due cose: quale configurazione è stata applicata, e le cinque " +
                         "spie dei permessi. Non il nome del bambino, non il PIN, non quanto ha " +
-                        "giocato e a cosa. Quelle restano qui, ed e una scelta.",
+                        "giocato e a cosa. Quelle restano qui, ed è una scelta.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -167,8 +167,8 @@ private fun Collegamento(
 
     SectionCard("Non collegato") {
         Text(
-            text = "Questo tablet non parla con nessun server: tutto quello che c'e qui lo ha " +
-                "deciso chi ha in mano il tablet. Collegandolo, un genitore puo cambiare le " +
+            text = "Questo tablet non parla con nessun server: tutto quello che c'è qui lo ha " +
+                "deciso chi ha in mano il tablet. Collegandolo, un genitore può cambiare le " +
                 "regole da lontano.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -207,7 +207,7 @@ private fun Collegamento(
         )
         Spacer(Modifier.size(6.dp))
         Text(
-            text = "Lo trovi sul server quando crei il tablet. Si vede una volta sola: se e " +
+            text = "Lo trovi sul server quando crei il tablet. Si vede una volta sola: se è " +
                 "andato perso, dal server si chiede di riarruolare il tablet e ne esce uno " +
                 "nuovo, senza perdere la configurazione.",
             style = MaterialTheme.typography.bodyMedium,

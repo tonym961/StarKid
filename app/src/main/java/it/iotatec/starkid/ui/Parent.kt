@@ -126,15 +126,15 @@ fun ParentHome(
                 SectionCard("La gestione chiede il kiosk") {
                     Text(
                         text = "Dalla pagina web hanno chiesto di chiudere questo tablet su " +
-                            "StarKid. Da lontano non si puo accendere da soli: serve qualcuno " +
-                            "davanti al tablet, ed e il motivo per cui stai leggendo questo " +
+                            "StarKid. Da lontano non si può accendere da soli: serve qualcuno " +
+                            "davanti al tablet, ed è il motivo per cui stai leggendo questo " +
                             "dietro al PIN.",
                         style = MaterialTheme.typography.bodyLarge,
                     )
                     Spacer(Modifier.size(12.dp))
                     Button(onClick = actions.enableKiosk) { Text("Accendi il kiosk adesso") }
                     Spacer(Modifier.size(8.dp))
-                    TextButton(onClick = actions.openKiosk) { Text("Prima fammi vedere cos'e") }
+                    TextButton(onClick = actions.openKiosk) { Text("Prima fammi vedere cos'è") }
                 }
             }
 
@@ -180,7 +180,7 @@ fun ParentHome(
                 val on = Games.All.count { it.id !in config.disabledGames }
                 Text(
                     text = "$on giochi su ${Games.All.size} accesi. Sono dentro l'app: " +
-                        "niente pubblicita, niente acquisti, niente rete.",
+                        "niente pubblicità, niente acquisti, niente rete.",
                     style = MaterialTheme.typography.bodyLarge,
                 )
                 Spacer(Modifier.size(12.dp))
@@ -197,7 +197,7 @@ fun ParentHome(
                         "Collegato a " + config.serverUrl + ". Da collegato, le regole le " +
                             "decide il server."
                     } else {
-                        "Non collegato: tutto quello che c'e qui lo decidi da questo tablet."
+                        "Non collegato: tutto quello che c'è qui lo decidi da questo tablet."
                     },
                     style = MaterialTheme.typography.bodyLarge,
                 )
@@ -226,7 +226,7 @@ fun ParentHome(
 
             SectionCard("Fasce orarie") {
                 Text(
-                    text = if (!config.scheduleEnabled) "Nessuna fascia: si puo usare sempre"
+                    text = if (!config.scheduleEnabled) "Nessuna fascia: si può usare sempre"
                     else "Dalle ${formatTimeOfDay(config.startMinuteOfDay)} alle " +
                         formatTimeOfDay(config.endMinuteOfDay),
                     style = MaterialTheme.typography.bodyLarge,
@@ -235,12 +235,12 @@ fun ParentHome(
                 Button(onClick = actions.openSchedule) { Text("Imposta gli orari") }
             }
 
-            SectionCard("Modalita kiosk") {
+            SectionCard("Modalità kiosk") {
                 Text(
                     text = when {
-                        config.kioskEnabled && status.isDeviceOwner -> "Attiva: il tablet e bloccato sul launcher."
+                        config.kioskEnabled && status.isDeviceOwner -> "Attiva: il tablet è bloccato sul launcher."
                         status.isDeviceOwner -> "Disponibile, ma non attiva."
-                        else -> "Non disponibile: l'app non e Device Owner."
+                        else -> "Non disponibile: l'app non è Device Owner."
                     },
                     style = MaterialTheme.typography.bodyLarge,
                 )
@@ -268,8 +268,8 @@ fun ParentHome(
                 // cioe: un interruttore che non diceva in che posizione
                 // stava, per un problema che non doveva esistere.
                 Text(
-                    text = "Qui dentro comandi tu. Il PIN e il cancello: oltre quello il " +
-                        "controllo e fermo, e niente ti chiude in faccia quello che apri.",
+                    text = "Qui dentro comandi tu. Il PIN è il cancello: oltre quello il " +
+                        "controllo è fermo, e niente ti chiude in faccia quello che apri.",
                     style = MaterialTheme.typography.bodyLarge,
                 )
                 Spacer(Modifier.size(6.dp))
@@ -283,7 +283,7 @@ fun ParentHome(
                 )
                 Spacer(Modifier.size(6.dp))
                 Text(
-                    text = "Si richiude quando torni alla schermata del bambino: e quello il " +
+                    text = "Si richiude quando torni alla schermata del bambino: è quello il " +
                         "gesto che dice \"ho finito\".",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -400,7 +400,7 @@ fun AppLimitsScreen(
             ScreenHeader("Limiti per app", onBack)
             if (apps.isEmpty()) {
                 Text(
-                    text = "Prima scegli quali app puo usare il bambino.",
+                    text = "Prima scegli quali app può usare il bambino.",
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -549,7 +549,7 @@ fun ScheduleScreen(
                     onIncrease = { onWindowChange(config.startMinuteOfDay, config.endMinuteOfDay + 15) },
                 )
                 Text(
-                    text = "Una fascia che scavalca la mezzanotte, per esempio 22:00 - 07:00, e ammessa.",
+                    text = "Una fascia che scavalca la mezzanotte, per esempio 22:00 - 07:00, è ammessa.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -592,7 +592,7 @@ fun KioskScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            ScreenHeader("Modalita kiosk", onBack)
+            ScreenHeader("Modalità kiosk", onBack)
 
             if (status.isDeviceOwner) {
                 SectionCard("Stato") {
@@ -603,12 +603,12 @@ fun KioskScreen(
                                     "permesse: barra di stato e impostazioni sono chiuse, " +
                                     "l'app non si disinstalla."
                             config.kioskEnabled ->
-                                "Kiosk attivo su questo utente. StarKid non e proprietaria " +
+                                "Kiosk attivo su questo utente. StarKid non è proprietaria " +
                                     "dell'intero tablet, quindi qualche blocco potrebbe non " +
                                     "aver fatto presa: controlla l'elenco qui sotto."
-                            status.fullOwner -> "L'app e Device Owner: il kiosk si puo accendere."
-                            else -> "StarKid e proprietaria di questo utente, non di tutto il " +
-                                "tablet. Il kiosk si puo provare, ma con meno poteri."
+                            status.fullOwner -> "L'app è Device Owner: il kiosk si può accendere."
+                            else -> "StarKid è proprietaria di questo utente, non di tutto il " +
+                                "tablet. Il kiosk si può provare, ma con meno poteri."
                         },
                         style = MaterialTheme.typography.bodyLarge,
                     )
@@ -621,7 +621,7 @@ fun KioskScreen(
                     if (config.kioskEnabled) {
                         Spacer(Modifier.size(12.dp))
                         Text(
-                            text = "Adesso non e in funzione, e qui dentro non lo sara mai: " +
+                            text = "Adesso non è in funzione, e qui dentro non lo sarà mai: " +
                                 "nell'area genitori StarKid si toglie di mezzo apposta. " +
                                 "Si chiude sul serio quando torni alla schermata del bambino.",
                             style = MaterialTheme.typography.bodyMedium,
@@ -650,7 +650,7 @@ fun KioskScreen(
                         onCheckedChange = onRecents,
                     )
                     Text(
-                        text = "Spente, il bambino non puo passare da una app all'altra se " +
+                        text = "Spente, il bambino non può passare da una app all'altra se " +
                             "non dalla schermata di StarKid.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -725,7 +725,7 @@ fun KioskScreen(
                     }
                 }
 
-                SectionCard("Perche non c'e un'alternativa") {
+                SectionCard("Perché non c'è un'alternativa") {
                     Text(
                         text = "Senza Device Owner Android offre solo il blocco su schermo, che " +
                             "confina l'utente nella singola app bloccata: il bambino non " +
@@ -766,8 +766,8 @@ fun RecommendedScreen(
 
             SectionCard("Come sono scelte") {
                 Text(
-                    text = "Il criterio non e il prezzo: quasi tutto il gratis sul Play Store " +
-                        "e pagato dalla pubblicita. Qui ci sono solo app senza pubblicita e " +
+                    text = "Il criterio non è il prezzo: quasi tutto il gratis sul Play Store " +
+                        "è pagato dalla pubblicità. Qui ci sono solo app senza pubblicità e " +
                         "senza acquisti, che funzionano anche senza rete.",
                     style = MaterialTheme.typography.bodyLarge,
                 )
@@ -840,7 +840,7 @@ private fun RecommendationRow(
             Spacer(Modifier.width(12.dp))
             if (installed) {
                 Text(
-                    text = "gia installata",
+                    text = "già installata",
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.secondary,
                 )
@@ -1239,7 +1239,7 @@ fun CategoriesScreen(
             ScreenHeader("Categorie", onBack)
             if (apps.isEmpty()) {
                 Text(
-                    text = "Prima scegli quali app puo usare il bambino.",
+                    text = "Prima scegli quali app può usare il bambino.",
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

@@ -135,7 +135,7 @@ fun Elenco(stato: Stato) {
                 // davanti il bottone. La serratura resta il server.
                 if (stato.solaLettura) {
                     Avviso(
-                        "Il tuo accesso e in sola lettura: puoi guardare i tablet che ti " +
+                        "Il tuo accesso è in sola lettura: puoi guardare i tablet che ti " +
                             "hanno dato, ma non cambiare niente e non aggiungerne.",
                         Tono.SPENTO,
                     )
@@ -215,7 +215,7 @@ private fun rigaConfigurazione(t: Tablet): String = when {
     t.campiRifiutati.isNotEmpty() ->
         "Revisione ${t.revisioneConfermata} presa, ma il tablet non ha applicato: " +
             t.campiRifiutati.joinToString(", ") + "."
-    else -> "Il server e alla ${t.revisione}, il tablet ha confermato la ${t.revisioneConfermata}."
+    else -> "Il server è alla ${t.revisione}, il tablet ha confermato la ${t.revisioneConfermata}."
 }
 
 /** La barra in alto: il marchio a sinistra, le azioni a destra. */
@@ -266,13 +266,13 @@ private fun Aggiornamento(
 ) {
     Carta {
         Text(
-            "C'e la versione ${novita.versione}",
+            "C'è la versione ${novita.versione}",
             style = MaterialTheme.typography.titleMedium,
             color = Tinte.Testo,
         )
         Spacer(Modifier.height(6.dp))
         Text(
-            "Questa e la ${it.iotatec.starkid.genitore.BuildConfig.VERSION_NAME}. " +
+            "Questa è la ${it.iotatec.starkid.genitore.BuildConfig.VERSION_NAME}. " +
                 "Il file pesa ${novita.byte / (1024 * 1024)} MB e arriva dalle release " +
                 "di GitHub, firmato con la stessa chiave di questa app: se la firma non " +
                 "torna, non lo installo.",

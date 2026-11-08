@@ -78,8 +78,8 @@
         var id = risposta && (risposta.id || risposta.id_dispositivo);
         if (!token) {
           throw new SK.ErroreApi(0,
-            'Il tablet e stato creato ma il server non ha dato il codice di arruolamento, ' +
-            'quindi non posso disegnare il QR. Torna all\'elenco: il tablet c\'e, e si puo ' +
+            'Il tablet è stato creato ma il server non ha dato il codice di arruolamento, ' +
+            'quindi non posso disegnare il QR. Torna all\'elenco: il tablet c\'è, e si può ' +
             'cancellare e ricreare.');
         }
         creato = { id: id || '', nome: nome, token: String(token) };
@@ -181,7 +181,7 @@
         zonaErrore.appendChild(SK.avviso('attesa', 'QR fitto',
           'Con questo contenuto i quadratini sono piccoli e qualche tablet fa fatica. ' +
           'Prova a inquadrarlo con un telefono prima di usarlo; se non lo legge, ' +
-          'stampalo piu grande oppure togli il Wi-Fi dal QR (la rete si sceglie a mano ' +
+          'stampalo più grande oppure togli il Wi-Fi dal QR (la rete si sceglie a mano ' +
           'sul tablet) o installa l\'APK con adb e lascia vuoti indirizzo e impronta.'));
       }
       abilitaUscite(true);
@@ -197,9 +197,9 @@
        tablet appena resettato. */
     var pin = SK.$('#pin-iniziale').value.trim();
     if (pin && !SK.pinValido(pin)) {
-      zonaErrore.appendChild(SK.avviso('attesa', 'Il PIN non e nel QR',
+      zonaErrore.appendChild(SK.avviso('attesa', 'Il PIN non è nel QR',
         'Il PIN sono da ' + SK.PIN_CIFRE_MIN + ' a ' + SK.PIN_CIFRE_MAX +
-        ' cifre, niente altro. Cosi com\'e non l\'ho messo: il tablet lo chiedera ' +
+        ' cifre, niente altro. Così com\'è non l\'ho messo: il tablet lo chiederà ' +
         'la prima volta che si apre l\'area genitori.'));
     }
   }

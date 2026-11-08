@@ -48,9 +48,9 @@
     if (g <= 21) {
       return SK.avviso(classe, 'Il certificato scade fra ' + g + ' giorni',
         'Di solito certbot lo rinnova da solo trenta giorni prima. Se siamo arrivati qui, ' +
-        'il rinnovo non e passato: sul server, "certbot renew --dry-run" dice perche. ' +
+        'il rinnovo non è passato: sul server, "certbot renew --dry-run" dice perché. ' +
         'Attenzione: su questa macchina ci sono altri certificati con lineage rotte, e ' +
-        'un errore su quelle puo fermare tutto il rinnovo.');
+        'un errore su quelle può fermare tutto il rinnovo.');
     }
     return null;
   }
@@ -64,15 +64,15 @@
     if (!quando) {
       numero('n-backup', 'mai', 'guasto');
       return SK.avviso('guasto', 'Nessun backup',
-        'Il database non e mai stato copiato. Sta tutto in un file: se la macchina si perde, ' +
+        'Il database non è mai stato copiato. Sta tutto in un file: se la macchina si perde, ' +
         'si perdono i tablet e bisogna rifare gli arruolamenti uno per uno. ' +
-        'Sul server e un timer di systemd da accendere, non un cron (qui cron non c\'e).');
+        'Sul server è un timer di systemd da accendere, non un cron (qui cron non c\'è).');
     }
     var ore = (Date.now() - quando.getTime()) / 3600000;
     var classe = ore > 24 * 7 ? 'guasto' : (ore > 36 ? 'attesa' : 'ok');
     numero('n-backup', SK.quando(valore), classe, SK.dataEOra(valore));
     if (classe !== 'ok') {
-      return SK.avviso(classe, 'Il backup e vecchio',
+      return SK.avviso(classe, 'Il backup è vecchio',
         'L\'ultima copia risale a ' + SK.dataEOra(valore) + '. Controlla il timer: ' +
         'sul server, "systemctl list-timers | grep starkid" e "journalctl -u starkid-backup".');
     }
@@ -100,7 +100,7 @@
     numero('n-zitti', String(zitti.length), zitti.length === 0 ? 'ok' : (zitti.length > 1 ? 'guasto' : 'attesa'));
 
     if (tablets.length === 0) {
-      contenitore.appendChild(SK.el('p', { classe: 'tenue', testo: 'Non c\'e ancora nessun tablet.' }));
+      contenitore.appendChild(SK.el('p', { classe: 'tenue', testo: 'Non c\'è ancora nessun tablet.' }));
       return;
     }
     if (zitti.length === 0) {
@@ -117,7 +117,7 @@
       var ore = quando ? (Date.now() - quando.getTime()) / 3600000 : null;
       var testo;
       if (!quando) {
-        testo = ' - mai arrivato: il QR di arruolamento non e stato usato, o il tablet non e riuscito a collegarsi';
+        testo = ' - mai arrivato: il QR di arruolamento non è stato usato, o il tablet non è riuscito a collegarsi';
       } else if (ore >= ORE_ALLARME) {
         testo = ' - zitto da ' + Math.round(ore / 24) + ' giorni (ultima volta ' + SK.dataEOra(t.ultimo_contatto) + ')';
       } else {
@@ -154,7 +154,7 @@
       } else {
         numero('n-servizio', 'muto', 'guasto');
         avvisi.push(SK.avviso('guasto', 'Il controllo pubblico non risponde',
-          'La pagina e arrivata (quindi nginx c\'e) ma /healthz no: il programma dietro e fermo o non riparte. ' +
+          'La pagina è arrivata (quindi nginx c\'è) ma /healthz no: il programma dietro è fermo o non riparte. ' +
           'Sul server: "systemctl status starkid" e "journalctl -u starkid -n 50".'));
       }
 
@@ -178,8 +178,8 @@
         if (errore.stato === 404 || errore.stato === 405 || errore.stato === 501) {
           dettagli.appendChild(SK.avviso('attesa', 'Questo server non dice come sta',
             'Certificato, backup e dimensione del database arrivano da GET /api/v1/salute, che qui ' +
-            'risponde "non trovato". Quella rotta c’e dalla v1, quindi di solito vuol dire che ' +
-            'il server e piu vecchio dei file di questa pagina, oppure che nginx non sta mandando ' +
+            'risponde "non trovato". Quella rotta c’è dalla v1, quindi di solito vuol dire che ' +
+            'il server è più vecchio dei file di questa pagina, oppure che nginx non sta mandando ' +
             '/api/ al servizio. Il resto della pagina funziona lo stesso.'));
         } else {
           dettagli.appendChild(SK.avviso('guasto', 'Numeri del servizio non disponibili', errore.messaggio || 'motivo non detto'));
@@ -200,7 +200,7 @@
         if (rotti.length) {
           avvisi.unshift(SK.avviso('guasto',
             'Su ' + rotti.length + (rotti.length === 1 ? ' tablet' : ' tablet') + ' i limiti di tempo non stanno funzionando',
-            'Apri l\'elenco dei tablet: sulla scheda c\'e scritto cosa manca e dove si tocca.'));
+            'Apri l\'elenco dei tablet: sulla scheda c\'è scritto cosa manca e dove si tocca.'));
         }
       }
 
