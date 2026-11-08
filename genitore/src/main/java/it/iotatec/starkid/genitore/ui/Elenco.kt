@@ -69,12 +69,15 @@ fun Elenco(stato: Stato) {
 
     // Una volta per avvio, in silenzio: se GitHub non risponde non succede
     // niente e non si vede niente.
-    LaunchedEffect(Unit) { stato.cercaAggiornamenti() }
+    LaunchedEffect(Unit) { stato.cercaAggiornamentiUnaVolta() }
 
     Column(Modifier.fillMaxSize()) {
         Testata(
             stato = stato,
             azioni = {
+                TextButton(onClick = { stato.vaiA(Schermata.Impostazioni) }) {
+                    Text("Impostazioni")
+                }
                 TextButton(onClick = { stato.carica() }) {
                     Icon(Icons.Filled.Refresh, contentDescription = null)
                     Spacer(Modifier.height(0.dp))

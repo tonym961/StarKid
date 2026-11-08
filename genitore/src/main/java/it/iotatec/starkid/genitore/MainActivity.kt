@@ -20,6 +20,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import it.iotatec.starkid.genitore.ui.Accesso
 import it.iotatec.starkid.genitore.ui.Dettaglio
 import it.iotatec.starkid.genitore.ui.Elenco
+import it.iotatec.starkid.genitore.ui.Impostazioni
 import it.iotatec.starkid.genitore.ui.Nuovo
 import it.iotatec.starkid.genitore.ui.Storico
 import it.iotatec.starkid.genitore.ui.TemaGenitori
@@ -69,6 +70,7 @@ private fun App(stato: Stato = viewModel()) {
                 is Schermata.Elenco -> Elenco(stato)
                 is Schermata.Dettaglio -> Dettaglio(stato, dove.idTablet)
                 is Schermata.Nuovo -> Nuovo(stato)
+                is Schermata.Impostazioni -> Impostazioni(stato)
                 is Schermata.Storico -> Storico(stato, dove.idTablet)
             }
         }

@@ -24,6 +24,7 @@ sealed interface Schermata {
     data object Elenco : Schermata
     data class Dettaglio(val idTablet: String) : Schermata
     data object Nuovo : Schermata
+    data object Impostazioni : Schermata
     data class Storico(val idTablet: String) : Schermata
 }
 
@@ -76,6 +77,9 @@ class Stato(app: Application) : AndroidViewModel(app) {
             is Schermata.Dettaglio -> caricaConfigurazione(dove.idTablet)
             is Schermata.Storico -> caricaStorico(dove.idTablet)
             is Schermata.Nuovo -> appenaCreato = null
+            // Entrando nelle impostazioni si guarda sempre: e il posto in
+            // cui si entra apposta per sapere se c'e qualcosa di nuovo.
+            is Schermata.Impostazioni -> cercaAggiornamenti(esplicito = false)
             else -> Unit
         }
     }
@@ -238,19 +242,36 @@ class Stato(app: Application) : AndroidViewModel(app) {
      * rosso una schermata che sta facendo tutt'altro. Chi lo chiede a mano
      * invece l'esito lo vuole sapere, e allora [esplicito] e vero.
      */
+    /**
+     * All'avvio, una volta sola: la chiama l'elenco, che si ricompone spesso
+     * e non deve chiamare GitHub a ogni giro.
+     */
+    fun cercaAggiornamentiUnaVolta() {
+        if (giaCercato) return
+        cercaAggiornamenti(esplicito = false)
+    }
+
     fun cercaAggiornamenti(esplicito: Boolean = false) {
-        if (giaCercato && !esplicito) return
         giaCercato = true
         viewModelScope.launch {
-            val trovata = withContext(Dispatchers.IO) {
-                runCatching { Aggiornamenti.cerca() }.getOrNull()
-            }
-            novita = trovata
-            if (esplicito) {
-                avviso = if (trovata == null) {
-                    "Questa e gia l'ultima versione."
-                } else {
-                    "C'e la ${trovata.versione}."
+            val esito = withContext(Dispatchers.IO) { runCatching { Aggiornamenti.cerca() } }
+            esito.onSuccess { trovata ->
+                novita = trovata
+                if (esplicito) {
+                    avviso = if (trovata == null) {
+                        "Questa è già l'ultima versione."
+                    } else {
+                        "C'è la ${trovata.versione}."
+                    }
+                }
+            }.onFailure { guasto ->
+                // Solo a chi l'ha chiesto, ma a lui SI: prima un controllo
+                // andato male finiva nel nulla, e da fuori era identico a
+                // "sei aggiornato". Chi preme un bottone e non riceve
+                // risposta pensa che il bottone non funzioni.
+                if (esplicito) {
+                    errore = "Non riesco a chiedere a GitHub se c'è una versione nuova: " +
+                        (guasto.message ?: guasto.javaClass.simpleName)
                 }
             }
         }

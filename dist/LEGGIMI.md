@@ -40,7 +40,16 @@ Qui stanno le build firmate che si installano senza compilare niente. Ci sono
 perche l'app dei genitori non passa dal Play Store: la si scarica da qui, la si
 mette sul telefono e si apre.
 
-## StarKid-Genitori-1.0.6.apk
+## StarKid-Genitori-1.0.7.apk
+
+C'e una schermata **Impostazioni**, dal tasto in alto nell'elenco, con dentro
+il **controllo aggiornamenti a mano**. Serviva perche il controllo automatico
+parte una volta per avvio: con l'app rimasta aperta, una versione pubblicata
+nel frattempo non la vedeva nessuno, e da fuori sembrava che
+l'aggiornamento automatico non funzionasse. Da li si chiede adesso, e
+soprattutto si legge la risposta - compresa "questa e gia l'ultima versione",
+che prima non la diceva nessuno. Se GitHub non risponde lo dice, invece di
+far credere che non ci sia niente di nuovo.
 
 Le **app permesse si spuntano da un elenco**, con nome e icona vera, invece
 di scrivere `com.esempio.app` a mano. L'elenco lo dichiara il tablet: ci sono
@@ -54,10 +63,10 @@ frase a meta.
 | | |
 |---|---|
 | pacchetto | `it.iotatec.starkid.genitore` |
-| versione | 1.0.6 (versionCode 6) |
+| versione | 1.0.7 (versionCode 7) |
 | Android minimo | 8.0 (API 26) |
 | firma | `CN=StarKid, O=iotatec, C=IT` |
-| SHA-256 | `b3567d570688342609ebcf69bdc468a99cf40b7583210b1f0a176831480a6735` |
+| SHA-256 | `95c8a42f74c545d1a9be7278ce37e1afac9cd3c76a01b84ff655c9b358320b2a` |
 
 ## StarKid-Genitori-1.0.5.apk
 

@@ -195,7 +195,7 @@ class Api(contesto: Context) {
                 // /history risponde con una lista: la si incarta per avere
                 // sempre lo stesso tipo di ritorno.
                 '[' -> JSONObject().put("revisioni", JSONArray(testo))
-                else -> throw ErroreServer(stato, "Il server ha risposto qualcosa che non e JSON (iniziava per '$primo').")
+                else -> throw ErroreServer(stato, "Il server ha risposto qualcosa che non è JSON (iniziava per '$primo').")
             }
         } finally {
             conn.disconnect()
@@ -231,8 +231,8 @@ class Api(contesto: Context) {
         val dettaglio = runCatching { JSONObject(testo).optString("detail") }.getOrNull().orEmpty()
         return when (stato) {
             401 -> "Nome utente o password non vanno bene."
-            403 -> "La sessione non e piu valida: rientra."
-            404 -> "Questo tablet non c'e piu sul server."
+            403 -> "La sessione non è più valida: rientra."
+            404 -> "Questo tablet non c'è più sul server."
             409 -> "Qualcun altro ha cambiato questa configurazione mentre la modificavi. Riapri il tablet e rifai la modifica."
             422 -> if (dettaglio.isNotEmpty()) "Il server ha rifiutato questi valori: $dettaglio"
                    else "Il server ha rifiutato questi valori."
